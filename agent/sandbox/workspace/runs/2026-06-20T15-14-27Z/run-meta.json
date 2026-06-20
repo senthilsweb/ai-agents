@@ -1,0 +1,19 @@
+{
+  "run_id": "2026-06-20T15-14-27Z",
+  "started_at": "2026-06-20T15-14-27Z",
+  "request": "Generate a standard-size architecture diagram from reference image inputs/ai-analytics.png with fit=card",
+  "options": {
+    "theme": "dark",
+    "size": "standard",
+    "fit": "card",
+    "variations": "default",
+    "genericize": true,
+    "allow_cost": false,
+    "out_name": "diagram",
+    "run_root": "runs"
+  },
+  "models": {
+    "orchestrator": "deepseek-v4-pro"
+  },
+  "host": "eve"
+}

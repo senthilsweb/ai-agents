@@ -39,6 +39,7 @@ written description.
 | `theme` | `dark` | `dark` or `light` |
 | `size` | `standard` | `compact` / `standard` / `wide` preset |
 | `canvas` | — | explicit `WxH`, e.g. `1040x660` (overrides `size`) |
+| `fit` | `card` | `card` (bounded, no page break) / `scale` (shrink wide to fit) / `full` (full-page) |
 | `variations` | `default` | comma list, e.g. `dark,light` |
 | `genericize` | `true` | `false` keeps real product names |
 | `spec` | — | path to a prewritten spec JSON (skip spec-building) |

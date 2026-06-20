@@ -1,0 +1,15 @@
+{
+  "phase": "report",
+  "variation": null,
+  "model": "unknown",
+  "started_at": "2026-06-20T15:19:35Z",
+  "ended_at": "2026-06-20T15:20:12Z",
+  "duration_s": 37,
+  "iterations": 1,
+  "tokens": {
+    "input": null,
+    "output": null,
+    "total": null,
+    "source": "unavailable"
+  }
+}

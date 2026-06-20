@@ -1,0 +1,128 @@
+{
+  "title": "AI Analytics Platform",
+  "subtitle": "End-to-end architecture for AI-powered data insights and decision intelligence",
+  "theme": {
+    "mode": "dark",
+    "mood": "technical",
+    "palette_hint": "deep slate base with electric blue and amber accents, glass panels",
+    "font_hint": "Sora for display, IBM Plex Sans for body, JetBrains Mono for mono"
+  },
+  "canvas": { "w": 1280, "h": 800 },
+  "zones": [
+    {
+      "id": "z_sources",
+      "label": "Data Sources",
+      "sublabel": "Ingest Origins",
+      "accent": "sky",
+      "box": { "left": 32, "top": 72, "w": 220, "h": 370 },
+      "nodes": [
+        { "id": "n_odb", "label": "Operational DBs", "icon": "database", "accent": "sky" },
+        { "id": "n_events", "label": "Event Streams", "icon": "radio", "accent": "sky" },
+        { "id": "n_apis", "label": "Third-party APIs", "icon": "globe", "accent": "sky" },
+        { "id": "n_files", "label": "File & Object Stores", "icon": "folder-open", "accent": "sky" }
+      ]
+    },
+    {
+      "id": "z_ingestion",
+      "label": "Data Ingestion",
+      "sublabel": "Stream & Batch",
+      "accent": "blue",
+      "box": { "left": 276, "top": 72, "w": 220, "h": 370 },
+      "nodes": [
+        { "id": "n_stream", "label": "Stream Processor", "icon": "waves", "accent": "blue" },
+        { "id": "n_batch", "label": "Batch ETL", "icon": "folder-sync", "accent": "blue" },
+        { "id": "n_cdc", "label": "CDC Capture", "icon": "refresh-cw", "accent": "blue" },
+        { "id": "n_gateway", "label": "API Gateway", "icon": "server", "accent": "blue" }
+      ]
+    },
+    {
+      "id": "z_platform",
+      "label": "Unified Data Plane",
+      "sublabel": "Lakehouse Architecture",
+      "accent": "indigo",
+      "box": { "left": 520, "top": 72, "w": 220, "h": 370 },
+      "nodes": [
+        { "id": "n_lake", "label": "Data Lake", "icon": "hard-drive", "accent": "indigo" },
+        { "id": "n_warehouse", "label": "Data Warehouse", "icon": "layers", "accent": "indigo" },
+        { "id": "n_vector", "label": "Vector Store", "icon": "grid-3x3", "accent": "indigo" },
+        { "id": "n_features", "label": "Feature Store", "icon": "cpu", "accent": "indigo" }
+      ]
+    },
+    {
+      "id": "z_ai",
+      "label": "AI Engine",
+      "sublabel": "Intelligence Layer",
+      "accent": "violet",
+      "box": { "left": 764, "top": 72, "w": 220, "h": 370 },
+      "nodes": [
+        { "id": "n_embed", "label": "Embedding Service", "icon": "braces", "accent": "violet" },
+        { "id": "n_llm", "label": "LLM Gateway", "icon": "sparkles", "accent": "violet" },
+        { "id": "n_rag", "label": "RAG Pipeline", "icon": "search", "accent": "violet" },
+        { "id": "n_registry", "label": "Model Registry", "icon": "bookmark", "accent": "violet" }
+      ]
+    },
+    {
+      "id": "z_analytics",
+      "label": "Analytics Layer",
+      "sublabel": "Insights & Actions",
+      "accent": "amber",
+      "box": { "left": 1008, "top": 72, "w": 240, "h": 370 },
+      "nodes": [
+        { "id": "n_dash", "label": "BI Dashboards", "icon": "bar-chart-3", "accent": "amber" },
+        { "id": "n_explore", "label": "Ad-hoc Explorer", "icon": "compass", "accent": "amber" },
+        { "id": "n_notebook", "label": "ML Notebooks", "icon": "file-code", "accent": "amber" },
+        { "id": "n_alerts", "label": "Alerting Engine", "icon": "bell", "accent": "amber" }
+      ]
+    },
+    {
+      "id": "z_gov",
+      "label": "Platform Governance",
+      "sublabel": "Cross-cutting Concerns",
+      "accent": "emerald",
+      "box": { "left": 32, "top": 482, "w": 1216, "h": 120 },
+      "nodes": [
+        { "id": "n_catalog", "label": "Data Catalog", "icon": "book-open", "accent": "emerald" },
+        { "id": "n_lineage", "label": "Lineage Tracking", "icon": "git-branch", "accent": "emerald" },
+        { "id": "n_auth", "label": "Access Control", "icon": "shield", "accent": "emerald" },
+        { "id": "n_cost", "label": "Cost Monitor", "icon": "dollar-sign", "accent": "emerald" },
+        { "id": "n_quality", "label": "Quality Engine", "icon": "check-circle", "accent": "emerald" }
+      ]
+    }
+  ],
+  "edges": [
+    { "id": "e1", "from": "z_sources", "to": "z_ingestion", "label": "ingest", "style": "solid", "animated": true, "color_role": "flow", "route": "h" },
+    { "id": "e2", "from": "z_ingestion", "to": "z_platform", "label": "transform & load", "style": "solid", "animated": true, "color_role": "flow", "route": "h" },
+    { "id": "e3", "from": "z_platform", "to": "z_ai", "label": "embeddings & context", "style": "solid", "animated": true, "color_role": "flow", "route": "h" },
+    { "id": "e4", "from": "z_ai", "to": "z_analytics", "label": "inference & serve", "style": "solid", "animated": true, "color_role": "flow", "route": "h" },
+    { "id": "e5", "from": "z_gov", "to": "z_sources", "label": "govern", "style": "dotted", "animated": false, "color_role": "control", "route": "v" },
+    { "id": "e6", "from": "z_gov", "to": "z_ingestion", "label": "govern", "style": "dotted", "animated": false, "color_role": "control", "route": "v" },
+    { "id": "e7", "from": "z_gov", "to": "z_platform", "label": "govern", "style": "dotted", "animated": false, "color_role": "control", "route": "v" },
+    { "id": "e8", "from": "z_gov", "to": "z_ai", "label": "govern", "style": "dotted", "animated": false, "color_role": "control", "route": "v" },
+    { "id": "e9", "from": "z_gov", "to": "z_analytics", "label": "govern", "style": "dotted", "animated": false, "color_role": "control", "route": "v" },
+    { "id": "e10", "from": "z_analytics", "to": "z_ai", "label": "feedback loop", "style": "dashed", "animated": true, "color_role": "success", "route": "h" }
+  ],
+  "annotations": [
+    { "id": "a1", "text": "Real-time + batch ingestion supports both streaming analytics and nightly ETL", "attach_to": "z_ingestion", "color_role": "control" },
+    { "id": "a2", "text": "Vector embeddings power semantic search and RAG over unstructured data", "attach_to": "z_ai", "color_role": "control" }
+  ],
+  "personas": [
+    { "label": "Data Engineers", "sublabel": "Pipeline & Platform", "icon": "wrench", "accent": "sky" },
+    { "label": "Analytics Engineers", "sublabel": "Semantic Models", "icon": "pencil-ruler", "accent": "indigo" },
+    { "label": "Data Scientists", "sublabel": "ML & Experimentation", "icon": "flask-conical", "accent": "violet" },
+    { "label": "Decision Makers", "sublabel": "Insights & Strategy", "icon": "target", "accent": "amber" }
+  ],
+  "legend": [
+    { "label": "Data Flow", "desc": "Primary data movement path", "color_role": "flow" },
+    { "label": "Governance", "desc": "Cross-cutting policies and controls", "color_role": "control" },
+    { "label": "Feedback", "desc": "Analytics-to-model improvement loop", "color_role": "success" }
+  ],
+  "use_case": [
+    "Self-service analytics over structured and unstructured data",
+    "LLM-powered natural-language querying of enterprise data",
+    "Real-time dashboards fed by streaming ingestion with sub-second latency",
+    "Semantic search across documents via vector embeddings and RAG"
+  ],
+  "notes": {
+    "original_product_names": {}
+  }
+}

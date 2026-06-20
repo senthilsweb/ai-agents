@@ -34,7 +34,11 @@ export default defineTool({
       started_at: run_id,
       request,
       options,
-      models: { orchestrator: "anthropic/claude-sonnet-4.6" },
+      models: {
+        // The orchestrator and its renderer/reporter copies all share the single
+        // agent model (configured via MODEL env in agent.ts).
+        orchestrator: process.env.MODEL ?? "deepseek-v4-pro",
+      },
       host: "eve",
     };
     await sandbox.writeTextFile({

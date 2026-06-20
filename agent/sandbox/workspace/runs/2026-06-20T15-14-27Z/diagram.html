@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Analytics Platform — Architecture Diagram</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Base ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{ margin:0; background:#060a10; color:#e2e8f0; font-family:'IBM Plex Sans',system-ui,sans-serif }
+
+/* ── Card frame (bounded, not full-viewport) ── */
+body{ display:flex; justify-content:center; align-items:flex-start; padding:32px; min-height:auto }
+.frame{ width:100%; max-width:1320px; margin:0 auto }
+.canvas{ position:relative; width:1280px; height:800px; margin:0 auto;
+  background:radial-gradient(ellipse 80% 60% at 50% 35%, #0f1729 0%, #060a10 100%);
+  border-radius:18px; overflow:hidden;
+  box-shadow:0 0 0 1px rgba(99,102,241,0.12), 0 20px 60px rgba(0,0,0,0.5), 0 0 120px rgba(99,102,241,0.06);
+}
+
+/* ── Grid texture ── */
+.canvas::before{ content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(99,102,241,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,102,241,0.04) 1px, transparent 1px);
+  background-size:40px 40px;
+  -webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 70%);
+  mask-image:radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 70%);
+}
+
+/* ── Title area ── */
+.title-area{ position:absolute; left:32px; top:16px; z-index:10 }
+.title-area h1{ font-family:'Sora',sans-serif; font-size:22px; font-weight:600; letter-spacing:-0.02em;
+  color:#f1f5f9; margin:0; line-height:1.2 }
+.title-area .sub{ font-family:'IBM Plex Sans',sans-serif; font-size:11.5px; font-weight:400;
+  color:#94a3b8; margin-top:2px; letter-spacing:0.01em }
+
+/* ── Zone panels ── */
+.zone{ position:absolute; z-index:2;
+  background:rgba(15,23,42,0.82); border:1px solid rgba(148,163,184,0.14);
+  border-radius:14px; padding:14px;
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  box-shadow:0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04);
+  display:flex; flex-direction:column; gap:6px;
+}
+.zone::before{ content:''; position:absolute; top:-1px; left:20px; right:20px; height:1px;
+  border-radius:0 0 2px 2px; opacity:0.5 }
+.zone.z_sky::before{ background:linear-gradient(90deg, transparent, #38bdf8, transparent) }
+.zone.z_blue::before{ background:linear-gradient(90deg, transparent, #3b82f6, transparent) }
+.zone.z_indigo::before{ background:linear-gradient(90deg, transparent, #6366f1, transparent) }
+.zone.z_violet::before{ background:linear-gradient(90deg, transparent, #a855f7, transparent) }
+.zone.z_amber::before{ background:linear-gradient(90deg, transparent, #f59e0b, transparent) }
+.zone.z_emerald::before{ background:linear-gradient(90deg, transparent, #10b981, transparent) }
+
+.zone-header{ display:flex; flex-direction:column; gap:0 }
+.zone-label{ font-family:'Sora',sans-serif; font-size:12px; font-weight:600; letter-spacing:0.02em;
+  text-transform:uppercase }
+.zone-sublabel{ font-family:'IBM Plex Sans',sans-serif; font-size:10px; font-weight:400; opacity:0.55 }
+
+.zone.z_sky .zone-label{ color:#38bdf8 } .zone.z_sky .zone-sublabel{ color:#7dd3fc }
+.zone.z_blue .zone-label{ color:#60a5fa } .zone.z_blue .zone-sublabel{ color:#93c5fd }
+.zone.z_indigo .zone-label{ color:#818cf8 } .zone.z_indigo .zone-sublabel{ color:#a5b4fc }
+.zone.z_violet .zone-label{ color:#c084fc } .zone.z_violet .zone-sublabel{ color:#d8b4fe }
+.zone.z_amber .zone-label{ color:#fbbf24 } .zone.z_amber .zone-sublabel{ color:#fcd34d }
+.zone.z_emerald .zone-label{ color:#34d399 } .zone.z_emerald .zone-sublabel{ color:#6ee7b7 }
+
+/* Radial glow per zone */
+.zone::after{ content:''; position:absolute; z-index:-1; border-radius:inherit; inset:-2px;
+  opacity:0; transition:opacity 0.8s }
+.zone.z_sky::after{ background:radial-gradient(ellipse at 50% 0%, rgba(56,189,248,0.09), transparent 70%); opacity:1 }
+.zone.z_blue::after{ background:radial-gradient(ellipse at 50% 0%, rgba(59,130,246,0.09), transparent 70%); opacity:1 }
+.zone.z_indigo::after{ background:radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.09), transparent 70%); opacity:1 }
+.zone.z_violet::after{ background:radial-gradient(ellipse at 50% 0%, rgba(168,85,247,0.09), transparent 70%); opacity:1 }
+.zone.z_amber::after{ background:radial-gradient(ellipse at 50% 0%, rgba(245,158,11,0.09), transparent 70%); opacity:1 }
+.zone.z_emerald::after{ background:radial-gradient(ellipse at 50% 0%, rgba(16,185,129,0.09), transparent 70%); opacity:1 }
+
+/* Zone nodes list */
+.zone-nodes{ display:flex; flex-direction:column; gap:5px; flex:1 }
+.node-chip{ display:flex; align-items:center; gap:8px;
+  padding:7px 10px; border-radius:8px;
+  background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05);
+  transition:background 0.2s, border-color 0.2s; cursor:default }
+.node-chip:hover{ background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.1) }
+.node-chip .ic-wrap{ width:26px; height:26px; display:flex; align-items:center; justify-content:center;
+  border-radius:6px; font-size:13px; flex:none }
+.node-chip .nl{ font-family:'IBM Plex Sans',sans-serif; font-size:11px; font-weight:500;
+  color:#cbd5e1; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+
+/* Chip accent tints */
+.ic-sky{ background:rgba(56,189,248,0.14); color:#38bdf8; border:1px solid rgba(56,189,248,0.18) }
+.ic-blue{ background:rgba(59,130,246,0.14); color:#3b82f6; border:1px solid rgba(59,130,246,0.18) }
+.ic-indigo{ background:rgba(99,102,241,0.14); color:#6366f1; border:1px solid rgba(99,102,241,0.18) }
+.ic-violet{ background:rgba(168,85,247,0.14); color:#a855f7; border:1px solid rgba(168,85,247,0.18) }
+.ic-amber{ background:rgba(245,158,11,0.14); color:#f59e0b; border:1px solid rgba(245,158,11,0.18) }
+.ic-emerald{ background:rgba(16,185,129,0.14); color:#10b981; border:1px solid rgba(16,185,129,0.18) }
+
+/* ── SVG Wire Layer ── */
+.wire-layer{ position:absolute; inset:0; z-index:1; pointer-events:none }
+.wire-layer line, .wire-layer path{ fill:none; stroke-linecap:round; stroke-linejoin:round }
+
+.edge-flow{ stroke:#60a5fa; stroke-width:1.8 }
+.edge-control{ stroke:#64748b; stroke-width:1.3 }
+.edge-success{ stroke:#34d399; stroke-width:1.5 }
+
+.edge-solid{ /* default */ }
+.edge-dotted{ stroke-dasharray:4 4 }
+.edge-dashed{ stroke-dasharray:7 4 }
+
+/* Marching ants animation */
+@keyframes march{ to{ stroke-dashoffset:-16 } }
+.edge-animated{ stroke-dasharray:8 4; animation:march 0.8s linear infinite }
+
+/* Arrowhead markers */
+.wire-layer marker{ overflow:visible }
+.wire-layer marker path{ fill:currentColor }
+
+/* Glow dots */
+.glow-dot{ fill:#60a5fa; filter:blur(1px) }
+
+/* ── Annotations ── */
+.annotation{ position:absolute; z-index:3; font-family:'IBM Plex Sans',sans-serif;
+  font-size:10px; color:#94a3b8; line-height:1.4; max-width:200px;
+  pointer-events:none; font-style:italic }
+
+/* ── Persona strip ── */
+.persona-strip{ position:absolute; left:32px; top:612px; width:1216px; height:54px;
+  z-index:10; display:flex; gap:12px }
+.persona-card{ flex:1; display:flex; align-items:center; gap:10px; padding:8px 12px;
+  background:rgba(15,23,42,0.7); border:1px solid rgba(148,163,184,0.1); border-radius:10px;
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px) }
+.persona-card .p-ic{ width:32px; height:32px; border-radius:7px; display:flex; align-items:center;
+  justify-content:center; font-size:15px; flex:none }
+.persona-card .p-info{ display:flex; flex-direction:column; gap:1px }
+.persona-card .p-label{ font-family:'Sora',sans-serif; font-size:11px; font-weight:600; color:#e2e8f0 }
+.persona-card .p-sublabel{ font-family:'IBM Plex Sans',sans-serif; font-size:9.5px; font-weight:400; color:#64748b }
+
+/* ── Legend ── */
+.legend{ position:absolute; left:32px; top:678px; z-index:10; display:flex; gap:18px; align-items:center }
+.legend-item{ display:flex; align-items:center; gap:6px; font-family:'IBM Plex Sans',sans-serif; font-size:10px; color:#94a3b8 }
+.legend-line{ width:20px; height:0; border-radius:1px; flex:none }
+.ll-flow{ border-top:2px solid #60a5fa }
+.ll-control{ border-top:1.3px dotted #64748b }
+.ll-success{ border-top:1.5px dashed #34d399 }
+
+/* ── Use cases ── */
+.use-cases{ position:absolute; left:32px; top:706px; z-index:10; display:flex; gap:10px; flex-wrap:wrap; width:1216px }
+.use-tag{ font-family:'JetBrains Mono',monospace; font-size:9px; padding:4px 10px;
+  border-radius:5px; background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.14);
+  color:#a5b4fc; white-space:nowrap }
+
+/* ── Staggered reveal ── */
+@keyframes fadeUp{ from{ opacity:0; transform:translateY(8px) } to{ opacity:1; transform:translateY(0) } }
+.reveal{ animation:fadeUp 0.5s ease-out both }
+.reveal-d1{ animation-delay:0.05s } .reveal-d2{ animation-delay:0.12s } .reveal-d3{ animation-delay:0.19s }
+.reveal-d4{ animation-delay:0.26s } .reveal-d5{ animation-delay:0.33s } .reveal-d6{ animation-delay:0.40s }
+.reveal-d7{ animation-delay:0.47s } .reveal-d8{ animation-delay:0.54s }
+
+/* ── Inline icon reset ── */
+.ic{ width:1em; height:1em; display:block; flex:none }
+</style>
+</head>
+<body>
+<div class="frame">
+<div class="canvas">
+
+  <!-- Title -->
+  <div class="title-area reveal">
+    <h1>AI Analytics Platform</h1>
+    <div class="sub">End-to-end architecture for AI-powered data insights and decision intelligence</div>
+  </div>
+
+  <!-- ─────── Zone: Data Sources ─────── -->
+  <div class="zone z_sky reveal reveal-d1" id="z_sources" style="left:32px;top:72px;width:220px;height:370px">
+    <div class="zone-header"><span class="zone-label">Data Sources</span><span class="zone-sublabel">Ingest Origins</span></div>
+    <div class="zone-nodes">
+      <div class="node-chip"><span class="ic-wrap ic-sky"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></span><span class="nl">Operational DBs</span></div>
+      <div class="node-chip"><span class="ic-wrap ic-sky"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.247 7.761a6 6 0 0 1 0 8.478"/><path d="M19.075 4.933a10 10 0 0 1 0 14.134"/><path d="M4.925 19.067a10 10 0 0 1 0-14.134"/><path d="M7.753 16.239a6 6 0 0 1 0-8.478"/><circle cx="12" cy="12" r="2"/></svg></span><span class="nl">Event Streams</span></div>
+      <div class="node-chip"><span class="ic-wrap ic-sky"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg></span><span class="nl">Third-party APIs</span></div>
+      <div class="node-chip"><span class="ic-wrap ic-sky"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg></span><span class="nl">File &amp; Object Stores</span></div>
+    </div>
+  </div>
+
+  <!-- ─────── Zone: Data Ingestion ─────── -->
+  <div class="zone z_blue reveal reveal-d2" id="z_ingestion" style="left:276px;top:72px;width:220px;height:370px">
+    <div class="zone-header"><span class="zone-label">Data Ingestion</span><span class="zone-sublabel">Stream &amp; Batch</span></div>
+    <div class="zone-nodes">
+      <div class="node-chip"><span class="ic-wrap ic-blue"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/></svg></span><span class="nl">Stream Processor</span></div>
+      <div class="node-chip"><span class="ic-wrap ic-blue"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v.5"/><path d="M12 10v4h4"/><path d="m12 14 1.535-1.605a5 5 0 0 1 8 1.5"/><path d="M22 22v-4h-4"/><path d="m22 18-1.535 1.605a5 5 0 0 1-8-1.5"/></svg></span><span class="nl">Batch ETL</span></div>
+      <div class="node-chip"><span class="ic-wrap ic-blue"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></span><span class="nl">CDC Capture</span></div>
+      <div class="node-chip"><span class="ic-wrap ic-blue"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg></span><span class="nl">API Gateway</span></div>
+    </div>
+  </div>
+
+  <!-- ─────── Zone: Unified Data Plane ─────── -->
+  <div class="zone z_indigo reveal reveal-d3" id="z_platform" style="left:520px;top:72px;width:220px;height:370px">
+    <div class="zone-header"><span class="zone-label">Unified Data Plane</span><span class="zone-sublabel">Lakehouse Architecture</span></div>
+    <div class="zone-nodes">
+      <div class="node-chip"><span class="ic-wrap ic-indigo"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 16h.01"/><path d="M2.212 11.577a2 2 0 0 0-.212.896V18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5.527a2 2 0 0 0-.212-.896L18.55 5.11A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><path d="M21.946 12.013H2.054"/><path d="M6 16h.01"/></svg></span><span class="nl">Data Lake</span></div>
+      <div class="node-chip"><span class="ic-wrap ic-indigo"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg></span><span class="nl">Data Warehouse</span></div>
+      <div class="node-chip"><span class="ic-wrap ic-indigo"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg></span><span class="nl">Vector Store</span></div>
+      <div class="node-chip"><span class="ic-wrap ic-indigo"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20v2"/><path d="M12 2v2"/><path d="M17 20v2"/><path d="M17 2v2"/><path d="M2 12h2"/><path d="M2 17h2"/><path d="M2 7h2"/><path d="M20 12h2"/><path d="M20 17h2"/><path d="M20 7h2"/><path d="M7 20v2"/><path d="M7 2v2"/><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg></span><span class="nl">Feature Store</span></div>
+    </div>
+  </div>
+
+  <!-- ─────── Zone: AI Engine ─────── -->
+  <div class="zone z_violet reveal reveal-d4" id="z_ai" style="left:764px;top:72px;width:220px;height:370px">
+    <div class="zone-header"><span class="zone-label">AI Engine</span><span class="zone-sublabel">Intelligence Layer</span></div>
+    <div class="zone-nodes">
+      <div class="node-chip"><span class="ic-wrap ic-violet"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/></svg></span><span class="nl">Embedding Service</span></div>
+      <div class="node-chip"><span class="ic-wrap ic-violet"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></svg></span><span class="nl">LLM Gateway</span></div>
+      <div class="node-chip"><span class="ic-wrap ic-violet"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg></span><span class="nl">RAG Pipeline</span></div>
+      <div class="node-chip"><span class="ic-wrap ic-violet"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"/></svg></span><span class="nl">Model Registry</span></div>
+    </div>
+  </div>
+
+  <!-- ─────── Zone: Analytics Layer ─────── -->
+  <div class="zone z_amber reveal reveal-d5" id="z_analytics" style="left:1008px;top:72px;width:240px;height:370px">
+    <div class="zone-header"><span class="zone-label">Analytics Layer</span><span class="zone-sublabel">Insights &amp; Actions</span></div>
+    <div class="zone-nodes">
+      <div class="node-chip"><span class="ic-wrap ic-amber"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></span><span class="nl">BI Dashboards</span></div>
+      <div class="node-chip"><span class="ic-wrap ic-amber"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></svg></span><span class="nl">Ad-hoc Explorer</span></div>
+      <div class="node-chip"><span class="ic-wrap ic-amber"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 12.5 8 15l2 2.5"/><path d="m14 12.5 2 2.5-2 2.5"/></svg></span><span class="nl">ML Notebooks</span></div>
+      <div class="node-chip"><span class="ic-wrap ic-amber"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg></span><span class="nl">Alerting Engine</span></div>
+    </div>
+  </div>
+
+  <!-- ─────── Zone: Platform Governance ─────── -->
+  <div class="zone z_emerald reveal reveal-d6" id="z_gov" style="left:32px;top:482px;width:1216px;height:120px">
+    <div class="zone-header" style="flex-direction:row;align-items:baseline;gap:12px"><span class="zone-label">Platform Governance</span><span class="zone-sublabel">Cross-cutting Concerns</span></div>
+    <div class="zone-nodes" style="flex-direction:row;flex-wrap:wrap;gap:8px">
+      <div class="node-chip"><span class="ic-wrap ic-emerald"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg></span><span class="nl">Data Catalog</span></div>
+      <div class="node-chip"><span class="ic-wrap ic-emerald"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6a9 9 0 0 0-9 9V3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/></svg></span><span class="nl">Lineage Tracking</span></div>
+      <div class="node-chip"><span class="ic-wrap ic-emerald"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg></span><span class="nl">Access Control</span></div>
+      <div class="node-chip"><span class="ic-wrap ic-emerald"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span class="nl">Cost Monitor</span></div>
+      <div class="node-chip"><span class="ic-wrap ic-emerald"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span><span class="nl">Quality Engine</span></div>
+    </div>
+  </div>
+
+  <!-- ─────── SVG Wire Layer ─────── -->
+  <svg class="wire-layer" viewBox="0 0 1280 800">
+    <defs>
+      <!-- Flow arrowhead -->
+      <marker id="ma-flow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+        <path d="M0,0 L8,3 L0,6 L2,3 Z" fill="#60a5fa"/>
+      </marker>
+      <!-- Control arrowhead -->
+      <marker id="ma-control" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto" markerUnits="userSpaceOnUse">
+        <path d="M0,0 L7,2.5 L0,5 L1.5,2.5 Z" fill="#64748b"/>
+      </marker>
+      <!-- Success arrowhead -->
+      <marker id="ma-success" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+        <path d="M0,0 L8,3 L0,6 L2,3 Z" fill="#34d399"/>
+      </marker>
+
+      <!-- Glow filter -->
+      <filter id="glow"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </defs>
+
+    <!-- Horizontal flow edges -->
+    <!-- e1: sources → ingestion -->
+    <line x1="252" y1="257" x2="272" y2="257" class="edge-flow edge-solid edge-animated" marker-end="url(#ma-flow)"/>
+    <!-- e2: ingestion → platform -->
+    <line x1="496" y1="257" x2="516" y2="257" class="edge-flow edge-solid edge-animated" marker-end="url(#ma-flow)"/>
+    <!-- e3: platform → ai -->
+    <line x1="740" y1="257" x2="760" y2="257" class="edge-flow edge-solid edge-animated" marker-end="url(#ma-flow)"/>
+    <!-- e4: ai → analytics -->
+    <line x1="984" y1="257" x2="1004" y2="257" class="edge-flow edge-solid edge-animated" marker-end="url(#ma-flow)"/>
+
+    <!-- e10: analytics → ai (feedback loop, dashed, success) -->
+    <path d="M 1128 442 V 456 H 874 V 445" class="edge-success edge-dashed edge-animated" marker-end="url(#ma-success)"/>
+
+    <!-- Governance edges (dotted, control, vertical up) -->
+    <line x1="142" y1="482" x2="142" y2="446" class="edge-control edge-dotted" marker-end="url(#ma-control)"/>
+    <line x1="386" y1="482" x2="386" y2="446" class="edge-control edge-dotted" marker-end="url(#ma-control)"/>
+    <line x1="630" y1="482" x2="630" y2="446" class="edge-control edge-dotted" marker-end="url(#ma-control)"/>
+    <line x1="874" y1="482" x2="874" y2="446" class="edge-control edge-dotted" marker-end="url(#ma-control)"/>
+    <line x1="1128" y1="482" x2="1128" y2="446" class="edge-control edge-dotted" marker-end="url(#ma-control)"/>
+
+    <!-- Edge labels -->
+    <text x="264" y="250" class="edge-label" fill="#93c5fd" font-family="'JetBrains Mono',monospace" font-size="8.5" text-anchor="middle">ingest</text>
+    <text x="508" y="250" class="edge-label" fill="#93c5fd" font-family="'JetBrains Mono',monospace" font-size="8.5" text-anchor="middle">transform &amp; load</text>
+    <text x="752" y="250" class="edge-label" fill="#93c5fd" font-family="'JetBrains Mono',monospace" font-size="8.5" text-anchor="middle">embeddings &amp; context</text>
+    <text x="996" y="250" class="edge-label" fill="#93c5fd" font-family="'JetBrains Mono',monospace" font-size="8.5" text-anchor="middle">inference &amp; serve</text>
+    <text x="1001" y="450" class="edge-label" fill="#6ee7b7" font-family="'JetBrains Mono',monospace" font-size="8.5" text-anchor="middle">feedback loop</text>
+
+    <!-- Governance edge labels -->
+    <text x="120" y="466" fill="#64748b" font-family="'JetBrains Mono',monospace" font-size="7.5" text-anchor="end">govern</text>
+    <text x="364" y="466" fill="#64748b" font-family="'JetBrains Mono',monospace" font-size="7.5" text-anchor="end">govern</text>
+    <text x="608" y="466" fill="#64748b" font-family="'JetBrains Mono',monospace" font-size="7.5" text-anchor="end">govern</text>
+    <text x="852" y="466" fill="#64748b" font-family="'JetBrains Mono',monospace" font-size="7.5" text-anchor="end">govern</text>
+    <text x="1106" y="466" fill="#64748b" font-family="'JetBrains Mono',monospace" font-size="7.5" text-anchor="end">govern</text>
+
+    <!-- SMIL glow dots on primary flow -->
+    <circle r="3" fill="#60a5fa" filter="url(#glow)" opacity="0.85">
+      <animateMotion dur="4s" repeatCount="indefinite" path="M252,257 L272,257 L496,257 L516,257 L740,257 L760,257 L984,257 L1004,257"/>
+    </circle>
+    <circle r="2.5" fill="#818cf8" filter="url(#glow)" opacity="0.7">
+      <animateMotion dur="5s" repeatCount="indefinite" begin="2s" path="M252,257 L272,257 L496,257 L516,257 L740,257 L760,257 L984,257 L1004,257"/>
+    </circle>
+  </svg>
+
+  <!-- ─────── Annotations ─────── -->
+  <div class="annotation reveal reveal-d7" style="left:280px;top:447px;width:200px">
+    Real-time + batch ingestion supports both streaming analytics and nightly ETL
+  </div>
+  <div class="annotation reveal reveal-d7" style="left:768px;top:447px;width:200px">
+    Vector embeddings power semantic search and RAG over unstructured data
+  </div>
+
+  <!-- ─────── Personas ─────── -->
+  <div class="persona-strip reveal reveal-d8">
+    <div class="persona-card"><span class="p-ic ic-sky"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="font-size:15px"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"/></svg></span><div class="p-info"><span class="p-label">Data Engineers</span><span class="p-sublabel">Pipeline &amp; Platform</span></div></div>
+    <div class="persona-card"><span class="p-ic ic-indigo"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="font-size:15px"><path d="M13 7 8.7 2.7a2.41 2.41 0 0 0-3.4 0L2.7 5.3a2.41 2.41 0 0 0 0 3.4L7 13"/><path d="m8 6 2-2"/><path d="m18 16 2-2"/><path d="m17 11 4.3 4.3c.94.94.94 2.46 0 3.4l-2.6 2.6c-.94.94-2.46.94-3.4 0L11 17"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></span><div class="p-info"><span class="p-label">Analytics Engineers</span><span class="p-sublabel">Semantic Models</span></div></div>
+    <div class="persona-card"><span class="p-ic ic-violet"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="font-size:15px"><path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2"/><path d="M6.453 15h11.094"/><path d="M8.5 2h7"/></svg></span><div class="p-info"><span class="p-label">Data Scientists</span><span class="p-sublabel">ML &amp; Experimentation</span></div></div>
+    <div class="persona-card"><span class="p-ic ic-amber"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="font-size:15px"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span><div class="p-info"><span class="p-label">Decision Makers</span><span class="p-sublabel">Insights &amp; Strategy</span></div></div>
+  </div>
+
+  <!-- ─────── Legend ─────── -->
+  <div class="legend reveal reveal-d8">
+    <div class="legend-item"><span class="legend-line ll-flow"></span>Data Flow — Primary data movement path</div>
+    <div class="legend-item"><span class="legend-line ll-control"></span>Governance — Cross-cutting policies and controls</div>
+    <div class="legend-item"><span class="legend-line ll-success"></span>Feedback — Analytics-to-model improvement loop</div>
+  </div>
+
+  <!-- ─────── Use Cases ─────── -->
+  <div class="use-cases reveal reveal-d8">
+    <span class="use-tag">Self-service analytics over structured and unstructured data</span>
+    <span class="use-tag">LLM-powered natural-language querying of enterprise data</span>
+    <span class="use-tag">Real-time dashboards fed by streaming ingestion with sub-second latency</span>
+    <span class="use-tag">Semantic search across documents via vector embeddings and RAG</span>
+  </div>
+
+</div><!-- .canvas -->
+</div><!-- .frame -->
+</body>
+</html>

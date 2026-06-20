@@ -1,0 +1,21 @@
+{
+  "phase": "render-default",
+  "variation": "default",
+  "started": "2026-06-20T15:15:30Z",
+  "ended": "2026-06-20T15:19:00Z",
+  "duration_s": 210,
+  "model": null,
+  "usage": {
+    "source": "unavailable"
+  },
+  "qc": {
+    "passed": true,
+    "issues_fixed": [],
+    "iterations": 1,
+    "notes": "All 29 Lucide icons inlined correctly. Canvas 1280x800 with fit=card (no 100vh). Screenshot captured via Playwright at 1560x1500. No layout issues detected — zones align to spec boxes, edges route from zone-edge coordinates, arrowheads render with correct orientation, governance control lines are dotted vertical from z_gov to each top zone, feedback loop routes below zones as dashed success-color path. Staggered reveal animation applied per data-flow order. Font pairing: Sora display, IBM Plex Sans body, JetBrains Mono mono — all loaded from Google Fonts with fallbacks."
+  },
+  "html_bytes": 31257,
+  "icons_inlined": 29,
+  "preview": "runs/2026-06-20T15-14-27Z/diagram.preview.png",
+  "html": "runs/2026-06-20T15-14-27Z/diagram.html"
+}

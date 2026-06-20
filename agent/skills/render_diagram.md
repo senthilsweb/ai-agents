@@ -26,8 +26,13 @@ Load the `design_system` skill and follow it exactly. Non-negotiables:
 - Apply the spec's `theme.mode`; for a `light` variation, invert the palette but
   keep the same structure.
 - Genericize labels per `spec.notes` unless told otherwise.
-- Use the `size` preset or explicit `canvas` from the options to set canvas
-  dimensions: compact ~1040x660, standard ~1280x800, wide ~1480x1000.
+- Set the canvas dimensions from `size` (compact ~1040x660, standard ~1280x800,
+  wide ~1480x1000) or an explicit `canvas=WxH`.
+- **Page fit** (default `fit=card`): wrap the canvas in a centered, bounded
+  `.frame` card. NEVER set `min-height:100vh`/`height:100vh` on the body unless
+  `fit=full` — that is what causes full-page stretching and page breaks. For
+  `fit=scale`, scale the wide canvas down to a max-width instead of relayout.
+  See the "Canvas size & fit" section of the `design_system` skill.
 
 Write the file to `<run_dir>/<out_name>[-<variation>].html` via `write_run_file`.
 For the `default` variation, omit the `-<variation>` suffix.

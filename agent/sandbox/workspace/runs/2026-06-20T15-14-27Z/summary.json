@@ -1,0 +1,48 @@
+{
+  "run_id": "2026-06-20T15-14-27Z",
+  "status": "ok",
+  "models": {
+    "orchestrator": "deepseek-v4-pro",
+    "renderer": "not captured",
+    "reporter": "unknown"
+  },
+  "variations": ["default"],
+  "timing": {
+    "wall_s": 345,
+    "compute_s": 553,
+    "per_phase": {
+      "orchestrate": 306,
+      "render-default": 210,
+      "report": 37
+    }
+  },
+  "tokens": {
+    "input": 0,
+    "output": 0,
+    "total": 0,
+    "by_phase": {
+      "orchestrate": { "input": 0, "output": 0, "total": 0, "source": "unavailable" },
+      "render-default": { "input": 0, "output": 0, "total": 0, "source": "unavailable" },
+      "report": { "input": 0, "output": 0, "total": 0, "source": "unavailable" }
+    },
+    "source": "unavailable"
+  },
+  "cost": {
+    "currency": "USD",
+    "mode": "per_token",
+    "total": 0,
+    "by_phase": {},
+    "estimated": true,
+    "note": "allow_cost=false — cost not computed. Set allow_cost=true to enable."
+  },
+  "qc": {
+    "default": { "passed": true }
+  },
+  "artifacts": [
+    "diagram.html",
+    "diagram.preview.png",
+    "spec.json",
+    "report.md",
+    "summary.json"
+  ]
+}
