@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Issue Tracker to Analytical Database</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+/* ── Design System: Refined Dark ── */
+:root {
+  --bg0: #080d1a;
+  --bg1: #0f1724;
+  --bg2: #162032;
+  --txt: #e8edf5;
+  --dim: #8899b4;
+  --faint: #3d5068;
+  --flow: #38bdf8;
+  --flow-dim: #0e4a6b;
+  --read: #f59e0b;
+  --read-dim: #5c3d08;
+  --sky: #38bdf8;
+  --amber: #f59e0b;
+  --slate: #64748b;
+  --neutral: #8899b4;
+  --glass-bg: rgba(15,23,36,0.72);
+  --glass-border: rgba(137,153,180,0.10);
+  --glass-hilite: rgba(255,255,255,0.03);
+  --shadow: 0 1px 3px rgba(0,0,0,0.5), 0 8px 32px rgba(0,0,0,0.35);
+  --radius: 14px;
+  --transition: 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+html,body{
+  margin:0;
+  background:var(--bg0);
+  font-family:'IBM Plex Sans',system-ui,sans-serif;
+  color:var(--txt);
+}
+body{
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  padding:36px 24px 48px;
+  min-height:auto;
+}
+
+.frame{
+  width:100%;
+  max-width:1520px;
+  margin:0 auto;
+}
+
+/* ── Title Bar ── */
+.title-bar{
+  display:flex;
+  align-items:baseline;
+  gap:16px;
+  padding:0 8px 16px;
+}
+.title-bar h1{
+  font-family:'Sora',sans-serif;
+  font-weight:700;
+  font-size:1.6rem;
+  letter-spacing:-0.02em;
+  color:var(--txt);
+}
+.title-bar .sub{
+  font-family:'IBM Plex Sans',sans-serif;
+  font-weight:400;
+  font-size:0.9rem;
+  color:var(--dim);
+  font-style:italic;
+}
+
+/* ── Canvas ── */
+.canvas{
+  position:relative;
+  width:1480px;
+  height:490px;
+  margin:0 auto;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 50%, rgba(56,189,248,0.04) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 50% at 78% 50%, rgba(245,158,11,0.03) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 48% 50%, rgba(100,116,139,0.02) 0%, transparent 70%),
+    var(--bg1);
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+}
+.canvas::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  background-image:
+    linear-gradient(rgba(137,153,180,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(137,153,180,0.04) 1px, transparent 1px);
+  background-size:40px 40px;
+  mask-image:radial-gradient(ellipse 90% 80% at 50% 50%, black 30%, transparent 80%);
+  -webkit-mask-image:radial-gradient(ellipse 90% 80% at 50% 50%, black 30%, transparent 80%);
+}
+
+/* ── Zone cards ── */
+.zone{
+  position:absolute;
+  z-index:2;
+  background:var(--glass-bg);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  border:1px solid var(--glass-border);
+  border-radius:var(--radius);
+  box-shadow:
+    0 1px 0 var(--glass-hilite) inset,
+    0 4px 24px rgba(0,0,0,0.3);
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  padding:16px 18px;
+  opacity:0;
+  animation:zoneIn 0.55s var(--transition) forwards;
+}
+.zone::before{
+  content:'';
+  position:absolute;
+  inset:-1px;
+  border-radius:var(--radius);
+  pointer-events:none;
+  z-index:-1;
+}
+.zone.accent-sky::before{
+  background:radial-gradient(ellipse at center, rgba(56,189,248,0.08) 0%, transparent 75%);
+}
+.zone.accent-amber::before{
+  background:radial-gradient(ellipse at center, rgba(245,158,11,0.08) 0%, transparent 75%);
+}
+.zone.accent-slate::before{
+  background:radial-gradient(ellipse at center, rgba(100,116,139,0.06) 0%, transparent 75%);
+}
+.zone.accent-neutral::before{
+  background:radial-gradient(ellipse at center, rgba(137,153,180,0.05) 0%, transparent 75%);
+}
+.zone-header{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.zone-title{
+  font-family:'Sora',sans-serif;
+  font-weight:600;
+  font-size:0.85rem;
+  letter-spacing:-0.01em;
+  color:var(--txt);
+}
+.zone-sublabel{
+  font-family:'IBM Plex Sans',sans-serif;
+  font-weight:400;
+  font-size:0.7rem;
+  color:var(--dim);
+  font-style:italic;
+}
+
+/* ── Chips (nodes inside zones) ── */
+.chip{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 12px;
+  border-radius:10px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.05);
+  transition:background var(--transition),border-color var(--transition);
+}
+.chip:hover{
+  background:rgba(255,255,255,0.06);
+  border-color:rgba(255,255,255,0.10);
+}
+.chip-icon{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:32px;
+  height:32px;
+  border-radius:8px;
+  flex:none;
+  font-size:16px;
+}
+.chip-icon.sky-accent{
+  background:rgba(56,189,248,0.12);
+  color:var(--sky);
+  box-shadow:0 0 8px rgba(56,189,248,0.08);
+}
+.chip-icon.slate-accent{
+  background:rgba(100,116,139,0.12);
+  color:var(--slate);
+  box-shadow:0 0 8px rgba(100,116,139,0.06);
+}
+.chip-icon.amber-accent{
+  background:rgba(245,158,11,0.12);
+  color:var(--amber);
+  box-shadow:0 0 8px rgba(245,158,11,0.08);
+}
+.chip-icon.neutral-accent{
+  background:rgba(137,153,180,0.10);
+  color:var(--neutral);
+  box-shadow:0 0 8px rgba(137,153,180,0.05);
+}
+.chip-label{
+  font-family:'JetBrains Mono','IBM Plex Sans',monospace;
+  font-weight:500;
+  font-size:0.72rem;
+  color:var(--dim);
+  white-space:nowrap;
+}
+.ic{width:1em;height:1em;display:block;flex:none}
+
+/* ── SVG Wire Layer ── */
+.wire-layer{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+}
+.wire-layer line,
+.wire-layer path{
+  fill:none;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.wire-layer line.flow,
+.wire-layer path.flow{
+  stroke:var(--flow);
+  stroke-dasharray:8 4;
+  animation:ants 0.8s linear infinite;
+}
+.wire-layer line.read,
+.wire-layer path.read{
+  stroke:var(--read);
+  stroke-dasharray:4 4;
+}
+@keyframes ants{
+  to{stroke-dashoffset:-24}
+}
+/* Glow underneath flow edges */
+.wire-layer line.flow-glow,
+.wire-layer path.flow-glow{
+  stroke:var(--flow);
+  stroke-width:6;
+  opacity:0.12;
+  filter:blur(3px);
+}
+
+/* Arrowhead markers (filled via native SVG fill; CSS var fill on marker path is unreliable, set directly) */
+#arr-flow path{fill:#38bdf8}
+#arr-read path{fill:#f59e0b}
+
+/* ── Legend & Use Cases ── */
+.legend-bar{
+  display:flex;
+  align-items:center;
+  gap:24px;
+  padding:18px 8px 8px;
+  flex-wrap:wrap;
+}
+.legend-item{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:0.72rem;
+  color:var(--dim);
+}
+.legend-line{
+  width:28px;
+  height:2px;
+  border-radius:2px;
+  flex:none;
+}
+.legend-line.flow{background:var(--flow)}
+.legend-line.read{background:var(--read); height:0; border-top:2px dashed var(--read)}
+
+.use-cases{
+  display:flex;
+  gap:12px;
+  padding:4px 8px 0;
+  flex-wrap:wrap;
+}
+.use-case{
+  font-family:'IBM Plex Sans',sans-serif;
+  font-size:0.68rem;
+  color:var(--faint);
+  font-style:italic;
+  padding:4px 10px;
+  border-radius:20px;
+  background:rgba(255,255,255,0.02);
+  border:1px solid rgba(255,255,255,0.04);
+}
+
+/* ── Glow dot (SMIL animated) ── */
+.glow-dot{
+  filter:blur(2px);
+}
+.glow-dot .dot-flow{
+  fill:#38bdf8;
+  opacity:0.7;
+}
+.glow-dot .dot-read{
+  fill:#f59e0b;
+  opacity:0.6;
+}
+
+/* ── Animation delays ── */
+.zone[data-delay="0"]{animation-delay:0.05s}
+.zone[data-delay="1"]{animation-delay:0.15s}
+.zone[data-delay="2"]{animation-delay:0.25s}
+.zone[data-delay="3"]{animation-delay:0.35s}
+.zone[data-delay="4"]{animation-delay:0.45s}
+.zone[data-delay="5"]{animation-delay:0.55s}
+
+@keyframes zoneIn{
+  0%{opacity:0;transform:translateY(8px)}
+  100%{opacity:1;transform:translateY(0)}
+}
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="title-bar">
+    <h1>Issue Tracker to Analytical Database</h1>
+    <span class="sub">Data ingestion pipeline with staged transformation and persistent storage</span>
+  </div>
+
+  <div class="canvas">
+    <!-- ════ SVG Wire Layer ════ -->
+    <svg class="wire-layer" viewBox="0 0 1480 490" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr-flow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+          <path d="M0,0 L10,4 L0,8 L2,4 Z"/>
+        </marker>
+        <marker id="arr-read" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+          <path d="M0,0 L10,4 L0,8 L2,4 Z"/>
+        </marker>
+      </defs>
+
+      <!-- Flow glows (blurred underlines) -->
+      <line class="flow-glow" x1="250" y1="252" x2="424" y2="252"/>
+      <line class="flow-glow" x1="466" y1="252" x2="554" y2="252"/>
+      <line class="flow-glow" x1="860" y1="252" x2="874" y2="252"/>
+      <line class="flow-glow" x1="916" y1="256" x2="1074" y2="256"/>
+
+      <!-- e1: Fetch — z_source → z_stage_a -->
+      <line class="flow" x1="250" y1="252" x2="424" y2="252" marker-end="url(#arr-flow)"/>
+
+      <!-- e2: Stream — z_stage_a → z_pipeline -->
+      <line class="flow" x1="466" y1="252" x2="554" y2="252" marker-end="url(#arr-flow)"/>
+
+      <!-- e3: Batch — z_pipeline → z_stage_b -->
+      <line class="flow" x1="860" y1="252" x2="874" y2="252" marker-end="url(#arr-flow)"/>
+
+      <!-- e4: Insert — z_stage_b → z_dest -->
+      <line class="flow" x1="916" y1="256" x2="1074" y2="256" marker-end="url(#arr-flow)"/>
+
+      <!-- e5: Persist — z_dest → z_storage (dashed, read) -->
+      <line class="read" x1="1250" y1="268" x2="1316" y2="268" marker-end="url(#arr-read)"/>
+
+      <!-- Edge labels -->
+      <text x="335" y="242" fill="#7d8fa8" font-family="IBM Plex Sans,sans-serif" font-size="10.5" text-anchor="middle" opacity="0.75">Fetch</text>
+      <text x="510" y="242" fill="#7d8fa8" font-family="IBM Plex Sans,sans-serif" font-size="10.5" text-anchor="middle" opacity="0.75">Stream</text>
+      <text x="863" y="242" fill="#7d8fa8" font-family="IBM Plex Sans,sans-serif" font-size="10.5" text-anchor="middle" opacity="0.75">Batch</text>
+      <text x="995" y="248" fill="#7d8fa8" font-family="IBM Plex Sans,sans-serif" font-size="10.5" text-anchor="middle" opacity="0.75">Insert</text>
+      <text x="1283" y="260" fill="#7d8fa8" font-family="IBM Plex Sans,sans-serif" font-size="10.5" text-anchor="middle" opacity="0.75">Persist</text>
+
+      <!-- Diamond step marker backgrounds -->
+      <!-- Extract step diamond -->
+      <rect x="430" y="235" width="36" height="36" rx="7" fill="rgba(15,23,36,0.75)" stroke="rgba(56,189,248,0.25)" stroke-width="1.5" transform="rotate(45,448,253)" opacity="0.92"/>
+      <!-- Diamond zone labels -->
+      <text x="448" y="226" fill="#b0c4de" font-family="Sora,sans-serif" font-weight="600" font-size="10" text-anchor="middle" opacity="0.8">Extract</text>
+
+      <!-- Load step diamond -->
+      <rect x="880" y="235" width="36" height="36" rx="7" fill="rgba(15,23,36,0.75)" stroke="rgba(245,158,11,0.25)" stroke-width="1.5" transform="rotate(45,898,253)" opacity="0.92"/>
+      <text x="898" y="226" fill="#b0c4de" font-family="Sora,sans-serif" font-weight="600" font-size="10" text-anchor="middle" opacity="0.8">Load</text>
+
+      <!-- Diamond icons (inside the rotated diamonds) -->
+      <!-- Extract icon -->
+      <g transform="translate(440,244)" color="#38bdf8" opacity="0.85">
+        <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41l-7.59-7.59a2.41 2.41 0 0 0-3.41 0Z"/>
+        </svg>
+      </g>
+      <!-- Load icon -->
+      <g transform="translate(890,244)" color="#f59e0b" opacity="0.85">
+        <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41l-7.59-7.59a2.41 2.41 0 0 0-3.41 0Z"/>
+        </svg>
+      </g>
+
+      <!-- Glow dot 1: travels e1→e4 pipeline path -->
+      <g class="glow-dot">
+        <circle class="dot-flow" r="3">
+          <animateMotion dur="4s" repeatCount="indefinite" path="M250,252 H424 M466,252 H554 M860,252 H874 M916,256 H1074"/>
+        </circle>
+      </g>
+      <!-- Glow dot 2: offset start, travels same path -->
+      <g class="glow-dot">
+        <circle class="dot-flow" r="2.5" opacity="0.5">
+          <animateMotion dur="4s" repeatCount="indefinite" begin="1.3s" path="M250,252 H424 M466,252 H554 M860,252 H874 M916,256 H1074"/>
+        </circle>
+      </g>
+      <!-- Glow dot 3: travels the persist edge -->
+      <g class="glow-dot">
+        <circle class="dot-read" r="3">
+          <animateMotion dur="2.5s" repeatCount="indefinite" path="M1250,268 H1316"/>
+        </circle>
+      </g>
+    </svg>
+
+    <!-- ════ Zone: Issue Tracker (z_source) ════ -->
+    <div class="zone accent-sky" data-delay="0" style="left:40px;top:170px;width:210px;min-height:160px;">
+      <div class="zone-header">
+        <span class="zone-title">Issue Tracker</span>
+        <span class="zone-sublabel">REST API Source</span>
+      </div>
+      <div class="chip">
+        <div class="chip-icon sky-accent">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/>
+          </svg>
+        </div>
+        <span class="chip-label">Issue Tracker API</span>
+      </div>
+    </div>
+
+    <!-- ════ Zone: Data Pipeline (z_pipeline) ════ -->
+    <div class="zone accent-slate" data-delay="2" style="left:560px;top:155px;width:300px;min-height:190px;">
+      <div class="zone-header">
+        <span class="zone-title">Data Pipeline</span>
+        <span class="zone-sublabel">Ingestion &amp; Transformation</span>
+      </div>
+      <div class="chip">
+        <div class="chip-icon sky-accent">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/>
+          </svg>
+        </div>
+        <span class="chip-label">Extract Issues</span>
+      </div>
+      <div class="chip">
+        <div class="chip-icon slate-accent">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/>
+          </svg>
+        </div>
+        <span class="chip-label">Transform &amp; Normalize</span>
+      </div>
+      <div class="chip">
+        <div class="chip-icon slate-accent">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/>
+          </svg>
+        </div>
+        <span class="chip-label">Stage Payloads</span>
+      </div>
+    </div>
+
+    <!-- ════ Zone: Analytical Database (z_dest) ════ -->
+    <div class="zone accent-amber" data-delay="4" style="left:1080px;top:200px;width:170px;min-height:130px;">
+      <div class="zone-header">
+        <span class="zone-title">Analytical Database</span>
+        <span class="zone-sublabel">OLAP Storage</span>
+      </div>
+      <div class="chip">
+        <div class="chip-icon amber-accent">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
+          </svg>
+        </div>
+        <span class="chip-label">Columnar Engine</span>
+      </div>
+    </div>
+
+    <!-- ════ Zone: Storage Backends (z_storage) ════ -->
+    <div class="zone accent-neutral" data-delay="5" style="left:1320px;top:170px;width:130px;min-height:200px;">
+      <div class="zone-header">
+        <span class="zone-title">Storage Backends</span>
+        <span class="zone-sublabel">Persistence Layer</span>
+      </div>
+      <div class="chip">
+        <div class="chip-icon neutral-accent">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/>
+          </svg>
+        </div>
+        <span class="chip-label">Local DB File</span>
+      </div>
+      <div class="chip">
+        <div class="chip-icon neutral-accent">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+          </svg>
+        </div>
+        <span class="chip-label">Cloud Bucket</span>
+      </div>
+      <div class="chip">
+        <div class="chip-icon neutral-accent">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/>
+          </svg>
+        </div>
+        <span class="chip-label">Managed Service</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ Legend & Use Cases ════ -->
+  <div class="legend-bar">
+    <div class="legend-item">
+      <span class="legend-line flow"></span>
+      <span>Data Flow — Primary ingestion path</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-line read"></span>
+      <span>Storage — Persistence / materialization</span>
+    </div>
+  </div>
+  <div class="use-cases">
+    <span class="use-case">Extract issues from a remote tracker via REST API</span>
+    <span class="use-case">Transform, normalize, and stage the payloads through a pipeline</span>
+    <span class="use-case">Load into a columnar analytical database for fast queries</span>
+    <span class="use-case">Persist to local files, cloud object storage, or a managed service</span>
+  </div>
+</div>
+</body>
+</html>

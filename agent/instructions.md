@@ -72,17 +72,26 @@ parallel where the runtime supports it. Do not proceed until every copy has
 returned and its `.html` + phase trace exist. If a copy fails QC after its
 retries, record `qc.passed: false` in its trace and continue.
 
+After each renderer copy returns, call `read_usage` to get its token
+consumption. Include the token counts in the render phase trace (see step 4).
+
 ### 4 — Record your own phase trace
-Write `<run_dir>/phases/orchestrate.json` (schema in the `build_spec` skill)
-with your phase timing/model. If the runtime surfaces a usage figure, fill it
-and set `"source": "runtime"`; else null + `"source": "unavailable"`. Timing is
-always recorded.
+Call `read_usage` (no session_id) to get accumulated usage for ALL sessions in
+this run. Write `<run_dir>/phases/orchestrate.json` (schema in the `build_spec`
+skill) with your phase timing/model. Fill the `tokens` block from the
+`read_usage` result for your own session — set `"source": "runtime"`. If
+`read_usage` returns no data, leave tokens null + `"source": "unavailable"`.
+Timing is always recorded.
 
 ### 5 — Invoke the reporter
 Delegate to a copy of yourself via the `agent` tool. Its `message` must contain:
 `run_dir`, `allow_cost`, and "load the `write_report` skill and execute the
 reporter procedure — aggregate the phase traces, compute timing/tokens/cost,
 and write `report.md` + `summary.json` into `<run_dir>`."
+
+After the reporter returns, call `read_usage` again to get the reporter's
+token usage. Update `<run_dir>/phases/report.json` (written by the reporter)
+with the reporter's token counts if the reporter did not already capture them.
 
 ### 6 — Final summary to the user
 Print a tight summary: the run folder path, the report path, the diagram html

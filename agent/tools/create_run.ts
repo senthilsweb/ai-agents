@@ -1,5 +1,10 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
+import { writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+
+const USAGE_DIR = join(tmpdir(), "eve-usage");
 
 export default defineTool({
   description:
@@ -35,8 +40,6 @@ export default defineTool({
       request,
       options,
       models: {
-        // The orchestrator and its renderer/reporter copies all share the single
-        // agent model (configured via MODEL env in agent.ts).
         orchestrator: process.env.MODEL ?? "deepseek-v4-pro",
       },
       host: "eve",
@@ -45,6 +48,14 @@ export default defineTool({
       path: `${run_dir}/run-meta.json`,
       content: JSON.stringify(meta, null, 2) + "\n",
     });
+
+    // Write a session→run mapping so the usage hook and read_usage tool can
+    // correlate sessions to runs.
+    if (!existsSync(USAGE_DIR)) mkdirSync(USAGE_DIR, { recursive: true });
+    writeFileSync(
+      join(USAGE_DIR, `run-${ctx.session.id}.json`),
+      JSON.stringify({ run_dir, run_id, session_id: ctx.session.id }, null, 2),
+    );
 
     return { run_dir, run_id, start_epoch };
   },

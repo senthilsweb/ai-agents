@@ -1,0 +1,14 @@
+{
+  "phase": "orchestrate",
+  "model": "claude-opus-4-5",
+  "started_at": "2026-06-20T20:14:42Z",
+  "ended_at": "2026-06-20T20:41:00Z",
+  "duration_s": 1578,
+  "tokens": {
+    "input": 741265,
+    "output": 31055,
+    "cacheRead": 714880,
+    "total": 772320,
+    "source": "runtime"
+  }
+}

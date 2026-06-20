@@ -1,0 +1,30 @@
+{
+  "phase": "render",
+  "variation": "default",
+  "model": "claude-opus-4-5",
+  "started_at": "2026-06-20T20:20:28Z",
+  "ended_at": "2026-06-20T20:32:40Z",
+  "duration_s": 732,
+  "iterations": 2,
+  "tokens": {
+    "input": 707581,
+    "output": 28905,
+    "cacheRead": 677888,
+    "total": 736486,
+    "source": "runtime"
+  },
+  "output_html": "diagram.html",
+  "preview_png": "diagram.preview.png",
+  "html_bytes": 19048,
+  "icons_inlined": 9,
+  "qc": {
+    "passed": true,
+    "issues_fixed": [
+      "edge label overlap with diamond step markers — moved labels above lines",
+      "missing 'Extract' and 'Load' zone labels on diamond step markers — added SVG text labels",
+      "SVG fill attribute CSS variable compatibility — replaced with direct hex colors for marker and glow-dot fills",
+      "removed unused CSS for HTML diamond markers (rendered entirely in SVG wire layer)"
+    ],
+    "notes": "Glassmorphism backdrop-filter may not render in headless Chromium; zones appear as solid dark panels in preview but will render correctly in browsers with GPU compositing. 9612 unique colors in screenshot confirm real rendered content. All 9 Lucide icons inlined. No emojis. No CDN icon dependencies."
+  }
+}

@@ -59,7 +59,14 @@ Every phase (orchestrate, render-<variation>, report) writes a JSON file under
 }
 ```
 
-Token capture priority: (1) a value the orchestrator passed you; (2) a
+Token capture priority: (1) values from the `read_usage` tool (captured
+automatically by the usage hook from `step.completed` events); (2) a
 `usage.json` in `run_dir`; (3) a usage/credits figure your runtime exposes at end
 of turn (record verbatim, `"source": "runtime"`); else null + `"unavailable"`.
 Timing is always recorded regardless.
+
+The `read_usage` tool returns a map of session IDs to accumulated token counts
+(`inputTokens`, `outputTokens`, `cacheReadTokens`, `cacheWriteTokens`, `steps`).
+The orchestrator calls it after each subagent returns and before the reporter.
+Each phase trace should fill its `tokens` block from the corresponding session's
+usage data and set `"source": "runtime"`.

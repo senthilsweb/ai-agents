@@ -51,8 +51,8 @@ folder path when done.
 ### 5 — Your first prompt
 
 ```
-Generate a standard-size diagram from reference=inputs/ai-analytics.png,
-fit=card, genericize=false, title="AI Analytics Platform".
+Generate a standard-size diagram from reference=inputs/jira-to-duckdb.png,
+fit=card, genericize=false, title="Jira to DuckDB Pipeline".
 ```
 
 Or describe an architecture in words with no reference image:
@@ -168,8 +168,8 @@ The root agent is the **Orchestrator**. On each turn it:
 1. **Creates a run folder** — `runs/<UTC-timestamp>/` via the `create_run` tool.
 2. **Builds a Diagram Spec** — loads the `build_spec` skill, reads any reference image, and writes `spec.json`.
 3. **Fans out renderers** — one copy of the agent per variation via the built-in `agent` tool. Each loads `render_diagram` + `design_system`, builds a self-contained HTML diagram, and self-verifies with a headless Playwright screenshot.
-4. **Records its own phase trace** — `phases/orchestrate.json`.
-5. **Delegates to a reporter** — another agent copy loads `write_report`, aggregates phase traces, and writes `report.md` + `summary.json`.
+4. **Captures token usage** — calls `read_usage` after each renderer returns to get its token consumption, then records its own phase trace in `phases/orchestrate.json`.
+5. **Delegates to a reporter** — another agent copy loads `write_report`, aggregates phase traces (including token data), and writes `report.md` + `summary.json`.
 6. **Prints the run folder, report, and diagram paths.**
 
 The renderer and reporter run as **copies of the agent** so they share the sandbox and `runs/` folder — that shared filesystem is what makes fan-out work.
@@ -195,13 +195,19 @@ runs/
     └── summary.json           # machine-readable rollup
 ```
 
-### Example run
+### Example runs
 
-A committed example lives at
-[`runs/2026-06-20T15-14-27Z/`](agent/sandbox/workspace/runs/2026-06-20T15-14-27Z/) —
-it ports `inputs/ai-analytics.png` into a dark-glass architecture diagram with
-`fit=card`. Browse the `diagram.html` in a browser, or view the
-[`diagram.preview.png`](agent/sandbox/workspace/runs/2026-06-20T15-14-27Z/diagram.preview.png)
+Two committed examples live under `runs/`:
+
+1. [`runs/2026-06-20T15-14-27Z/`](agent/sandbox/workspace/runs/2026-06-20T15-14-27Z/) —
+   ports `inputs/ai-analytics.png` into a dark-glass architecture diagram with
+   `fit=card`.
+
+2. [`runs/2026-06-20T20-14-42Z/`](agent/sandbox/workspace/runs/2026-06-20T20-14-42Z/) —
+   ports `inputs/jira-to-duckdb.png` with `fit=card`. Phase traces include
+   full token usage data captured by the usage hook.
+
+Browse any `diagram.html` in a browser, or view the `diagram.preview.png`
 screenshot.
 
 ---
@@ -243,8 +249,11 @@ agent-diagram-generator/
 │   │   ├── create_run.ts          #   make the timestamped run folder
 │   │   ├── write_run_file.ts      #   write an artifact into a run
 │   │   ├── read_run_file.ts       #   read a run artifact
+│   │   ├── read_usage.ts          #   read accumulated token usage
 │   │   ├── fetch_lucide_icon.ts   #   fetch + inline a Lucide icon
 │   │   └── render_screenshot.ts   #   headless Playwright self-verify
+│   ├── hooks/
+│   │   └── usage.ts               #   captures step.completed token usage
 │   └── channels/eve.ts            # the eve HTTP/TUI channel
 ├── .env.example                   # model config template
 ├── example.md                     # ready-to-paste prompts
@@ -254,11 +263,51 @@ agent-diagram-generator/
 
 ---
 
-## Metrics
+## Metrics & observability
 
-- **Execution time** — always captured (wall-clock UTC per phase + total).
-- **Token consumption** — captured when the runtime exposes usage to the agent. Otherwise the report prints `n/a` with a note.
-- **Token cost** — computed only with `allow_cost=true`, from the `cost_rates` skill. Rates are placeholders — update them to match your provider.
+### Execution time
+
+Always captured — wall-clock UTC per phase + total, written to each phase trace
+and the final report.
+
+### Token consumption
+
+Captured automatically by a **usage hook** (`agent/hooks/usage.ts`) that listens
+to `step.completed` stream events. Each step carries `usage.inputTokens`,
+`usage.outputTokens`, `usage.cacheReadTokens`, and `usage.cacheWriteTokens`.
+
+The hook accumulates per-session usage in the OS temp directory
+(`$TMPDIR/eve-usage/<sessionId>.json`). The orchestrator calls the `read_usage`
+tool after each subagent returns and before the reporter, writing the token data
+into phase traces with `"source": "runtime"`.
+
+Because the orchestrator, renderer, and reporter all run as copies of the same
+agent (Eve's built-in `agent` tool), the usage hook fires for every session —
+parent and children alike.
+
+### Token cost
+
+Computed only with `allow_cost=true`, from the `cost_rates` skill. Rates are
+placeholders — update them to match your provider.
+
+### Example phase trace (with token data)
+
+```json
+{
+  "phase": "orchestrate",
+  "model": "deepseek-v4-pro",
+  "started_at": "2026-06-20T20:14:42Z",
+  "ended_at": "2026-06-20T20:41:00Z",
+  "duration_s": 1578,
+  "tokens": {
+    "input": 741265,
+    "output": 31055,
+    "cacheRead": 714880,
+    "total": 772320,
+    "source": "runtime"
+  }
+}
+```
 
 ---
 

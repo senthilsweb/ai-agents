@@ -1,0 +1,19 @@
+{
+  "run_id": "2026-06-20T20-14-42Z",
+  "started_at": "2026-06-20T20-14-42Z",
+  "request": "Generate diagram from reference image inputs/jira-to-duckdb.png with fit=card, 1 variation.",
+  "options": {
+    "reference": "inputs/jira-to-duckdb.png",
+    "fit": "card",
+    "variations": "default",
+    "theme": "dark",
+    "genericize": true,
+    "allow_cost": false,
+    "out_name": "diagram",
+    "size": "standard"
+  },
+  "models": {
+    "orchestrator": "deepseek-v4-pro"
+  },
+  "host": "eve"
+}

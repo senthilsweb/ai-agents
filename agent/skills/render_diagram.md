@@ -51,6 +51,10 @@ phase-trace schema from the `build_spec` skill. Always fill `html_bytes`
 (byte length of the html — an effort proxy) and `icons_inlined`, and the `qc`
 block with `passed` + any `issues_fixed`.
 
+Call `read_usage` (no session_id) to get your token consumption. Fill the
+`tokens` block from your session's usage data and set `"source": "runtime"`.
+If no usage data is available, leave tokens null + `"source": "unavailable"`.
+
 ### 5 — Return
 Return a short result to the orchestrator: `{ html, preview, trace, qc.passed }`.
 Do not add prose for the end user.

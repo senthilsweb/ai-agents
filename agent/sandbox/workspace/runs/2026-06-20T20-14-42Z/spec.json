@@ -1,0 +1,103 @@
+{
+  "title": "Issue Tracker to Analytical Database",
+  "subtitle": "Data ingestion pipeline with staged transformation and persistent storage",
+  "theme": {
+    "mode": "dark",
+    "mood": "technical",
+    "palette_hint": "deep navy base, electric blue accents, amber gold for destination, slate grey for processing",
+    "font_hint": "Sora / IBM Plex Sans / JetBrains Mono"
+  },
+  "canvas": { "w": 1480, "h": 490 },
+  "zones": [
+    {
+      "id": "z_source",
+      "label": "Issue Tracker",
+      "sublabel": "REST API Source",
+      "accent": "sky",
+      "box": { "left": 40, "top": 170, "w": 210, "h": 160 },
+      "nodes": [
+        { "id": "n_jira", "label": "Issue Tracker API", "icon": "ticket", "accent": "sky" }
+      ]
+    },
+    {
+      "id": "z_stage_a",
+      "label": "Extract",
+      "sublabel": "",
+      "accent": "sky",
+      "box": { "left": 430, "top": 235, "w": 36, "h": 36 },
+      "nodes": [
+        { "id": "n_d1", "label": "", "icon": "diamond", "accent": "sky" }
+      ]
+    },
+    {
+      "id": "z_pipeline",
+      "label": "Data Pipeline",
+      "sublabel": "Ingestion & Transformation",
+      "accent": "slate",
+      "box": { "left": 560, "top": 155, "w": 300, "h": 190 },
+      "nodes": [
+        { "id": "n_extract", "label": "Extract Issues", "icon": "arrow-down-to-line", "accent": "sky" },
+        { "id": "n_transform", "label": "Transform & Normalize", "icon": "shuffle", "accent": "slate" },
+        { "id": "n_load_stage", "label": "Stage Payloads", "icon": "package", "accent": "slate" }
+      ]
+    },
+    {
+      "id": "z_stage_b",
+      "label": "Load",
+      "sublabel": "",
+      "accent": "amber",
+      "box": { "left": 880, "top": 235, "w": 36, "h": 36 },
+      "nodes": [
+        { "id": "n_d2", "label": "", "icon": "diamond", "accent": "amber" }
+      ]
+    },
+    {
+      "id": "z_dest",
+      "label": "Analytical Database",
+      "sublabel": "OLAP Storage",
+      "accent": "amber",
+      "box": { "left": 1080, "top": 200, "w": 170, "h": 130 },
+      "nodes": [
+        { "id": "n_duckdb", "label": "Columnar Engine", "icon": "database", "accent": "amber" }
+      ]
+    },
+    {
+      "id": "z_storage",
+      "label": "Storage Backends",
+      "sublabel": "Persistence Layer",
+      "accent": "neutral",
+      "box": { "left": 1320, "top": 170, "w": 130, "h": 200 },
+      "nodes": [
+        { "id": "n_local", "label": "Local DB File", "icon": "file", "accent": "neutral" },
+        { "id": "n_cloud", "label": "Cloud Bucket", "icon": "cloud", "accent": "neutral" },
+        { "id": "n_mother", "label": "Managed Service", "icon": "server", "accent": "neutral" }
+      ]
+    }
+  ],
+  "edges": [
+    { "id": "e1", "from": "z_source", "to": "z_stage_a", "label": "Fetch", "style": "solid", "animated": true, "color_role": "flow", "route": "h" },
+    { "id": "e2", "from": "z_stage_a", "to": "z_pipeline", "label": "Stream", "style": "solid", "animated": true, "color_role": "flow", "route": "h" },
+    { "id": "e3", "from": "z_pipeline", "to": "z_stage_b", "label": "Batch", "style": "solid", "animated": true, "color_role": "flow", "route": "h" },
+    { "id": "e4", "from": "z_stage_b", "to": "z_dest", "label": "Insert", "style": "solid", "animated": true, "color_role": "flow", "route": "h" },
+    { "id": "e5", "from": "z_dest", "to": "z_storage", "label": "Persist", "style": "dashed", "animated": false, "color_role": "read", "route": "h" }
+  ],
+  "personas": [],
+  "legend": [
+    { "label": "Data Flow", "desc": "Primary ingestion path", "color_role": "flow" },
+    { "label": "Storage", "desc": "Persistence / materialization", "color_role": "read" }
+  ],
+  "use_case": [
+    "Extract issues from a remote tracker via REST API",
+    "Transform, normalize, and stage the payloads through a pipeline",
+    "Load into a columnar analytical database for fast queries",
+    "Persist to local files, cloud object storage, or a managed service"
+  ],
+  "notes": {
+    "original_product_names": {
+      "z_source": "Jira",
+      "z_dest": "DuckDB",
+      "z_storage_node_cloud": "S3 / GCS",
+      "z_storage_node_mother": "MotherDuck"
+    }
+  }
+}

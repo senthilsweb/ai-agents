@@ -26,10 +26,14 @@ Read `run-meta.json`, every `phases/*.json`, and `cost-rates.yaml` (load the
 - Format human-readable (e.g. `1m 12s`).
 
 ### 3 — Compute tokens
-- Sum `tokens.input`, `tokens.output`, `tokens.total` across phases where present.
+- Each phase trace should have its `tokens` block filled from the `read_usage`
+  tool (captured by the usage hook from `step.completed` events).
+- Sum `tokens.input`, `tokens.output`, `tokens.total` across phases where
+  `tokens.source == "runtime"`.
 - If a phase has `tokens.source == "unavailable"`, exclude it and note it.
 - If NO phase has token data, mark tokens as `n/a` and add the note: "runtime did
   not report token usage — timing only."
+- Include `cacheReadTokens` and `cacheWriteTokens` in the summary if present.
 
 ### 4 — Compute cost (only if `allow_cost` is true)
 Read `cost-rates.yaml`. Use its `mode`:
@@ -65,5 +69,7 @@ list of artifacts (relative paths). Do not invent numbers — if something is
 unknown, print `n/a` and a one-line reason.
 
 ### 7 — Record your own phase + return
-Append `<run_dir>/phases/report.json` with your phase timing/model, then return
+Call `read_usage` (no session_id) to get your token consumption. Append
+`<run_dir>/phases/report.json` with your phase timing/model and the token counts
+from your session's usage data (`"source": "runtime"`), then return
 `{ report: "report.md", summary: "summary.json" }` to the orchestrator.

@@ -40,7 +40,8 @@ next-env.d.ts
 /.output
 /.workflow-data
 
-# live run outputs (keep the example run, ignore new ones)
+# live run outputs (keep example runs, ignore new ones)
 agent/sandbox/workspace/runs/*
 !agent/sandbox/workspace/runs/.gitkeep
 !agent/sandbox/workspace/runs/2026-06-20T15-14-27Z/
+!agent/sandbox/workspace/runs/2026-06-20T20-14-42Z/
