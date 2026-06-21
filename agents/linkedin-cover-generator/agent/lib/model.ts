@@ -1,3 +1,4 @@
+import { createOpenAI } from "@ai-sdk/openai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
 // ── Per-role model configuration ──────────────────────────────────────────
@@ -78,20 +79,28 @@ export function resolveModelConfig(role: ModelRole): ModelConfig {
  */
 export function resolveModel(role: ModelRole) {
   const { modelId, baseURL, apiKey } = resolveModelConfig(role);
-  if (baseURL && apiKey) {
-    return createOpenAICompatible({
-      name: `linkedin-cover-model-${role.toLowerCase()}`,
-      baseURL,
-      apiKey,
-    })(modelId);
-  }
   if (!apiKey) {
     throw new Error(
       `Missing API key for ${role}. Set MODEL_${role}_API_KEY, MODEL_API_KEY, or AI_GATEWAY_API_KEY.`,
     );
   }
-  // Gateway path: raw model id string (e.g. "anthropic/claude-sonnet-4.6")
-  return modelId;
+
+  // Use the official @ai-sdk/openai provider for OpenAI endpoints — it correctly
+  // handles GPT-5.x response features (reasoning, annotations) that
+  // @ai-sdk/openai-compatible does not, preventing ModelMessage[] schema errors.
+  const isOpenAIEndpoint =
+    !baseURL || baseURL.includes("api.openai.com");
+
+  if (isOpenAIEndpoint) {
+    return createOpenAI({ apiKey, ...(baseURL ? { baseURL } : {}) })(modelId);
+  }
+
+  // Non-OpenAI endpoint: fall back to the generic compatible provider.
+  return createOpenAICompatible({
+    name: `linkedin-cover-model-${role.toLowerCase()}`,
+    baseURL: baseURL!,
+    apiKey,
+  })(modelId);
 }
 
 /**
