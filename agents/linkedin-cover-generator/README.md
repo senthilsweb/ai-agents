@@ -5,7 +5,7 @@ Turn an article (local file, remote URL, or pasted text) into a polished
 generation call, deterministic dimension validation, and no unbounded review
 loop. Built on the [Vercel Eve](https://vercel.com/eve) agent framework.
 
-This agent lives at `agents/agent-linkedin-cover/` in the `ai-agents` monorepo.
+This agent lives at `agents/linkedin-cover-generator/` in the `ai-agents` monorepo.
 All paths below are relative to that folder unless noted.
 
 ---
@@ -37,7 +37,7 @@ This agent has its **own `.env` file** — separate from the diagram generator's
 `eve dev` from there.
 
 ```bash
-cd agents/agent-linkedin-cover
+cd agents/linkedin-cover-generator
 cp .env.example .env
 ```
 
@@ -81,7 +81,7 @@ npm run dev:linkedin
 Or directly from the agent folder:
 
 ```bash
-cd agents/agent-linkedin-cover
+cd agents/linkedin-cover-generator
 npm run dev
 ```
 
@@ -162,7 +162,7 @@ Use an explicit `size=1040x660` to override the preset.
 
 ### Environment variables
 
-Set these in `agents/agent-linkedin-cover/.env`. Each role reads role-specific
+Set these in `agents/linkedin-cover-generator/.env`. Each role reads role-specific
 env vars that fall back to the generic `MODEL*` vars.
 
 | Variable | Fallback | Description |
@@ -262,7 +262,7 @@ runs/
 npm run build:linkedin
 
 # Or from the agent folder
-cd agents/agent-linkedin-cover
+cd agents/linkedin-cover-generator
 npm run build
 ```
 
@@ -278,7 +278,7 @@ npm run typecheck:linkedin
 ## Folder layout
 
 ```
-agents/agent-linkedin-cover/
+agents/linkedin-cover-generator/
 ├── agent/
 │   ├── agent.ts                   # orchestrator model config (MODEL_ORCHESTRATOR*)
 │   ├── instructions.md            # always-on Orchestrator system prompt

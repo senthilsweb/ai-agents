@@ -11,7 +11,7 @@ export default defineTool({
     let text = "", title: string | undefined, kind: "file"|"url"|"text" = "text";
     if (/^https?:\/\//i.test(input)) {
       kind = "url";
-      const res = await fetch(input, { headers: { "user-agent": "agent-linkedin-cover/0.1" } });
+      const res = await fetch(input, { headers: { "user-agent": "linkedin-cover-generator/0.1" } });
       if (!res.ok) throw new Error(`URL fetch failed: ${res.status} ${res.statusText}`);
       const html = await res.text();
       const dom = new JSDOM(html, { url: input });

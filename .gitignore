@@ -56,5 +56,5 @@ agents/diagram-generator/agent/subagents/*/sandbox/workspace/runs/*
 !agents/diagram-generator/agent/subagents/*/sandbox/workspace/runs/.gitkeep
 
 # linkedin-cover run outputs (keep .gitkeep)
-agents/agent-linkedin-cover/agent/sandbox/workspace/runs/*
-!agents/agent-linkedin-cover/agent/sandbox/workspace/runs/.gitkeep
+agents/linkedin-cover-generator/agent/sandbox/workspace/runs/*
+!agents/linkedin-cover-generator/agent/sandbox/workspace/runs/.gitkeep
