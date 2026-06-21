@@ -2,7 +2,7 @@ import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
 // ── Per-role model configuration ──────────────────────────────────────────
 //
-// The orchestrator and optional reviewer each use a different model.
+// The orchestrator and reporter each use a different model.
 // Configure via .env with role-prefixed env vars that fall back to the generic
 // MODEL* vars:
 //
@@ -10,9 +10,9 @@ import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 //   MODEL_ORCHESTRATOR_BASE_URL    (fallback: MODEL_BASE_URL)
 //   MODEL_ORCHESTRATOR_API_KEY     (fallback: MODEL_API_KEY)
 //
-//   MODEL_REVIEWER                 (fallback: MODEL)
-//   MODEL_REVIEWER_BASE_URL        (fallback: MODEL_BASE_URL)
-//   MODEL_REVIEWER_API_KEY         (fallback: MODEL_API_KEY)
+//   MODEL_REPORTER                 (fallback: MODEL)
+//   MODEL_REPORTER_BASE_URL        (fallback: MODEL_BASE_URL)
+//   MODEL_REPORTER_API_KEY         (fallback: MODEL_API_KEY)
 //
 // Image generation is configured separately via IMAGE_* vars:
 //
@@ -20,12 +20,13 @@ import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 //   IMAGE_BASE_URL                 (fallback: MODEL_BASE_URL or OpenAI)
 //   IMAGE_API_KEY                  (fallback: MODEL_API_KEY or OPENAI_API_KEY)
 //
-// If only MODEL* is set, the orchestrator and reviewer use the same model.
+// If only MODEL* is set, the orchestrator and reporter use the same model.
 
 export const MODEL_ORCHESTRATOR = "ORCHESTRATOR";
-export const MODEL_REVIEWER = "REVIEWER";
+export const MODEL_REVIEWER = "REVIEWER"; // kept for backward compat
+export const MODEL_REPORTER = "REPORTER";
 
-export type ModelRole = typeof MODEL_ORCHESTRATOR | typeof MODEL_REVIEWER;
+export type ModelRole = typeof MODEL_ORCHESTRATOR | typeof MODEL_REVIEWER | typeof MODEL_REPORTER;
 
 interface ModelConfig {
   modelId: string;

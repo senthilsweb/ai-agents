@@ -2,12 +2,21 @@
 
 - [x] Define agent package and Eve entry point.
 - [x] Add article input loader for local Markdown, remote URL, and inline text.
-- [x] Add size presets including 1279x720 default.
+- [x] Add size presets including 1280x720 default (16-divisible for image API).
 - [x] Add Cover Spec schema and deterministic prompt builder.
 - [x] Add image provider tool and model configuration.
-- [x] Add deterministic dimension validator.
+- [x] Add deterministic dimension validator (16px tolerance for API rounding).
 - [x] Add brand-safety, layout, title, and art-direction skills.
 - [x] Add run artifact/report generation.
 - [x] Add README and environment template.
+- [x] Fix module resolution: use explicit `#lib/*.js` → `.ts` import mappings.
+- [x] Fix image size: snap to 16-divisible dimensions in generate_image.
+- [x] Add phase trace recording (orchestrate, generate, validate) with read_usage.
+- [x] Add reporter subagent with isolated sandbox, cost_rates, report_template skills.
+- [x] Add usage hooks and read_usage tool to orchestrator.
+- [x] Add fine-grained model selection (MODEL_ORCHESTRATOR, MODEL_REPORTER, IMAGE_MODEL).
+- [x] Add ALLOW_COST env var for cost reporting toggle.
+- [x] Update orchestrator instructions with reporter delegation workflow.
+- [x] Update OpenSpec spec with orchestrator + reporter architecture, phase traces.
 - [ ] Integrate root workspace/package scripts after applying to the live repository.
 - [ ] Confirm exact image API parameter compatibility for the selected provider account.
