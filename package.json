@@ -11,7 +11,10 @@
     "build": "npm -w agent-diagram-generator run build",
     "dev": "npm -w agent-diagram-generator run dev",
     "start": "npm -w agent-diagram-generator run start",
-    "typecheck": "npm -w agent-diagram-generator run typecheck"
+    "typecheck": "npm -w agent-diagram-generator run typecheck",
+    "dev:linkedin": "npm -w agent-linkedin-cover run dev",
+    "build:linkedin": "npm -w agent-linkedin-cover run build",
+    "typecheck:linkedin": "npm -w agent-linkedin-cover run typecheck"
   },
   "devDependencies": {
     "@types/node": "24.x",

@@ -24,9 +24,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
+# local env files (per-agent .env files are also ignored; .env.example is tracked)
 .env*.local
 .env
+agents/*/.env
+agents/*/.env*.local
 
 # vercel
 .vercel
@@ -35,10 +37,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# eve build artifacts
+# eve build artifacts (per-agent)
 /.eve
 /.output
 /.workflow-data
+agents/*/.eve
+agents/*/.output
+agents/*/.workflow-data
 
 # live run outputs (keep example runs, ignore new ones)
 agents/diagram-generator/agent/sandbox/workspace/runs/*
@@ -49,3 +54,7 @@ agents/diagram-generator/agent/sandbox/workspace/runs/*
 # subagent workspace runs (live outputs, keep .gitkeep)
 agents/diagram-generator/agent/subagents/*/sandbox/workspace/runs/*
 !agents/diagram-generator/agent/subagents/*/sandbox/workspace/runs/.gitkeep
+
+# linkedin-cover run outputs (keep .gitkeep)
+agents/agent-linkedin-cover/agent/sandbox/workspace/runs/*
+!agents/agent-linkedin-cover/agent/sandbox/workspace/runs/.gitkeep
