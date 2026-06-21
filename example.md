@@ -1,13 +1,14 @@
 # Example Prompts
 
-Copy-paste prompts for the Diagram Generator, now built on the **Vercel Eve**
+Copy-paste prompts for the Diagram Generator, built on the **Vercel Eve**
 framework. Start the agent with `npm run dev` (or `eve dev`) and send these in
 the Eve TUI / HTTP channel.
 
 The agent is the **Orchestrator** — it owns intake, run bookkeeping, and the
-final summary. It delegates each variation to a renderer copy of itself and
-delegates metrics to a reporter copy. You only change the parameters between
-runs.
+final summary. It delegates rendering to the **renderer** subagent and metrics
+to the **reporter** subagent, each running its own model (configured via
+`MODEL_RENDERER*` / `MODEL_REPORTER*` env vars). You only change the parameters
+between runs.
 
 ---
 

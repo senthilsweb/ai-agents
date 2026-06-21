@@ -8,7 +8,7 @@ export default defineSandbox({
   }),
   // Bump this when the bootstrap or seeded files change, so eve rebuilds the
   // template image instead of reusing a stale one.
-  revalidationKey: () => "diagram-generator-bootstrap-v2",
+  revalidationKey: () => "renderer-bootstrap-v2",
   async bootstrap({ use }) {
     const sandbox = await use();
     // Remove macOS .DS_Store files that may have been seeded from the workspace

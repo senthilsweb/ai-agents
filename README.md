@@ -21,16 +21,33 @@ nvm use 24
 npm install
 ```
 
-### 3 — Configure the model
+### 3 — Configure the models
 
-Copy `.env.example` to `.env` and fill in your provider:
+Copy `.env.example` to `.env` and fill in your provider. Each role
+(orchestrator, renderer, reporter) can use a different model:
 
 ```bash
 cp .env.example .env
 ```
 
 ```dotenv
-# .env — defaults shown (DeepSeek)
+# .env — recommended: reasoning orchestrator + fast renderer (z.ai)
+MODEL_ORCHESTRATOR=glm-5.2
+MODEL_ORCHESTRATOR_BASE_URL=https://api.z.ai/api/paas/v4/
+MODEL_ORCHESTRATOR_API_KEY=your-z-ai-key
+
+MODEL_RENDERER=glm-4.5-air
+MODEL_RENDERER_BASE_URL=https://api.z.ai/api/paas/v4/
+MODEL_RENDERER_API_KEY=your-z-ai-key
+
+MODEL_REPORTER=glm-4.5-air
+MODEL_REPORTER_BASE_URL=https://api.z.ai/api/paas/v4/
+MODEL_REPORTER_API_KEY=your-z-ai-key
+```
+
+Or use a single model for all roles (simplest):
+
+```dotenv
 MODEL=deepseek-v4-pro
 MODEL_BASE_URL=https://api.deepseek.com
 MODEL_API_KEY=sk-your-key-here
@@ -115,49 +132,106 @@ Controls how the canvas sits on the page:
 
 ---
 
-## Model configuration
+## Model configuration — per-role model selection
 
-The model is set via `.env` — no code changes needed to switch providers.
+The orchestrator, renderer, and reporter each run as **separate declared
+subagents** with their own model configuration. This lets you use a strong
+reasoning model for orchestration (spec analysis, layout planning) and a fast,
+cheap model for rendering and reporting (execution-heavy, not reasoning-heavy).
 
 ### Environment variables
 
-| Variable | Default | Description |
+Each role reads role-specific env vars that fall back to the generic `MODEL*`
+vars:
+
+| Variable | Fallback | Description |
 |---|---|---|
-| `MODEL` | `deepseek-v4-pro` | Model id your provider expects |
-| `MODEL_BASE_URL` | `https://api.deepseek.com` | OpenAI-compatible API base URL |
-| `MODEL_API_KEY` | — | Provider API key (also reads `DEEPSEEK_API_KEY` / `AI_GATEWAY_API_KEY` as aliases) |
-| `MODEL_CONTEXT_WINDOW_TOKENS` | `128000` | Context window size for compaction (override if your model differs) |
+| `MODEL_ORCHESTRATOR` | `MODEL` | Model id for the orchestrator |
+| `MODEL_ORCHESTRATOR_BASE_URL` | `MODEL_BASE_URL` | API base URL for the orchestrator |
+| `MODEL_ORCHESTRATOR_API_KEY` | `MODEL_API_KEY` | API key for the orchestrator |
+| `MODEL_RENDERER` | `MODEL` | Model id for the renderer |
+| `MODEL_RENDERER_BASE_URL` | `MODEL_BASE_URL` | API base URL for the renderer |
+| `MODEL_RENDERER_API_KEY` | `MODEL_API_KEY` | API key for the renderer |
+| `MODEL_REPORTER` | `MODEL` | Model id for the reporter |
+| `MODEL_REPORTER_BASE_URL` | `MODEL_BASE_URL` | API base URL for the reporter |
+| `MODEL_REPORTER_API_KEY` | `MODEL_API_KEY` | API key for the reporter |
+| `MODEL_CONTEXT_WINDOW_TOKENS` | `128000` | Context window size for compaction (all roles) |
 
-### Supported providers
+**If only `MODEL*` is set, all three roles use the same model** (backwards
+compatible with the previous single-model architecture).
 
-Any OpenAI-compatible endpoint works:
+### Recommended: reasoning orchestrator + fast renderer
+
+A reasoning model (e.g. GLM-5.2, Claude Sonnet) excels at spec analysis and
+layout planning but can loop indefinitely on rendering. A fast non-reasoning
+model (e.g. GLM-4.5-Air, GPT-4o-mini) handles rendering efficiently.
 
 ```dotenv
-# DeepSeek (default)
+# .env — reasoning orchestrator + fast renderer/reporter (z.ai)
+MODEL_ORCHESTRATOR=glm-5.2
+MODEL_ORCHESTRATOR_BASE_URL=https://api.z.ai/api/paas/v4/
+MODEL_ORCHESTRATOR_API_KEY=your-z-ai-key
+
+MODEL_RENDERER=glm-4.5-air
+MODEL_RENDERER_BASE_URL=https://api.z.ai/api/paas/v4/
+MODEL_RENDERER_API_KEY=your-z-ai-key
+
+MODEL_REPORTER=glm-4.5-air
+MODEL_REPORTER_BASE_URL=https://api.z.ai/api/paas/v4/
+MODEL_REPORTER_API_KEY=your-z-ai-key
+```
+
+### Other configurations
+
+```dotenv
+# Same model for all roles (simplest)
 MODEL=deepseek-v4-pro
 MODEL_BASE_URL=https://api.deepseek.com
 MODEL_API_KEY=sk-...
 
-# OpenRouter
-MODEL=anthropic/claude-sonnet-4.6
-MODEL_BASE_URL=https://openrouter.ai/api/v1
-MODEL_API_KEY=sk-or-...
+# Different providers per role
+MODEL_ORCHESTRATOR=anthropic/claude-sonnet-4.6
+MODEL_ORCHESTRATOR_BASE_URL=https://api.anthropic.com
+MODEL_ORCHESTRATOR_API_KEY=sk-ant-...
 
-# OpenAI
-MODEL=gpt-4o
-MODEL_BASE_URL=https://api.openai.com/v1
-MODEL_API_KEY=sk-...
+MODEL_RENDERER=gpt-4o-mini
+MODEL_RENDERER_BASE_URL=https://api.openai.com/v1
+MODEL_RENDERER_API_KEY=sk-...
 
 # Vercel AI Gateway (no base URL needed)
-MODEL=anthropic/claude-sonnet-4.6
+MODEL_ORCHESTRATOR=anthropic/claude-sonnet-4.6
 AI_GATEWAY_API_KEY=...
 ```
 
-> **Note:** The orchestrator, renderer, and reporter all run as copies of the
-> same agent (Eve's built-in `agent` tool), so they share one model
-> configuration. Per-subagent model overrides are not supported in this
-> architecture — the shared sandbox + `runs/` folder requires copy-of-self
-> delegation.
+### Architecture: declared subagents
+
+The renderer and reporter are **declared subagents** under `agent/subagents/`:
+
+```
+agent/
+├── agent.ts                          # orchestrator (MODEL_ORCHESTRATOR*)
+├── instructions.md                   # orchestrator system prompt
+├── subagents/
+│   ├── renderer/
+│   │   ├── agent.ts                  # renderer (MODEL_RENDERER*)
+│   │   ├── instructions.md           # renderer system prompt
+│   │   ├── skills/                   # design_system, render_diagram
+│   │   ├── tools/                    # write_run_file, render_screenshot, ...
+│   │   ├── hooks/usage.ts            # token capture (own copy)
+│   │   └── sandbox/sandbox.ts        # own Docker sandbox
+│   └── reporter/
+│       ├── agent.ts                  # reporter (MODEL_REPORTER*)
+│       ├── instructions.md           # reporter system prompt
+│       ├── skills/                   # write_report, cost_rates, report_template
+│       ├── tools/                    # write_run_file, read_usage, ...
+│       ├── hooks/usage.ts            # token capture (own copy)
+│       └── sandbox/sandbox.ts        # own Docker sandbox
+```
+
+Each subagent has an **isolated sandbox** — it cannot read the orchestrator's
+files. The orchestrator passes all context (spec JSON, phase traces) in the
+delegation message, and the subagent returns its output (HTML, report content)
+in the response. The orchestrator writes the returned content to the run folder.
 
 ---
 
@@ -167,12 +241,15 @@ The root agent is the **Orchestrator**. On each turn it:
 
 1. **Creates a run folder** — `runs/<UTC-timestamp>/` via the `create_run` tool.
 2. **Builds a Diagram Spec** — loads the `build_spec` skill, reads any reference image, and writes `spec.json`.
-3. **Fans out renderers** — one copy of the agent per variation via the built-in `agent` tool. Each loads `render_diagram` + `design_system`, builds a self-contained HTML diagram, and self-verifies with a headless Playwright screenshot.
-4. **Captures token usage** — calls `read_usage` after each renderer returns to get its token consumption, then records its own phase trace in `phases/orchestrate.json`.
-5. **Delegates to a reporter** — another agent copy loads `write_report`, aggregates phase traces (including token data), and writes `report.md` + `summary.json`.
+3. **Delegates to the renderer subagent** — calls the `renderer` tool with the full spec JSON in the message. The renderer (running its own model) builds a self-contained HTML diagram, self-verifies with a headless Playwright screenshot, and returns the HTML + phase trace. The orchestrator writes the returned HTML to the run folder.
+4. **Captures token usage** — calls `read_usage` after the renderer returns to get its token consumption, then records its own phase trace in `phases/orchestrate.json`.
+5. **Delegates to the reporter subagent** — calls the `reporter` tool with all phase traces + run metadata in the message. The reporter aggregates metrics and returns `report.md` + `summary.json` content. The orchestrator writes them to the run folder.
 6. **Prints the run folder, report, and diagram paths.**
 
-The renderer and reporter run as **copies of the agent** so they share the sandbox and `runs/` folder — that shared filesystem is what makes fan-out work.
+The renderer and reporter are **declared subagents** with isolated sandboxes.
+Each runs its own model (configured via `MODEL_RENDERER*` / `MODEL_REPORTER*`
+env vars). The orchestrator passes all context in the delegation message and
+writes returned content to the shared run folder.
 
 ---
 
@@ -230,22 +307,24 @@ export — anything visual.
 ```
 agent-diagram-generator/
 ├── agent/                         # the eve agent
-│   ├── agent.ts                   # model + compaction config (env-driven)
+│   ├── agent.ts                   # orchestrator model config (MODEL_ORCHESTRATOR*)
 │   ├── instructions.md            # always-on Orchestrator system prompt
+│   ├── shared/
+│   │   └── model.ts               # per-role model resolution helper
 │   ├── sandbox/
 │   │   ├── sandbox.ts             # Docker backend + Playwright bootstrap
 │   │   └── workspace/             # seeded into /workspace at session start
 │   │       ├── inputs/            #   reference images to port
-│   │       └── runs/              #   run outputs (example run committed)
+│   │       └── runs/              #   run outputs (example runs committed)
 │   ├── skills/                    # load-on-demand procedures
 │   │   ├── design_system.md       #   visual + technical contract
 │   │   ├── build_spec.md          #   spec schema + phase-trace schema
-│   │   ├── render_diagram.md      #   renderer procedure
-│   │   ├── write_report.md        #   reporter procedure
+│   │   ├── render_diagram.md      #   renderer procedure (reference)
+│   │   ├── write_report.md        #   reporter procedure (reference)
 │   │   ├── cost_rates.md          #   token cost rate-card
 │   │   ├── report_template.md     #   markdown report template
 │   │   └── prompt_template.md     #   single-diagram prompt scaffold
-│   ├── tools/                     # typed executable tools
+│   ├── tools/                     # typed executable tools (orchestrator)
 │   │   ├── create_run.ts          #   make the timestamped run folder
 │   │   ├── write_run_file.ts      #   write an artifact into a run
 │   │   ├── read_run_file.ts       #   read a run artifact
@@ -254,8 +333,23 @@ agent-diagram-generator/
 │   │   └── render_screenshot.ts   #   headless Playwright self-verify
 │   ├── hooks/
 │   │   └── usage.ts               #   captures step.completed token usage
+│   ├── subagents/                 # declared subagents (own model + sandbox)
+│   │   ├── renderer/              #   HTML diagram renderer
+│   │   │   ├── agent.ts           #   MODEL_RENDERER* config
+│   │   │   ├── instructions.md    #   renderer system prompt
+│   │   │   ├── skills/            #   design_system + render_diagram
+│   │   │   ├── tools/             #   write_run_file, render_screenshot, ...
+│   │   │   ├── hooks/usage.ts     #   token capture (own copy)
+│   │   │   └── sandbox/sandbox.ts #   own Docker sandbox
+│   │   └── reporter/              #   metrics report generator
+│   │       ├── agent.ts           #   MODEL_REPORTER* config
+│   │       ├── instructions.md    #   reporter system prompt
+│   │       ├── skills/            #   write_report, cost_rates, report_template
+│   │       ├── tools/             #   write_run_file, read_usage, ...
+│   │       ├── hooks/usage.ts     #   token capture (own copy)
+│   │       └── sandbox/sandbox.ts #   own Docker sandbox
 │   └── channels/eve.ts            # the eve HTTP/TUI channel
-├── .env.example                   # model config template
+├── .env.example                   # per-role model config template
 ├── example.md                     # ready-to-paste prompts
 ├── package.json                   # eve, ai, zod deps (Node 24)
 └── README.md                      # this file
@@ -281,9 +375,10 @@ The hook accumulates per-session usage in the OS temp directory
 tool after each subagent returns and before the reporter, writing the token data
 into phase traces with `"source": "runtime"`.
 
-Because the orchestrator, renderer, and reporter all run as copies of the same
-agent (Eve's built-in `agent` tool), the usage hook fires for every session —
-parent and children alike.
+Because the orchestrator, renderer, and reporter are **declared subagents**
+(each with its own session), the usage hook fires for every session —
+orchestrator, renderer, and reporter alike. Each subagent has its own copy of
+the hook in `agent/subagents/<id>/hooks/usage.ts`.
 
 ### Token cost
 

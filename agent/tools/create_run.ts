@@ -3,6 +3,7 @@ import { z } from "zod";
 import { writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { modelIdFor, MODEL_ORCHESTRATOR, MODEL_RENDERER, MODEL_REPORTER } from "#shared/model.js";
 
 const USAGE_DIR = join(tmpdir(), "eve-usage");
 
@@ -40,7 +41,9 @@ export default defineTool({
       request,
       options,
       models: {
-        orchestrator: process.env.MODEL ?? "deepseek-v4-pro",
+        orchestrator: modelIdFor(MODEL_ORCHESTRATOR),
+        renderer: modelIdFor(MODEL_RENDERER),
+        reporter: modelIdFor(MODEL_REPORTER),
       },
       host: "eve",
     };

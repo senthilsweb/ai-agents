@@ -8,7 +8,7 @@ export default defineSandbox({
   }),
   // Bump this when the bootstrap or seeded files change, so eve rebuilds the
   // template image instead of reusing a stale one.
-  revalidationKey: () => "diagram-generator-bootstrap-v2",
+  revalidationKey: () => "reporter-bootstrap-v2",
   async bootstrap({ use }) {
     const sandbox = await use();
     // Remove macOS .DS_Store files that may have been seeded from the workspace
@@ -16,14 +16,6 @@ export default defineSandbox({
     await sandbox.run({
       command: "find /workspace -name '.DS_Store' -delete 2>/dev/null; true",
     });
-    // Install a headless browser once per template so the renderer's
-    // self-verify screenshot works. Cached across sessions by the revalidationKey.
-    await sandbox.run({
-      command:
-        "npm init -y >/dev/null 2>&1 && " +
-        "npm install playwright >/dev/null 2>&1 && " +
-        "npx playwright install --with-deps chromium >/dev/null 2>&1 || " +
-        "echo 'playwright bootstrap attempted'",
-    });
+    // The reporter doesn't need Playwright — it only aggregates JSON data.
   },
 });
