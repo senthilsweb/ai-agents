@@ -1,5 +1,5 @@
 import { defineAgent } from "eve";
-import { resolveModel, MODEL_ORCHESTRATOR } from "#shared/model.js";
+import { resolveModel, MODEL_ORCHESTRATOR } from "#lib/model.js";
 
 // ── Orchestrator model ────────────────────────────────────────────────────
 // The orchestrator needs strong reasoning (spec analysis, image OCR, layout

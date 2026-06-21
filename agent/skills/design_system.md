@@ -8,7 +8,7 @@ Shared visual + technical contract for the Renderer. Goal: presentation-grade,
 self-contained diagrams that never look like generic templates.
 
 ## Theme & typography
-- Commit to ONE bold direction. Default: **refined dark** — deep gradient base,
+- Commit to ONE bold direction. Default: **clean light** — paper base, subtle
   faint masked grid texture, radial accent glows. For a `light` variation, invert
   to a clean paper base while keeping structure and accents.
 - VARY the font pairing per diagram so outputs do not all look the same. Avoid

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { modelIdFor, MODEL_ORCHESTRATOR, MODEL_RENDERER, MODEL_REPORTER } from "#shared/model.js";
+import { modelIdFor, MODEL_ORCHESTRATOR, MODEL_RENDERER, MODEL_REPORTER } from "#lib/model.js";
 
 const USAGE_DIR = join(tmpdir(), "eve-usage");
 

@@ -20,7 +20,7 @@ Load the `design_system` skill and follow it exactly. Non-negotiables:
   "wire" layer** for ALL connectors, drawn to exact zone-edge coordinates.
 - **Inline Lucide icons** (no runtime icon CDN). Use the `fetch_lucide_icon` tool
   to get each icon's inner shapes; it resolves renamed icons. **No emojis.**
-- Commit to ONE bold theme (default dark): glassmorphism, one accent per zone,
+- Commit to ONE bold theme (default light): glassmorphism, one accent per zone,
   radial glows, faint grid texture, distinctive type pairing, tasteful motion
   (marching-ants connectors + a couple of SMIL glow dots, staggered load-in).
 - Apply the spec's `theme.mode`; for a `light` variation, invert the palette but

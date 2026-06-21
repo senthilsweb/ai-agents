@@ -88,7 +88,7 @@ All options are optional. The agent parses them from your message text.
 |---|---|---|
 | `reference` | — | image in `inputs/` to port / recreate |
 | `title` / `subtitle` | from image | diagram heading |
-| `theme` | `dark` | `dark` or `light` |
+| `theme` | `light` | `dark` or `light` |
 | `size` | `standard` | `compact` / `standard` / `wide` preset (controls canvas size) |
 | `canvas` | — | explicit `WxH`, e.g. `1040x660` (overrides `size`) |
 | `fit` | `card` | `card` (bounded, no page break) / `scale` (shrink wide to fit) / `full` (full-page) |

@@ -1,5 +1,5 @@
 import { defineAgent } from "eve";
-import { resolveModel, MODEL_REPORTER } from "#shared/model.js";
+import { resolveModel, MODEL_REPORTER } from "#lib/model.js";
 
 // ── Reporter subagent ─────────────────────────────────────────────────────
 // Aggregates a run's phase traces into report.md + summary.json. Configured

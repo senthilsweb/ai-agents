@@ -4,7 +4,8 @@
   "type": "module",
   "imports": {
     "#*": "./agent/*",
-    "#evals/*": "./evals/*"
+    "#evals/*": "./evals/*",
+    "#lib/model.js": "./agent/lib/model.ts"
   },
   "scripts": {
     "build": "eve build",

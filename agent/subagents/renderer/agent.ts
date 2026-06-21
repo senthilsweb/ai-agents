@@ -1,5 +1,5 @@
 import { defineAgent } from "eve";
-import { resolveModel, MODEL_RENDERER } from "#shared/model.js";
+import { resolveModel, MODEL_RENDERER } from "#lib/model.js";
 
 // ── Renderer subagent ─────────────────────────────────────────────────────
 // Produces HTML diagrams from a Diagram Spec. Configured independently via

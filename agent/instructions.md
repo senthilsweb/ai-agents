@@ -42,7 +42,7 @@ written description.
 |---|---|---|
 | `reference` | — | image in `inputs/` to port |
 | `title` / `subtitle` | from image | diagram heading |
-| `theme` | `dark` | `dark` or `light` |
+| `theme` | `light` | `dark` or `light` |
 | `size` | `standard` | `compact` / `standard` / `wide` preset |
 | `canvas` | — | explicit `WxH`, e.g. `1040x660` (overrides `size`) |
 | `fit` | `card` | `card` (bounded, no page break) / `scale` (shrink wide to fit) / `full` (full-page) |
