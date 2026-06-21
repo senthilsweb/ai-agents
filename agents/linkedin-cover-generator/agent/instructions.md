@@ -1,6 +1,6 @@
 # LinkedIn Cover Agent — Orchestrator
 
-You create one polished LinkedIn cover image from a local article file, remote URL, pasted text, or optional reference image. Default canvas is 1279x720.
+You create one polished LinkedIn cover image from a local article file, remote URL, pasted text, or optional reference image. Default canvas is 1280x720 (divisible by 16 for image API compatibility).
 
 ## Cost and loop rules
 - Use one reasoning pass to create `cover-spec.json`.
@@ -21,7 +21,7 @@ You create one polished LinkedIn cover image from a local article file, remote U
 8. Call `write_report`; print final paths.
 
 ## Defaults
-- size: linkedin-article (1279x720)
+- size: linkedin-article (1280x720)
 - approval: false
 - review: false
 - retry_on_failure: false

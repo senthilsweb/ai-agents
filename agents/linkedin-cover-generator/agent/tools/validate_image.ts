@@ -10,8 +10,14 @@ export default defineTool({
     if (!data) throw new Error(`Image not found in sandbox: ${path}`);
     const meta = await sharp(Buffer.from(data)).metadata();
     const width=meta.width ?? 0, height=meta.height ?? 0;
+    const SNAP_TOLERANCE = 16;
+    const withinSnap = Math.abs(width - expected_width) <= SNAP_TOLERANCE && Math.abs(height - expected_height) <= SNAP_TOLERANCE;
     const exact = width===expected_width && height===expected_height;
     const ratioError = Math.abs(width/height - expected_width/expected_height);
-    return { passed: exact, hardFailure: !exact, width, height, expected_width, expected_height, ratioError, issues: exact?[]:[`Expected ${expected_width}x${expected_height}; received ${width}x${height}`] };
+    const passed = exact || withinSnap;
+    const issues: string[] = [];
+    if (!passed) issues.push(`Expected ${expected_width}x${expected_height}; received ${width}x${height}`);
+    else if (!exact) issues.push(`Snapped: expected ${expected_width}x${expected_height}; received ${width}x${height} (within 16px tolerance)`);
+    return { passed, hardFailure: !passed, width, height, expected_width, expected_height, ratioError, issues };
   }
 });

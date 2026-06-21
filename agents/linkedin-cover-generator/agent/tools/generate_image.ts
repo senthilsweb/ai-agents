@@ -25,6 +25,6 @@ export default defineTool({
     else throw new Error("Provider returned neither b64_json nor url.");
     const sandbox = await ctx.getSandbox();
     await sandbox.writeBinaryFile({ path: output_path, content: bytes });
-    return { output_path, model, bytes: bytes.byteLength };
+    return { output_path, model, bytes: bytes.byteLength, actual_width: w, actual_height: h };
   }
 });
