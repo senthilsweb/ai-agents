@@ -41,11 +41,11 @@ next-env.d.ts
 /.workflow-data
 
 # live run outputs (keep example runs, ignore new ones)
-agent/sandbox/workspace/runs/*
-!agent/sandbox/workspace/runs/.gitkeep
-!agent/sandbox/workspace/runs/2026-06-20T15-14-27Z/
-!agent/sandbox/workspace/runs/2026-06-20T20-14-42Z/
+agents/diagram-generator/agent/sandbox/workspace/runs/*
+!agents/diagram-generator/agent/sandbox/workspace/runs/.gitkeep
+!agents/diagram-generator/agent/sandbox/workspace/runs/2026-06-20T15-14-27Z/
+!agents/diagram-generator/agent/sandbox/workspace/runs/2026-06-20T20-14-42Z/
 
 # subagent workspace runs (live outputs, keep .gitkeep)
-agent/subagents/*/sandbox/workspace/runs/*
-!agent/subagents/*/sandbox/workspace/runs/.gitkeep
+agents/diagram-generator/agent/subagents/*/sandbox/workspace/runs/*
+!agents/diagram-generator/agent/subagents/*/sandbox/workspace/runs/.gitkeep

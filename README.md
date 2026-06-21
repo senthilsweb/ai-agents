@@ -16,6 +16,8 @@ timestamped `runs/` folder with a metrics report. Built on the [Vercel Eve](http
 
 ### 2 — Install
 
+From the repo root (installs all workspace agents):
+
 ```bash
 nvm use 24
 npm install
@@ -23,7 +25,7 @@ npm install
 
 ### 3 — Configure the models
 
-Copy `.env.example` to `.env` and fill in your provider. Each role
+Copy `.env.example` to `.env` at the repo root and fill in your provider. Each role
 (orchestrator, renderer, reporter) can use a different model:
 
 ```bash
@@ -57,13 +59,15 @@ Any OpenAI-compatible provider works — see **Model configuration** below.
 
 ### 4 — Run
 
+From the repo root:
+
 ```bash
 npm run dev
 ```
 
-This starts `eve dev` — an interactive TUI where you type prompts. The agent
-orchestrates the full pipeline (spec → render → report) and prints the run
-folder path when done.
+This runs `eve dev` inside `agents/diagram-generator/` — an interactive TUI where
+you type prompts. The agent orchestrates the full pipeline (spec → render →
+report) and prints the run folder path when done.
 
 ### 5 — Your first prompt
 
@@ -205,27 +209,29 @@ AI_GATEWAY_API_KEY=...
 
 ### Architecture: declared subagents
 
-The renderer and reporter are **declared subagents** under `agent/subagents/`:
+The renderer and reporter are **declared subagents** under `agent/subagents/`
+(paths relative to `agents/diagram-generator/`):
 
 ```
-agent/
-├── agent.ts                          # orchestrator (MODEL_ORCHESTRATOR*)
-├── instructions.md                   # orchestrator system prompt
-├── subagents/
-│   ├── renderer/
-│   │   ├── agent.ts                  # renderer (MODEL_RENDERER*)
-│   │   ├── instructions.md           # renderer system prompt
-│   │   ├── skills/                   # design_system, render_diagram
-│   │   ├── tools/                    # write_run_file, render_screenshot, ...
-│   │   ├── hooks/usage.ts            # token capture (own copy)
-│   │   └── sandbox/sandbox.ts        # own Docker sandbox
-│   └── reporter/
-│       ├── agent.ts                  # reporter (MODEL_REPORTER*)
-│       ├── instructions.md           # reporter system prompt
-│       ├── skills/                   # write_report, cost_rates, report_template
-│       ├── tools/                    # write_run_file, read_usage, ...
-│       ├── hooks/usage.ts            # token capture (own copy)
-│       └── sandbox/sandbox.ts        # own Docker sandbox
+agents/diagram-generator/
+└── agent/
+    ├── agent.ts                          # orchestrator (MODEL_ORCHESTRATOR*)
+    ├── instructions.md                   # orchestrator system prompt
+    ├── subagents/
+    │   ├── renderer/
+    │   │   ├── agent.ts                  # renderer (MODEL_RENDERER*)
+    │   │   ├── instructions.md           # renderer system prompt
+    │   │   ├── skills/                   # design_system, render_diagram
+    │   │   ├── tools/                    # write_run_file, render_screenshot, ...
+    │   │   ├── hooks/usage.ts            # token capture (own copy)
+    │   │   └── sandbox/sandbox.ts        # own Docker sandbox
+    │   └── reporter/
+    │       ├── agent.ts                  # reporter (MODEL_REPORTER*)
+    │       ├── instructions.md           # reporter system prompt
+    │       ├── skills/                   # write_report, cost_rates, report_template
+    │       ├── tools/                    # write_run_file, read_usage, ...
+    │       ├── hooks/usage.ts            # token capture (own copy)
+    │       └── sandbox/sandbox.ts        # own Docker sandbox
 ```
 
 Each subagent has an **isolated sandbox** — it cannot read the orchestrator's
@@ -276,11 +282,11 @@ runs/
 
 Two committed examples live under `runs/`:
 
-1. [`runs/2026-06-20T15-14-27Z/`](agent/sandbox/workspace/runs/2026-06-20T15-14-27Z/) —
+1. [`runs/2026-06-20T15-14-27Z/`](agents/diagram-generator/agent/sandbox/workspace/runs/2026-06-20T15-14-27Z/) —
    ports `inputs/ai-analytics.png` into a dark-glass architecture diagram with
    `fit=card`.
 
-2. [`runs/2026-06-20T20-14-42Z/`](agent/sandbox/workspace/runs/2026-06-20T20-14-42Z/) —
+2. [`runs/2026-06-20T20-14-42Z/`](agents/diagram-generator/agent/sandbox/workspace/runs/2026-06-20T20-14-42Z/) —
    ports `inputs/jira-to-duckdb.png` with `fit=card`. Phase traces include
    full token usage data captured by the usage hook.
 
@@ -291,11 +297,11 @@ screenshot.
 
 ## Inputs — reference images
 
-`agent/sandbox/workspace/inputs/` holds pictures you want the agent to **port /
+`agents/diagram-generator/agent/sandbox/workspace/inputs/` holds pictures you want the agent to **port /
 recreate**: a phone photo of a whiteboard, a screenshot of a slide, a draw.io
 export — anything visual.
 
-- **Add a file:** drop a `.png` / `.jpg` into `agent/sandbox/workspace/inputs/`.
+- **Add a file:** drop a `.png` / `.jpg` into `agents/diagram-generator/agent/sandbox/workspace/inputs/`.
 - **Use it:** pass `reference=inputs/<file>` in your prompt. The orchestrator reads it as the source of truth for zones, order, and relationships, then rebuilds it in the dark glass style.
 - **Fidelity vs. style:** it matches *structure, labels, and flow* faithfully and elevates the look, using tasteful **Lucide icons** (never brand logos). With `genericize=false`, product *names* are kept as labels.
 - **No input needed:** run with no `reference` and just describe the architecture.
@@ -305,54 +311,62 @@ export — anything visual.
 ## Folder layout
 
 ```
-agent-diagram-generator/
-├── agent/                         # the eve agent
-│   ├── agent.ts                   # orchestrator model config (MODEL_ORCHESTRATOR*)
-│   ├── instructions.md            # always-on Orchestrator system prompt
-│   ├── shared/
-│   │   └── model.ts               # per-role model resolution helper
-│   ├── sandbox/
-│   │   ├── sandbox.ts             # Docker backend + Playwright bootstrap
-│   │   └── workspace/             # seeded into /workspace at session start
-│   │       ├── inputs/            #   reference images to port
-│   │       └── runs/              #   run outputs (example runs committed)
-│   ├── skills/                    # load-on-demand procedures
-│   │   ├── design_system.md       #   visual + technical contract
-│   │   ├── build_spec.md          #   spec schema + phase-trace schema
-│   │   ├── render_diagram.md      #   renderer procedure (reference)
-│   │   ├── write_report.md        #   reporter procedure (reference)
-│   │   ├── cost_rates.md          #   token cost rate-card
-│   │   ├── report_template.md     #   markdown report template
-│   │   └── prompt_template.md     #   single-diagram prompt scaffold
-│   ├── tools/                     # typed executable tools (orchestrator)
-│   │   ├── create_run.ts          #   make the timestamped run folder
-│   │   ├── write_run_file.ts      #   write an artifact into a run
-│   │   ├── read_run_file.ts       #   read a run artifact
-│   │   ├── read_usage.ts          #   read accumulated token usage
-│   │   ├── fetch_lucide_icon.ts   #   fetch + inline a Lucide icon
-│   │   └── render_screenshot.ts   #   headless Playwright self-verify
-│   ├── hooks/
-│   │   └── usage.ts               #   captures step.completed token usage
-│   ├── subagents/                 # declared subagents (own model + sandbox)
-│   │   ├── renderer/              #   HTML diagram renderer
-│   │   │   ├── agent.ts           #   MODEL_RENDERER* config
-│   │   │   ├── instructions.md    #   renderer system prompt
-│   │   │   ├── skills/            #   design_system + render_diagram
-│   │   │   ├── tools/             #   write_run_file, render_screenshot, ...
-│   │   │   ├── hooks/usage.ts     #   token capture (own copy)
-│   │   │   └── sandbox/sandbox.ts #   own Docker sandbox
-│   │   └── reporter/              #   metrics report generator
-│   │       ├── agent.ts           #   MODEL_REPORTER* config
-│   │       ├── instructions.md    #   reporter system prompt
-│   │       ├── skills/            #   write_report, cost_rates, report_template
-│   │       ├── tools/             #   write_run_file, read_usage, ...
-│   │       ├── hooks/usage.ts     #   token capture (own copy)
-│   │       └── sandbox/sandbox.ts #   own Docker sandbox
-│   └── channels/eve.ts            # the eve HTTP/TUI channel
-├── .env.example                   # per-role model config template
-├── example.md                     # ready-to-paste prompts
-├── package.json                   # eve, ai, zod deps (Node 24)
-└── README.md                      # this file
+ai-agents/
+├── agents/
+│   └── diagram-generator/              # the eve agent
+│       ├── agent/
+│       │   ├── agent.ts                # orchestrator model config (MODEL_ORCHESTRATOR*)
+│       │   ├── instructions.md         # always-on Orchestrator system prompt
+│       │   ├── lib/
+│       │   │   └── model.ts            # per-role model resolution helper
+│       │   ├── sandbox/
+│       │   │   ├── sandbox.ts          # Docker backend + Playwright bootstrap
+│       │   │   └── workspace/          # seeded into /workspace at session start
+│       │   │       ├── inputs/         #   reference images to port
+│       │   │       └── runs/           #   run outputs (example runs committed)
+│       │   ├── skills/                 # load-on-demand procedures
+│       │   │   ├── design_system.md    #   visual + technical contract
+│       │   │   ├── build_spec.md       #   spec schema + phase-trace schema
+│       │   │   ├── render_diagram.md   #   renderer procedure (reference)
+│       │   │   ├── write_report.md     #   reporter procedure (reference)
+│       │   │   ├── cost_rates.md       #   token cost rate-card
+│       │   │   ├── report_template.md  #   markdown report template
+│       │   │   └── prompt_template.md  #   single-diagram prompt scaffold
+│       │   ├── tools/                  # typed executable tools (orchestrator)
+│       │   │   ├── create_run.ts       #   make the timestamped run folder
+│       │   │   ├── write_run_file.ts   #   write an artifact into a run
+│       │   │   ├── read_run_file.ts    #   read a run artifact
+│       │   │   ├── read_usage.ts       #   read accumulated token usage
+│       │   │   ├── fetch_lucide_icon.ts#   fetch + inline a Lucide icon
+│       │   │   └── render_screenshot.ts#   headless Playwright self-verify
+│       │   ├── hooks/
+│       │   │   └── usage.ts            #   captures step.completed token usage
+│       │   ├── subagents/              # declared subagents (own model + sandbox)
+│       │   │   ├── renderer/           #   HTML diagram renderer
+│       │   │   │   ├── agent.ts        #   MODEL_RENDERER* config
+│       │   │   │   ├── instructions.md #   renderer system prompt
+│       │   │   │   ├── skills/         #   design_system + render_diagram
+│       │   │   │   ├── tools/          #   write_run_file, render_screenshot, ...
+│       │   │   │   ├── hooks/usage.ts  #   token capture (own copy)
+│       │   │   │   └── sandbox/sandbox.ts # own Docker sandbox
+│       │   │   └── reporter/           #   metrics report generator
+│       │   │       ├── agent.ts        #   MODEL_REPORTER* config
+│       │   │       ├── instructions.md #   reporter system prompt
+│       │   │       ├── skills/         #   write_report, cost_rates, report_template
+│       │   │       ├── tools/          #   write_run_file, read_usage, ...
+│       │   │       ├── hooks/usage.ts  #   token capture (own copy)
+│       │   │       └── sandbox/sandbox.ts # own Docker sandbox
+│       │   └── channels/eve.ts         # the eve HTTP/TUI channel
+│       ├── package.json                # per-agent manifest (eve, ai, zod deps)
+│       └── tsconfig.json               # per-agent TS config (extends base)
+├── shared/                             # cross-agent utilities (placeholder)
+│   └── README.md                       #   contract for what belongs here
+├── .env.example                        # per-role model config template
+├── package.json                        # workspace root (npm workspaces)
+├── tsconfig.base.json                  # shared compiler options
+├── tsconfig.json                       # root references
+├── example.md                          # ready-to-paste prompts
+└── README.md                           # this file
 ```
 
 ---
@@ -366,7 +380,7 @@ and the final report.
 
 ### Token consumption
 
-Captured automatically by a **usage hook** (`agent/hooks/usage.ts`) that listens
+Captured automatically by a **usage hook** (`agents/diagram-generator/agent/hooks/usage.ts`) that listens
 to `step.completed` stream events. Each step carries `usage.inputTokens`,
 `usage.outputTokens`, `usage.cacheReadTokens`, and `usage.cacheWriteTokens`.
 
@@ -378,7 +392,7 @@ into phase traces with `"source": "runtime"`.
 Because the orchestrator, renderer, and reporter are **declared subagents**
 (each with its own session), the usage hook fires for every session —
 orchestrator, renderer, and reporter alike. Each subagent has its own copy of
-the hook in `agent/subagents/<id>/hooks/usage.ts`.
+the hook in `agents/diagram-generator/agent/subagents/<id>/hooks/usage.ts`.
 
 ### Token cost
 
