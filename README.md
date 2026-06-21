@@ -4,6 +4,11 @@ Turn a description (or a hand-drawn / screenshot **reference**) into a **stunnin
 self-contained HTML architecture diagram**. Every run is recorded under a
 timestamped `runs/` folder with a metrics report. Built on the [Vercel Eve](https://vercel.com/eve) agent framework — procedures live in markdown **skills** and real work happens through typed **tools**.
 
+This is the `ai-agents` monorepo. The diagram generator agent lives at
+[`agents/diagram-generator/`](agents/diagram-generator/) — see its
+[README](agents/diagram-generator/README.md) for full setup, dev, and testing
+instructions.
+
 ---
 
 ## Quickstart
