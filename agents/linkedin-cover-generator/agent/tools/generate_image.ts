@@ -9,7 +9,10 @@ export default defineTool({
     if (!apiKey) throw new Error("Set IMAGE_API_KEY, MODEL_API_KEY, or OPENAI_API_KEY.");
     const model = process.env.IMAGE_MODEL ?? "gpt-image-2";
     const base = process.env.IMAGE_BASE_URL ?? process.env.MODEL_BASE_URL ?? "https://api.openai.com/v1";
-    const body: any = { model, prompt, size: `${width}x${height}`, quality: process.env.IMAGE_QUALITY ?? "high", output_format: "png" };
+    const snap = (n: number) => Math.max(256, Math.round(n / 16) * 16);
+    const w = snap(width);
+    const h = snap(height);
+    const body: any = { model, prompt, size: `${w}x${h}`, quality: process.env.IMAGE_QUALITY ?? "high", output_format: "png" };
     if (reference_path) throw new Error("Reference-image editing requires provider-specific multipart support; use the documented adapter extension point.");
     const res = await fetch(`${base.replace(/\/$/,"")}/images/generations`, { method: "POST", headers: { "content-type":"application/json", authorization:`Bearer ${apiKey}` }, body: JSON.stringify(body) });
     const json: any = await res.json();

@@ -5,7 +5,11 @@
   "type": "module",
   "imports": {
     "#*": "./agent/*",
-    "#lib/*": "./agent/lib/*",
+    "#lib/model.js": "./agent/lib/model.ts",
+    "#lib/schemas.js": "./agent/lib/schemas.ts",
+    "#lib/prompt-builder.js": "./agent/lib/prompt-builder.ts",
+    "#lib/palettes.js": "./agent/lib/palettes.ts",
+    "#lib/presets.js": "./agent/lib/presets.ts",
     "#shared/*": "../../shared/*"
   },
   "scripts": {

@@ -1,5 +1,5 @@
-import type { CoverSpec } from "./schemas.js";
-import { PALETTES } from "./palettes.js";
+import type { CoverSpec } from "#lib/schemas.js";
+import { PALETTES } from "#lib/palettes.js";
 
 export function buildImagePrompt(spec: CoverSpec): string {
   const colors = PALETTES[spec.palette as keyof typeof PALETTES] ?? PALETTES["navy-cyan-violet"];
