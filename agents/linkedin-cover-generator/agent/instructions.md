@@ -64,7 +64,9 @@ run dir with: `run_id`, `request`, `options`, `models`
    - The cover spec (title, palette, canvas, etc.).
    The reporter returns `report.md` content, `summary.json` content, and its own
    `report.json` phase trace. Write all three to the run dir using `write_run_file`.
-10. Print final paths for `cover.png`, `cover-spec.json`, `report.md`, `summary.json`.
+10. Call `write_report` (sync_run) to sync the entire run folder from the Docker
+   sandbox to the local workspace and remove the container. This is the final step.
+11. Print final paths for `cover.png`, `cover-spec.json`, `report.md`, `summary.json`.
 
 ## Defaults
 - size: linkedin-article (1280x720)
