@@ -2,9 +2,9 @@ import { defineTool } from "eve/tools";
 import { z } from "zod";
 import sharp from "sharp";
 export default defineTool({
-  description: "Deterministically validate output dimensions and aspect ratio. No model call.",
-  inputSchema: z.object({ path: z.string(), expected_width: z.number().int(), expected_height: z.number().int() }),
-  async execute({ path, expected_width, expected_height }, ctx) {
+  description: "Deterministically validate output dimensions and aspect ratio. No model call. Also writes a phase trace to <run_dir>/phases/validate.json automatically.",
+  inputSchema: z.object({ path: z.string(), expected_width: z.number().int(), expected_height: z.number().int(), run_dir: z.string().describe("The run directory, e.g. runs/2026-06-21T17-09-53Z") }),
+  async execute({ path, expected_width, expected_height, run_dir }, ctx) {
     const started_at = new Date().toISOString();
     const sandbox = await ctx.getSandbox();
     const data = await sandbox.readBinaryFile({ path });
@@ -21,6 +21,9 @@ export default defineTool({
     else if (!exact) issues.push(`Snapped: expected ${expected_width}x${expected_height}; received ${width}x${height} (within 16px tolerance)`);
     const ended_at = new Date().toISOString();
     const duration_s = Math.round((Date.now() - new Date(started_at).getTime()) / 1000);
+    // Auto-write phase trace
+    const trace = { phase: "validate", model: "deterministic", started_at, ended_at, duration_s, tokens: { input: 0, output: 0, total: 0, source: "runtime" } };
+    await sandbox.writeTextFile({ path: `${run_dir}/phases/validate.json`, content: JSON.stringify(trace, null, 2) + "\n" });
     return { passed, hardFailure: !passed, width, height, expected_width, expected_height, ratioError, issues, started_at, ended_at, duration_s };
   }
 });

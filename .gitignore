@@ -64,4 +64,4 @@ agents/linkedin-cover-generator/agent/sandbox/workspace/runs/*
 
 # sandbox workspace inputs (user-provided, not tracked)
 **/sandbox/workspace/inputs/*.md
-agents/*/agent/sandbox/workspace/inputs/*.md
+agents/*/agent/sandbox/workspace/inputs/*.mdsession.db.bak
