@@ -25,6 +25,6 @@ export default defineTool({
       },
     };
     await sandbox.writeTextFile({ path: `${run_dir}/run-meta.json`, content: JSON.stringify(meta, null, 2)+"\n" });
-    return { run_dir, run_id: ts, start_epoch: parseInt(epoch, 10) };
+    return { run_dir, run_id: ts, start_epoch: parseInt(epoch, 10), started_at: ts };
   }
 });

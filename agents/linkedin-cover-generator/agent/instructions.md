@@ -23,8 +23,9 @@ inline in the delegation message. The reporter returns the full `report.md` and
 
 ## Phase traces
 
-After each major step, call `read_usage` (no session_id) to get token counts,
-then write a phase trace JSON to `<run_dir>/phases/<phase>.json`:
+After each major step, call `read_usage` (no args — defaults to current session)
+to get token counts, then write a phase trace JSON to
+`<run_dir>/phases/<phase>.json`:
 
 ```jsonc
 {
@@ -37,15 +38,22 @@ then write a phase trace JSON to `<run_dir>/phases/<phase>.json`:
 }
 ```
 
-- **orchestrate**: from `create_run` to just before `generate_image`.
-- **generate**: the `generate_image` call.
-- **validate**: the `validate_image` call.
+- **orchestrate**: from `create_run` to just before `generate_image`. Use
+  `create_run`'s `started_at` as the start, and the current time as end.
+  Compute `duration_s` from the difference.
+- **generate**: use the `started_at`, `ended_at`, and `duration_s` values
+  returned by `generate_image`. The model is the `model` field from
+  `generate_image`'s response. Tokens are 0 (image API doesn't report tokens).
+- **validate**: use the `started_at`, `ended_at`, and `duration_s` values
+  returned by `validate_image`. Model is `"deterministic"`. Tokens are 0.
 - **report**: recorded by the reporter subagent itself.
 
-Use `write_run_file` to write each trace. Also write `run-meta.json` in the
-run dir with: `run_id`, `request`, `options`, `models`
-(`{ orchestrator, image, reporter }`), `start_epoch` (Unix seconds from
-`create_run`).
+For token data, extract `inputTokens` and `outputTokens` from the
+`read_usage` response under `sessions.<current_session_id>`. Compute
+`total = input + output`.
+
+Use `write_run_file` to write each trace. `run-meta.json` is already written
+by `create_run` — do not rewrite it.
 
 ## Procedure
 1. Call `create_run` first. Record the start time.
