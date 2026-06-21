@@ -72,22 +72,22 @@ alternatives.
 
 ## Run in dev mode
 
-From the **repo root**:
+From the **agent folder**:
 
 ```bash
-npm run dev:linkedin
-```
-
-Or directly from the agent folder:
-
-```bash
-cd agents/linkedin-cover-generator
-npm run dev
+nvm use 24
+npx eve dev --port 3535
 ```
 
 This starts `eve dev` — an interactive TUI where you type prompts. The agent
 creates a run folder, builds a cover spec, generates the image, validates
-dimensions, and writes a report.
+dimensions, and writes a report. Run artifacts (cover image, report, summary)
+are synced from the Docker sandbox back to `agent/sandbox/workspace/runs/`
+after each run.
+
+> **Note:** Use `npx eve dev` directly rather than `npm run dev`. The latter
+> may pick up the wrong Node version from your shell. Always activate Node 24
+> first with `nvm use 24`.
 
 ---
 
@@ -106,7 +106,7 @@ palette=auto, approval=false.
 ### Example 2 — From a remote URL
 
 ```
-Create a LinkedIn cover from input=https://example.com/article, size=1279x720.
+Create a LinkedIn cover from input=https://example.com/article, size=1280x720.
 ```
 
 ### Example 3 — Approval mode (stop before image generation)
@@ -123,6 +123,51 @@ Create a cover from input=inputs/article.md, approval=true.
 Create a LinkedIn cover from input=inputs/article.md, palette=charcoal-gold-teal,
 density=balanced, size=linkedin-post.
 ```
+
+### Example 5 — Advanced: full control with custom size, palette, layout, and brands
+
+This example exercises every option: a custom canvas size (must be divisible by
+16 for the image API), an explicit palette, a centered-minimal layout, balanced
+density, brand names included, and approval mode so you can review the spec
+before the image is generated.
+
+```
+Create a LinkedIn cover from input=inputs/article.md,
+size=1088x1088,
+palette=indigo-lime,
+layout=centered-minimal,
+density=balanced,
+include_brands=true,
+approval=true.
+```
+
+**What each option does:**
+
+| Option | Value | Effect |
+|---|---|---|
+| `size` | `1088x1088` | Square canvas (divisible by 16); overrides the default `linkedin-article` preset |
+| `palette` | `indigo-lime` | Uses `#17163b`, `#6874ff`, `#b7e54a`, `#eaf7ff` — high-contrast dark indigo with lime accent |
+| `layout` | `centered-minimal` | Title and visual centered with generous negative space |
+| `density` | `balanced` | More visual elements than `minimal`, but still clean |
+| `include_brands` | `true` | Company/product names from the article are included in the cover |
+| `approval` | `true` | Stops after writing `cover-spec.json` + `proposal.md`; resumes after you approve |
+
+**Available palettes:**
+
+| Palette | Colors | Mood |
+|---|---|---|
+| `navy-cyan-violet` | `#07152f` `#16d9ff` `#7657ff` `#e34cff` | Dark tech, vibrant neon |
+| `cream-emerald` | `#f7f0df` `#0b4f3f` `#23a477` `#d6b85f` | Warm, organic, premium |
+| `charcoal-gold-teal` | `#101515` `#e7b94d` `#38d6c5` `#f7f4e8` | Luxe, dark with gold |
+| `soft-blue-pink` | `#dcecff` `#3578ff` `#8e5cff` `#f275d4` | Light, playful, modern |
+| `warm-coral-amber` | `#fff2e6` `#ff6b4a` `#ffad4d` `#164b62` | Warm, energetic, bold |
+| `indigo-lime` | `#17163b` `#6874ff` `#b7e54a` `#eaf7ff` | Dark indigo, lime pop |
+| `auto` | (varies) | Picks a palette automatically; avoids the previous run's palette |
+
+**Custom size note:** The image generation API requires both width and height
+to be divisible by 16. If you pass a size that isn't (e.g. `1279x720`), the
+agent snaps each dimension to the nearest multiple of 16 (e.g. `1280x720`)
+and validates with a 16px tolerance.
 
 ---
 
@@ -148,13 +193,15 @@ All options are optional. The agent parses them from your message text.
 
 | Preset | Canvas | Good for |
 |---|---|---|
-| `linkedin-article` | `1279 × 720` | **Default.** LinkedIn article cover |
-| `linkedin-profile` | `1584 × 396` | Profile background banner |
-| `linkedin-post` | `1200 × 627` | Feed post image |
-| `carousel` | `1080 × 1350` | Carousel slide |
-| `square` | `1080 × 1080` | Square social post |
+| `linkedin-article` | `1280 × 720` | **Default.** LinkedIn article cover |
+| `linkedin-profile` | `1584 × 400` | Profile background banner |
+| `linkedin-post` | `1200 × 624` | Feed post image |
+| `carousel` | `1088 × 1344` | Carousel slide |
+| `square` | `1088 × 1088` | Square social post |
 
-Use an explicit `size=1040x660` to override the preset.
+Dimensions are divisible by 16 for image API compatibility. Use an explicit
+`size=1040x660` to override the preset (values are snapped to the nearest
+multiple of 16 automatically).
 
 ---
 
@@ -258,19 +305,17 @@ runs/
 ## Build
 
 ```bash
-# From the repo root
-npm run build:linkedin
-
-# Or from the agent folder
-cd agents/linkedin-cover-generator
-npm run build
+# From the agent folder
+nvm use 24
+npx eve build
 ```
 
 ## Typecheck
 
 ```bash
-# From the repo root
-npm run typecheck:linkedin
+# From the agent folder
+nvm use 24
+npx tsgo
 ```
 
 ---
