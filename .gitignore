@@ -30,6 +30,9 @@ yarn-error.log*
 agents/*/.env
 agents/*/.env*.local
 
+# node_modules (per-agent)
+agents/*/node_modules
+
 # vercel
 .vercel
 
@@ -58,3 +61,7 @@ agents/diagram-generator/agent/subagents/*/sandbox/workspace/runs/*
 # linkedin-cover run outputs (keep .gitkeep)
 agents/linkedin-cover-generator/agent/sandbox/workspace/runs/*
 !agents/linkedin-cover-generator/agent/sandbox/workspace/runs/.gitkeep
+
+# sandbox workspace inputs (user-provided, not tracked)
+**/sandbox/workspace/inputs/*.md
+agents/*/agent/sandbox/workspace/inputs/*.md
