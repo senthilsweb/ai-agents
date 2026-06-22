@@ -6,22 +6,25 @@ Create a pull-request activity report for the requested repositories and UTC dat
 
 1. Call `resolve_report_request` exactly once.
 2. Call `create_run` exactly once with the resolved `from`, `to`, and `repositories`.
-3. For each resolved repository, invoke `repository-scout` exactly once with this short task:
+3. For each resolved repository, invoke `repository-scout` exactly once with:
 
    `Collect pull requests for <repository> from <from> to <toExclusive> with state <state>.`
 
-   Replace every placeholder with the exact values returned by `resolve_report_request`.
+   Replace every placeholder with the exact resolved value.
 
-4. Run repository-scout calls in parallel when possible.
-5. Wait for every scout to finish.
-6. Invoke `digest-reporter` exactly once with a compact JSON object containing:
-   - `from`: the requested start date
-   - `to`: the requested end date
-   - `repositories`: the resolved repository array
-   - `results`: all successful scout results
-   - `errors`: all failed scout results
-7. The reporter result must be non-empty Markdown beginning with `# GitHub Pull Request Digest`.
-8. Save the reporter Markdown with `write_run_file` at:
+4. Run scout calls in parallel when possible and wait for all of them.
+5. Invoke `digest-reporter` exactly once with a compact JSON object containing:
+   - `from`: resolved requested start date
+   - `to`: resolved requested end date
+   - `repositories`: resolved repository array
+   - `results`: successful scout results
+   - `errors`: failed scout results
+6. The reporter response must:
+   - begin with `# GitHub Pull Request Digest`
+   - contain `## Summary`
+   - contain `## Repository Activity`
+7. If the reporter response fails those checks, do not save it; report a reporter failure.
+8. Save the exact valid reporter response with `write_run_file` at:
 
    `<relativeRunDirectory>/report.md`
 
@@ -31,11 +34,9 @@ Create a pull-request activity report for the requested repositories and UTC dat
 
 - Never call GitHub directly.
 - Never invoke more than one scout per repository.
-- Never call a scout without repository and date values.
-- Never treat a failed scout as zero activity.
 - Never invoke the reporter more than once.
-- Never save `{}` or an empty reporter result.
-- Never write to a shared `runs/report.md` path.
+- Never treat a failed scout as zero activity.
+- Never save `{}`, an empty string, or a heading-only report.
+- Never write to `runs/report.md`.
 - Use only the timestamped directory returned by `create_run`.
-- Do not include commits, issues, reviews, releases, or diff analysis.
-- Keep delegation tasks short.
+- Keep subagent tasks short.
