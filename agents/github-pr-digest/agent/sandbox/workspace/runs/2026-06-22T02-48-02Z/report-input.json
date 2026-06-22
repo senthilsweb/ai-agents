@@ -1,0 +1,111 @@
+{
+  "runId": "2026-06-22T02-48-02Z",
+  "from": "2026-06-21T00:00:00.000Z",
+  "to": "2026-06-23T00:00:00.000Z",
+  "repositories": [
+    "senthilsweb/ai-agents"
+  ],
+  "results": [
+    {
+      "repository": "senthilsweb/ai-agents",
+      "interval": {
+        "from": "2026-06-21T00:00:00.000Z",
+        "toExclusive": "2026-06-23T00:00:00.000Z"
+      },
+      "counts": {
+        "total": 5,
+        "open": 5,
+        "closed": 0,
+        "merged": 0,
+        "draft": 0
+      },
+      "pullRequests": [
+        {
+          "number": 5,
+          "title": "Test PR 5",
+          "url": "https://github.com/senthilsweb/ai-agents/pull/5",
+          "state": "open",
+          "draft": false,
+          "author": "senthilsweb",
+          "createdAt": "2026-06-22T01:15:58Z",
+          "updatedAt": "2026-06-22T01:15:58Z",
+          "closedAt": null,
+          "mergedAt": null,
+          "events": [
+            "created",
+            "updated"
+          ]
+        },
+        {
+          "number": 4,
+          "title": "Test PR 4",
+          "url": "https://github.com/senthilsweb/ai-agents/pull/4",
+          "state": "open",
+          "draft": false,
+          "author": "senthilsweb",
+          "createdAt": "2026-06-22T01:15:55Z",
+          "updatedAt": "2026-06-22T01:15:55Z",
+          "closedAt": null,
+          "mergedAt": null,
+          "events": [
+            "created",
+            "updated"
+          ]
+        },
+        {
+          "number": 3,
+          "title": "Test PR 3",
+          "url": "https://github.com/senthilsweb/ai-agents/pull/3",
+          "state": "open",
+          "draft": false,
+          "author": "senthilsweb",
+          "createdAt": "2026-06-22T01:15:53Z",
+          "updatedAt": "2026-06-22T01:15:53Z",
+          "closedAt": null,
+          "mergedAt": null,
+          "events": [
+            "created",
+            "updated"
+          ]
+        },
+        {
+          "number": 2,
+          "title": "Test PR 2",
+          "url": "https://github.com/senthilsweb/ai-agents/pull/2",
+          "state": "open",
+          "draft": false,
+          "author": "senthilsweb",
+          "createdAt": "2026-06-22T01:15:50Z",
+          "updatedAt": "2026-06-22T01:15:50Z",
+          "closedAt": null,
+          "mergedAt": null,
+          "events": [
+            "created",
+            "updated"
+          ]
+        },
+        {
+          "number": 1,
+          "title": "Test PR 1",
+          "url": "https://github.com/senthilsweb/ai-agents/pull/1",
+          "state": "open",
+          "draft": false,
+          "author": "senthilsweb",
+          "createdAt": "2026-06-22T01:15:48Z",
+          "updatedAt": "2026-06-22T01:15:48Z",
+          "closedAt": null,
+          "mergedAt": null,
+          "events": [
+            "created",
+            "updated"
+          ]
+        }
+      ],
+      "diagnostics": {
+        "pagesFetched": 1,
+        "fetched": 5
+      }
+    }
+  ],
+  "errors": []
+}
