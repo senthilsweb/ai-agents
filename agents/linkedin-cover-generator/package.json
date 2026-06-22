@@ -19,8 +19,7 @@
     "typecheck": "tsgo"
   },
   "dependencies": {
-    "@ai-sdk/openai": "4.0.0-beta.75",
-    "@ai-sdk/openai-compatible": "3.0.0-beta.57",
+    "@ai-sdk/openai-compatible": "^2.0.51",
     "@mozilla/readability": "^0.6.0",
     "ai": "7.0.0-beta.178",
     "eve": "^0.11.7",
