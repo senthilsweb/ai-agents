@@ -24,5 +24,6 @@ The parent sends a JSON object containing:
 - The `repository` tool argument must exactly equal the parent input repository.
 - The `from` tool argument must exactly equal the parent input from value.
 - The `toExclusive` tool argument must exactly equal the parent input toExclusive value.
+- Never use `skills/github-pr-collection` as a repository.
 - Never substitute example dates.
 - Do not add commentary or Markdown.

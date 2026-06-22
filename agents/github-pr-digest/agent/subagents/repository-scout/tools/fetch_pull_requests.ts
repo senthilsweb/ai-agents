@@ -7,47 +7,94 @@ interface GitHubPull {
   html_url: string;
   state: "open" | "closed";
   draft: boolean;
-  user: { login: string } | null;
+  user: {
+    login: string;
+  } | null;
   created_at: string;
   updated_at: string;
   closed_at: string | null;
   merged_at: string | null;
-  base: { ref: string };
-  head: { ref: string };
-  labels: Array<{ name: string }>;
 }
 
-function inRange(value: string | null, fromMs: number, toMs: number): boolean {
-  if (!value) return false;
-  const time = Date.parse(value);
-  return Number.isFinite(time) && time >= fromMs && time < toMs;
+const inputSchema = z.object({
+  repository: z
+    .string()
+    .regex(
+      /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/,
+      "Repository must use owner/repository format.",
+    ),
+  from: z.string().datetime(),
+  toExclusive: z.string().datetime(),
+  state: z.enum(["all", "open", "closed"]).default("all"),
+});
+
+function isInRange(
+  value: string | null,
+  fromMilliseconds: number,
+  toExclusiveMilliseconds: number,
+): boolean {
+  if (!value) {
+    return false;
+  }
+
+  const timestamp = Date.parse(value);
+
+  return (
+    Number.isFinite(timestamp) &&
+    timestamp >= fromMilliseconds &&
+    timestamp < toExclusiveMilliseconds
+  );
+}
+
+function getErrorMessage(status: number, body: string): string {
+  try {
+    const parsed = JSON.parse(body) as {
+      message?: string;
+    };
+
+    if (parsed.message) {
+      return parsed.message;
+    }
+  } catch {
+    // Use the truncated response body below.
+  }
+
+  return body.slice(0, 300) || `HTTP ${status}`;
 }
 
 export default defineTool({
   description:
-    "Fetch, paginate, date-filter, normalize, and count pull requests for one GitHub repository. Requires GITHUB_TOKEN.",
-  inputSchema: z.object({
-    repository: z.string().regex(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/),
-    from: z.string().datetime(),
-    toExclusive: z.string().datetime(),
-    state: z.enum(["all", "open", "closed"]).default("all"),
-  }),
+    "Fetch and normalize pull-request activity for exactly one GitHub repository and UTC interval.",
+
+  inputSchema,
+
   async execute({ repository, from, toExclusive, state }) {
     const token = process.env.GITHUB_TOKEN;
-    if (!token) throw new Error("GITHUB_TOKEN is required.");
 
-    const fromMs = Date.parse(from);
-    const toMs = Date.parse(toExclusive);
-    if (!Number.isFinite(fromMs) || !Number.isFinite(toMs) || toMs <= fromMs) {
+    if (!token) {
+      throw new Error("GITHUB_TOKEN is required.");
+    }
+
+    const fromMilliseconds = Date.parse(from);
+    const toExclusiveMilliseconds = Date.parse(toExclusive);
+
+    if (
+      !Number.isFinite(fromMilliseconds) ||
+      !Number.isFinite(toExclusiveMilliseconds) ||
+      toExclusiveMilliseconds <= fromMilliseconds
+    ) {
       throw new Error("Invalid report interval.");
     }
 
-    const pulls: GitHubPull[] = [];
-    const maxPages = 5;
+    const fetchedPullRequests: GitHubPull[] = [];
+    const maximumPages = 5;
     let pagesFetched = 0;
 
-    for (let page = 1; page <= maxPages; page += 1) {
-      const url = new URL(`https://api.github.com/repos/${repository}/pulls`);
+    for (let page = 1; page <= maximumPages; page += 1) {
+      const url = new URL(
+        `https://api.github.com/repos/${repository}/pulls`,
+      );
+
       url.searchParams.set("state", state);
       url.searchParams.set("sort", "updated");
       url.searchParams.set("direction", "desc");
@@ -64,70 +111,144 @@ export default defineTool({
       });
 
       if (!response.ok) {
-        const body = (await response.text()).slice(0, 500);
-        throw new Error(`GitHub API ${response.status} for ${repository}: ${body}`);
+        const body = await response.text();
+        const message = getErrorMessage(response.status, body);
+
+        throw new Error(
+          `GitHub API ${response.status} for ${repository}: ${message}`,
+        );
       }
 
-      const pageItems = (await response.json()) as GitHubPull[];
-      pagesFetched += 1;
-      pulls.push(...pageItems);
-      if (pageItems.length < 100) break;
+      const pagePullRequests = (await response.json()) as GitHubPull[];
 
-      const oldestUpdated = Math.min(...pageItems.map((pr) => Date.parse(pr.updated_at)));
-      if (oldestUpdated < fromMs) break;
+      pagesFetched += 1;
+      fetchedPullRequests.push(...pagePullRequests);
+
+      if (pagePullRequests.length < 100) {
+        break;
+      }
+
+      const oldestUpdatedAt = Math.min(
+        ...pagePullRequests.map((pullRequest) =>
+          Date.parse(pullRequest.updated_at),
+        ),
+      );
+
+      if (
+        Number.isFinite(oldestUpdatedAt) &&
+        oldestUpdatedAt < fromMilliseconds
+      ) {
+        break;
+      }
     }
 
-    const selected = pulls
-      .filter((pr) =>
-        [pr.created_at, pr.updated_at, pr.closed_at, pr.merged_at].some((value) =>
-          inRange(value, fromMs, toMs),
+    const pullRequests = fetchedPullRequests
+      .filter((pullRequest) =>
+        [
+          pullRequest.created_at,
+          pullRequest.updated_at,
+          pullRequest.closed_at,
+          pullRequest.merged_at,
+        ].some((timestamp) =>
+          isInRange(
+            timestamp,
+            fromMilliseconds,
+            toExclusiveMilliseconds,
+          ),
         ),
       )
-      .map((pr) => {
-        const events = [
-          ["created", pr.created_at],
-          ["updated", pr.updated_at],
-          ["closed", pr.closed_at],
-          ["merged", pr.merged_at],
-        ]
-          .filter(([, value]) => inRange(value, fromMs, toMs))
-          .map(([name]) => name);
+      .map((pullRequest) => {
+        const events: string[] = [];
+
+        if (
+          isInRange(
+            pullRequest.created_at,
+            fromMilliseconds,
+            toExclusiveMilliseconds,
+          )
+        ) {
+          events.push("created");
+        }
+
+        if (
+          isInRange(
+            pullRequest.updated_at,
+            fromMilliseconds,
+            toExclusiveMilliseconds,
+          )
+        ) {
+          events.push("updated");
+        }
+
+        if (
+          isInRange(
+            pullRequest.closed_at,
+            fromMilliseconds,
+            toExclusiveMilliseconds,
+          )
+        ) {
+          events.push("closed");
+        }
+
+        if (
+          isInRange(
+            pullRequest.merged_at,
+            fromMilliseconds,
+            toExclusiveMilliseconds,
+          )
+        ) {
+          events.push("merged");
+        }
 
         return {
-          number: pr.number,
-          title: pr.title,
-          url: pr.html_url,
-          state: pr.merged_at ? "merged" : pr.state,
-          draft: pr.draft,
-          author: pr.user?.login ?? "unknown",
-          base: pr.base.ref,
-          head: pr.head.ref,
-          labels: pr.labels.map((label) => label.name),
-          createdAt: pr.created_at,
-          updatedAt: pr.updated_at,
-          closedAt: pr.closed_at,
-          mergedAt: pr.merged_at,
+          number: pullRequest.number,
+          title: pullRequest.title,
+          url: pullRequest.html_url,
+          state: pullRequest.merged_at
+            ? ("merged" as const)
+            : pullRequest.state,
+          draft: pullRequest.draft,
+          author: pullRequest.user?.login ?? "unknown",
+          createdAt: pullRequest.created_at,
+          updatedAt: pullRequest.updated_at,
+          closedAt: pullRequest.closed_at,
+          mergedAt: pullRequest.merged_at,
           events,
         };
       })
-      .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+      .sort(
+        (left, right) =>
+          Date.parse(right.updatedAt) - Date.parse(left.updatedAt),
+      );
 
     const counts = {
-      total: selected.length,
-      open: selected.filter((pr) => pr.state === "open").length,
-      closed: selected.filter((pr) => pr.state === "closed").length,
-      merged: selected.filter((pr) => pr.state === "merged").length,
-      draft: selected.filter((pr) => pr.draft).length,
+      total: pullRequests.length,
+      open: pullRequests.filter(
+        (pullRequest) => pullRequest.state === "open",
+      ).length,
+      closed: pullRequests.filter(
+        (pullRequest) => pullRequest.state === "closed",
+      ).length,
+      merged: pullRequests.filter(
+        (pullRequest) => pullRequest.state === "merged",
+      ).length,
+      draft: pullRequests.filter(
+        (pullRequest) => pullRequest.draft,
+      ).length,
     };
 
     return {
       repository,
-      interval: { from, toExclusive },
-      stateFilter: state,
-      pagesFetched,
-      fetched: pulls.length,
+      interval: {
+        from,
+        toExclusive,
+      },
       counts,
-      pullRequests: selected,
+      pullRequests,
+      diagnostics: {
+        pagesFetched,
+        fetched: fetchedPullRequests.length,
+      },
     };
   },
 });
