@@ -8,13 +8,15 @@ const inputSchema = z.object({
   path: z
     .string()
     .min(1)
-    .describe("Relative output path, for example runs/report.md"),
+    .describe(
+      "Timestamped relative output path, for example runs/2026-06-22T02-15-30Z/report.md",
+    ),
   content: z.string(),
 });
 
 export default defineTool({
   description:
-    "Write a report into the Eve sandbox and mirror it into the local host workspace.",
+    "Write a run artifact into the Eve sandbox and mirror it into the host workspace.",
 
   inputSchema,
 
@@ -25,22 +27,16 @@ export default defineTool({
 
     if (
       normalizedPath.includes("..") ||
-      !normalizedPath.startsWith("runs/")
+      !/^runs\/[^/]+\/.+/.test(normalizedPath)
     ) {
       throw new Error(
-        "Output path must be underneath runs/ and must not contain '..'.",
+        "Output path must be inside a timestamped runs/<run-id>/ directory.",
       );
     }
 
-    /*
-     * 1. Write inside the Eve sandbox.
-     */
     const sandbox = await ctx.getSandbox();
     const sandboxPath = `/workspace/${normalizedPath}`;
-    const sandboxDirectory = sandboxPath.slice(
-      0,
-      sandboxPath.lastIndexOf("/"),
-    );
+    const sandboxDirectory = path.posix.dirname(sandboxPath);
 
     await sandbox.run({
       command: `mkdir -p ${JSON.stringify(sandboxDirectory)}`,
@@ -51,41 +47,22 @@ export default defineTool({
       content,
     });
 
-    /*
-     * 2. Mirror to the local host.
-     *
-     * Run Eve from the github-pr-digest project root, or explicitly set
-     * HOST_REPORT_ROOT to that project directory.
-     */
-    const projectRoot =
-      process.env.HOST_REPORT_ROOT ?? process.cwd();
-
+    const projectRoot = process.env.HOST_REPORT_ROOT ?? process.cwd();
     const hostWorkspaceRoot = path.resolve(
       projectRoot,
       "agent",
       "sandbox",
       "workspace",
     );
+    const hostPath = path.resolve(hostWorkspaceRoot, normalizedPath);
 
-    const hostPath = path.resolve(
-      hostWorkspaceRoot,
-      normalizedPath,
-    );
-
-    /*
-     * Prevent paths from escaping the expected host workspace.
-     */
-    if (
-      hostPath !== hostWorkspaceRoot &&
-      !hostPath.startsWith(`${hostWorkspaceRoot}${path.sep}`)
-    ) {
+    if (!hostPath.startsWith(`${hostWorkspaceRoot}${path.sep}`)) {
       throw new Error("Resolved host path escapes the workspace.");
     }
 
     await mkdir(path.dirname(hostPath), {
       recursive: true,
     });
-
     await writeFile(hostPath, content, "utf8");
 
     return {

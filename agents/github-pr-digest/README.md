@@ -64,13 +64,11 @@ npm run dev
 After changing agent tools, instructions, or sandbox configuration, clear Eve's generated runtime:
 
 ```bash
+export HOST_REPORT_ROOT="$PWD"
 rm -rf .eve
-
-docker ps -aq \
-  --filter "name=eve-sbx-ses-docker" |
-xargs -r docker rm -f
-
-nvm use v24.17.0 && npx eve dev --port 3535
+docker ps -aq --filter "name=eve-sbx-ses-docker" | xargs -r docker rm -f
+nvm use v24.17.0
+npx eve dev --port 3535
 ```
 
 ## Example prompts

@@ -1,4 +1,4 @@
-import { mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { defineTool } from "eve/tools";
@@ -19,7 +19,7 @@ function createRunId(): string {
 
 export default defineTool({
   description:
-    "Create one unique timestamped run directory for a GitHub PR digest.",
+    "Create one timestamped run directory and write request.json to the sandbox and host workspace.",
 
   inputSchema,
 
@@ -36,9 +36,7 @@ export default defineTool({
       )}`,
     });
 
-    const projectRoot =
-      process.env.HOST_REPORT_ROOT ?? process.cwd();
-
+    const projectRoot = process.env.HOST_REPORT_ROOT ?? process.cwd();
     const hostRunDirectory = path.resolve(
       projectRoot,
       "agent",
@@ -47,12 +45,9 @@ export default defineTool({
       relativeRunDirectory,
     );
 
-    await mkdir(
-      path.join(hostRunDirectory, "repositories"),
-      {
-        recursive: true,
-      },
-    );
+    await mkdir(path.join(hostRunDirectory, "repositories"), {
+      recursive: true,
+    });
 
     const request = {
       runId,
@@ -68,8 +63,6 @@ export default defineTool({
       path: `${sandboxRunDirectory}/request.json`,
       content: requestJson,
     });
-
-    const { writeFile } = await import("node:fs/promises");
 
     await writeFile(
       path.join(hostRunDirectory, "request.json"),
