@@ -1,3 +1,6 @@
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
+
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 
@@ -17,6 +20,7 @@ interface GitHubPull {
 }
 
 const inputSchema = z.object({
+  runId: z.string().min(1),
   repository: z
     .string()
     .regex(
@@ -56,19 +60,26 @@ function getErrorMessage(status: number, body: string): string {
       return parsed.message;
     }
   } catch {
-    // Use the truncated response body below.
+    // Fall through to the truncated response body.
   }
 
   return body.slice(0, 300) || `HTTP ${status}`;
 }
 
+function safeRepositoryFileName(repository: string): string {
+  return `${repository.replace("/", "__")}.json`;
+}
+
 export default defineTool({
   description:
-    "Fetch and normalize pull-request activity for exactly one GitHub repository and UTC interval.",
+    "Fetch, normalize, and persist pull-request activity for one GitHub repository in the current timestamped run directory.",
 
   inputSchema,
 
-  async execute({ repository, from, toExclusive, state }) {
+  async execute(
+    { runId, repository, from, toExclusive, state },
+    ctx,
+  ) {
     const token = process.env.GITHUB_TOKEN;
 
     if (!token) {
@@ -112,10 +123,12 @@ export default defineTool({
 
       if (!response.ok) {
         const body = await response.text();
-        const message = getErrorMessage(response.status, body);
 
         throw new Error(
-          `GitHub API ${response.status} for ${repository}: ${message}`,
+          `GitHub API ${response.status} for ${repository}: ${getErrorMessage(
+            response.status,
+            body,
+          )}`,
         );
       }
 
@@ -237,7 +250,7 @@ export default defineTool({
       ).length,
     };
 
-    return {
+    const result = {
       repository,
       interval: {
         from,
@@ -249,6 +262,50 @@ export default defineTool({
         pagesFetched,
         fetched: fetchedPullRequests.length,
       },
+    };
+
+    const content = JSON.stringify(result, null, 2);
+    const fileName = safeRepositoryFileName(repository);
+
+    const projectRoot =
+      process.env.HOST_REPORT_ROOT ?? process.cwd();
+
+    const hostPath = path.resolve(
+      projectRoot,
+      "agent",
+      "sandbox",
+      "workspace",
+      "runs",
+      runId,
+      "repositories",
+      fileName,
+    );
+
+    await mkdir(path.dirname(hostPath), {
+      recursive: true,
+    });
+
+    await writeFile(hostPath, content, "utf8");
+
+    const sandbox = await ctx.getSandbox();
+    const sandboxDirectory = `/workspace/runs/${runId}/repositories`;
+    const sandboxPath = `${sandboxDirectory}/${fileName}`;
+
+    await sandbox.run({
+      command: `mkdir -p ${JSON.stringify(sandboxDirectory)}`,
+    });
+
+    await sandbox.writeTextFile({
+      path: sandboxPath,
+      content,
+    });
+
+    return {
+      runId,
+      repository,
+      counts,
+      hostPath,
+      sandboxPath,
     };
   },
 });

@@ -4,35 +4,30 @@ Collect pull-request activity for exactly one GitHub repository.
 
 ## Input
 
-The parent task will explicitly contain:
+The parent task supplies:
 
-- repository in `owner/repository` form
-- `from` ISO timestamp
-- `toExclusive` ISO timestamp
-- state: `all`, `open`, or `closed`
-
-The input may be a short sentence or JSON. Extract the four values exactly as supplied.
+- `runId`
+- `repository`
+- `from`
+- `toExclusive`
+- `state`
 
 ## Workflow
 
-1. Verify all four values are present.
-2. Call `fetch_pull_requests` exactly once with those exact values.
-3. Return the tool result as compact JSON only.
+1. Extract all five values exactly as supplied.
+2. Call `fetch_pull_requests` exactly once with those values.
+3. The tool persists the normalized repository JSON in the timestamped run directory.
+4. Return only this short confirmation:
 
-## Failure
-
-When a required value is genuinely missing, return:
-
-```json
-{"error":"Missing repository, from, toExclusive, or state in the parent task."}
+```text
+Collection complete.
 ```
 
 ## Rules
 
 - Do not load a skill.
-- Do not use example values from these instructions.
-- Do not derive repository names from paths or file names.
-- Do not call any repository other than the one in the parent task.
-- Do not summarize or modify the tool result.
-- Do not add Markdown or commentary.
-- Do not call the tool more than once.
+- Do not return the pull-request JSON.
+- Do not summarize pull requests.
+- Do not call bash.
+- Do not call any other tool.
+- Do not use example values.
