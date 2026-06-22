@@ -1,17 +1,13 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
-import { readFileSync, existsSync, readdirSync } from "node:fs";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
-import { modelIdFor, MODEL_ORCHESTRATOR } from "#lib/model.js";
-
-const USAGE_DIR = join(tmpdir(), "eve-usage");
+import { modelIdFor } from "shared/lib/model.js";
+import { readUsage } from "shared/lib/usage.js";
 
 export default defineTool({
   description:
     "Write the orchestrate phase trace by reading current token usage and " +
     "writing it to <run_dir>/phases/orchestrate.json. Call this after " +
-    "validate_image, before delegating to the reporter. Pass the started_at " +
+    "validate_image, before rendering the report. Pass the started_at " +
     "timestamp from create_run's return value.",
   inputSchema: z.object({
     run_dir: z.string().describe("The run directory, e.g. runs/2026-06-21T17-09-53Z"),
@@ -24,26 +20,13 @@ export default defineTool({
       (Date.now() - new Date(started_at).getTime()) / 1000,
     );
 
-    // Read usage for current session
-    const current_session_id = ctx.session.id;
-    let inputTokens = 0;
-    let outputTokens = 0;
-    let source = "runtime";
+    // Read usage for the current (orchestrator) session from the shared store.
+    const usage = readUsage(ctx.session.id);
+    const inputTokens = usage?.inputTokens ?? 0;
+    const outputTokens = usage?.outputTokens ?? 0;
+    const source = usage ? "runtime" : "unavailable";
 
-    if (existsSync(USAGE_DIR)) {
-      const p = join(USAGE_DIR, `${current_session_id}.json`);
-      if (existsSync(p)) {
-        const data = JSON.parse(readFileSync(p, "utf8"));
-        inputTokens = data.inputTokens ?? 0;
-        outputTokens = data.outputTokens ?? 0;
-      } else {
-        source = "unavailable";
-      }
-    } else {
-      source = "unavailable";
-    }
-
-    const model = modelIdFor(MODEL_ORCHESTRATOR);
+    const model = modelIdFor("orchestrator");
     const trace = {
       phase: "orchestrate",
       model,

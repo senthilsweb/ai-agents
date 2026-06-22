@@ -4,8 +4,7 @@
   "private": true,
   "type": "module",
   "imports": {
-    "#*": "./agent/*",
-    "#lib/model.js": "./agent/lib/model.ts"
+    "#*": "./agent/*"
   },
   "scripts": {
     "build": "eve build",
@@ -17,6 +16,7 @@
     "@ai-sdk/openai-compatible": "3.0.0-beta.57",
     "ai": "7.0.0-beta.178",
     "eve": "^0.11.7",
+    "shared": "*",
     "zod": "4.4.3"
   },
   "devDependencies": {

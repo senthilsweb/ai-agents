@@ -44,13 +44,19 @@ Load the `design_system` skill and follow it exactly. Non-negotiables:
 Write the file to `<out_name>[-<variation>].html` in your sandbox via
 `write_run_file`. For the `default` variation, omit the `-<variation>` suffix.
 
-### 3 — Self-verify (mandatory)
+### 3 — Self-verify (mandatory, bounded)
 Render headless and inspect the screenshot before returning. Call the
 `render_screenshot` tool with the html path; it returns the preview png path.
 Inspect for: empty icon chips (icon name wrong -> fix + re-inline), text
 overflow/clipping, connectors landing in the wrong place or pointing the wrong
 way, overlapping zones, weak contrast, and fidelity to the reference image. Fix
-and re-render. Cap at ~4 iterations; track the count.
+and re-render.
+
+**Hard iteration ceiling.** Cap self-verify at `RENDER_MAX_ITERATIONS`
+(default 4) screenshot passes and stay within the `RENDER_WALL_CLOCK_BUDGET_S`
+(default 240s) per-render budget. Track the count. When you hit either limit,
+**stop iterating**, keep your best HTML, and record `qc.passed: false` with the
+remaining issues in `qc.notes` — never loop indefinitely chasing perfection.
 
 ### 4 — Emit the phase trace
 Write `phases/render-<variation>.json` via `write_run_file` using the phase-trace

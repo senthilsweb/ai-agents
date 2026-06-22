@@ -1,22 +1,23 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
-import { writeFileSync, mkdirSync, existsSync } from "node:fs";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
-import { modelIdFor, MODEL_ORCHESTRATOR, MODEL_RENDERER, MODEL_REPORTER } from "#lib/model.js";
 
-const USAGE_DIR = join(tmpdir(), "eve-usage");
+import { modelIdFor } from "shared/lib/model.js";
+import {
+  createRunId,
+  ensureRunDirs,
+  hostRunDir,
+  runRelativeDir,
+  sandboxRunDir,
+  writeRunArtifact,
+} from "shared/lib/run.js";
+import { sweepIdleSandboxContainers } from "shared/lib/sandbox-cleanup.js";
 
 export default defineTool({
   description:
-    "Create a timestamped run folder for a diagram run and return its path. " +
-    "Makes <run_root>/<UTC-timestamp>/phases/ inside the sandbox workspace and " +
+    "Create a timestamped run folder for a diagram run (mirrored to host + " +
+    "sandbox) and return its path. Makes runs/<UTC-timestamp>/phases/ and " +
     "records the start epoch. Call this FIRST, before any other run work.",
   inputSchema: z.object({
-    run_root: z
-      .string()
-      .default("runs")
-      .describe("Where to create the run folder, relative to the workspace (default 'runs')."),
     request: z
       .string()
       .describe("A short summary of the user's request, stored in run-meta.json."),
@@ -25,41 +26,42 @@ export default defineTool({
       .default({})
       .describe("The resolved run options (theme, variations, genericize, allow_cost, ...)."),
   }),
-  async execute({ run_root, request, options }, ctx) {
-    const sandbox = await ctx.getSandbox();
-    const tsRes = await sandbox.run({ command: "date -u +%Y-%m-%dT%H-%M-%SZ" });
-    const run_id = tsRes.stdout.trim();
-    const epochRes = await sandbox.run({ command: "date -u +%s" });
-    const start_epoch = epochRes.stdout.trim();
-    const run_dir = `${run_root}/${run_id}`;
+  async execute({ request, options }, ctx) {
+    // Reap stopped sandbox containers left by previous runs before starting.
+    await sweepIdleSandboxContainers();
 
-    await sandbox.run({ command: `mkdir -p "${run_dir}/phases"` });
+    const runId = createRunId();
+    const startedAt = new Date().toISOString();
+    const startEpoch = Math.floor(Date.parse(startedAt) / 1000);
+
+    await ensureRunDirs(ctx, runId, ["phases"]);
 
     const meta = {
-      run_id,
-      started_at: run_id,
+      run_id: runId,
+      started_at: startedAt,
+      start_epoch: startEpoch,
       request,
       options,
       models: {
-        orchestrator: modelIdFor(MODEL_ORCHESTRATOR),
-        renderer: modelIdFor(MODEL_RENDERER),
-        reporter: modelIdFor(MODEL_REPORTER),
+        orchestrator: modelIdFor("orchestrator"),
+        renderer: modelIdFor("renderer"),
       },
       host: "eve",
     };
-    await sandbox.writeTextFile({
-      path: `${run_dir}/run-meta.json`,
-      content: JSON.stringify(meta, null, 2) + "\n",
-    });
-
-    // Write a session→run mapping so the usage hook and read_usage tool can
-    // correlate sessions to runs.
-    if (!existsSync(USAGE_DIR)) mkdirSync(USAGE_DIR, { recursive: true });
-    writeFileSync(
-      join(USAGE_DIR, `run-${ctx.session.id}.json`),
-      JSON.stringify({ run_dir, run_id, session_id: ctx.session.id }, null, 2),
+    await writeRunArtifact(
+      ctx,
+      runId,
+      "run-meta.json",
+      JSON.stringify(meta, null, 2) + "\n",
     );
 
-    return { run_dir, run_id, start_epoch };
+    return {
+      run_dir: runRelativeDir(runId),
+      run_id: runId,
+      sandbox_run_dir: sandboxRunDir(runId),
+      host_run_dir: hostRunDir(runId),
+      started_at: startedAt,
+      start_epoch: startEpoch,
+    };
   },
 });

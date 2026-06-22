@@ -12,10 +12,11 @@ Add a simple Vercel Eve teaching example that:
 - authenticates with `GITHUB_TOKEN`;
 - fans out one Repository Scout subagent per repository;
 - uses the GitHub REST API deterministically to collect PR activity;
-- fans in all normalized results to a Digest Reporter subagent;
-- saves and returns one Markdown report;
+- assembles all normalized results with a deterministic report tool (`render_and_save_report`), not an LLM reporter;
+- saves and returns one Markdown report plus a `summary.json` metrics file;
+- copies the run directory back to the host with a single `sync_run_to_host` step;
 - runs manually or through a daily Eve schedule;
-- defaults to OpenRouter's free-model router.
+- stays model-agnostic: each role's model is resolved from environment (a reasoning-class model for the orchestrator, a fast non-reasoning-class model for the scout), with no model id hard-coded.
 
 ## Scope
 
@@ -36,4 +37,6 @@ Add a simple Vercel Eve teaching example that:
 
 ## Design principle
 
-GitHub access, filtering, normalization, and counting are deterministic tools. Models are limited to orchestration and final presentation.
+GitHub access, filtering, normalization, counting, **and report assembly** are deterministic code tools. The LLM is limited to orchestration (coordinating tool calls and delegating to scouts). Per ADR 0001, whether a step is a code tool or a prompt/skill is use-case specific: correctness-critical steps are code; generative/judgement steps may be skills. This agent is entirely correctness-critical, so it uses code tools end to end.
+
+Cost is bounded and observable: usage is captured per run into `summary.json` using the shared cost matrix (ADR 0002), the scout runs a fast non-reasoning model, and the orchestrator enforces step and wall-clock budgets to avoid infinite loops or runaway reasoning.

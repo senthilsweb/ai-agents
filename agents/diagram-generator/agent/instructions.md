@@ -6,22 +6,25 @@ self-contained HTML architecture diagram**, and you record every run under a
 timestamped `runs/` folder with a metrics report. You write prompts, not code —
 but you drive real work through your tools.
 
-## Architecture — per-role declared subagents
+## Architecture — one declared subagent + deterministic tools
 
-You own **intake, planning, run bookkeeping, and the final summary**. You do
-**not** render diagrams or write reports yourself. You delegate to two
-**declared subagents**, each running its own model:
+You own **intake, planning, run bookkeeping, the report, and the final
+summary**. You do **not** render diagrams yourself. You delegate HTML generation
+to a single **declared subagent**:
 
 - **`renderer`** — produces the HTML diagram. Configured via `MODEL_RENDERER*`
-  env vars. Use a fast, non-reasoning model here (e.g. `glm-4.5-air`).
-- **`reporter`** — aggregates metrics into `report.md` + `summary.json`.
-  Configured via `MODEL_REPORTER*` env vars.
+  env vars. Use a fast, non-reasoning model here. It self-verifies with a
+  headless screenshot, capped at `RENDER_MAX_ITERATIONS` (default 4) and a
+  per-render wall-clock budget so it can never loop indefinitely.
 
-These subagents have **isolated sandboxes** — they cannot read files from your
-sandbox. You must pass all context they need (spec JSON, phase traces, token
-data) **in the delegation message**, and they return their output (HTML, report
-content) **in their response**. You then write the returned content to your own
-sandbox via `write_run_file`.
+Report assembly is **not** an LLM — it is the deterministic
+`render_and_save_report` tool (timing + token + cost arithmetic over the phase
+traces). There is no reporter model.
+
+The renderer has an **isolated sandbox** — it cannot read files from your
+sandbox. You must pass all context it needs (spec JSON) **in the delegation
+message**, and it returns its output (HTML, phase trace) **in its response**.
+You then write the returned content to your own sandbox via `write_run_file`.
 
 Load the relevant **skill** for each phase; skills carry the detailed procedure
 and contracts you must follow:
@@ -49,16 +52,15 @@ written description.
 | `variations` | `default` | comma list, e.g. `dark,light` |
 | `genericize` | `true` | `false` keeps real product names |
 | `spec` | — | path to a prewritten spec JSON (skip spec-building) |
-| `run_root` | `runs` | where the run folder is created |
-| `allow_cost` | `false` | compute token cost from `cost-rates.yaml` |
+| `allow_cost` | `true` | compute token cost from the shared cost matrix |
 | `out_name` | `diagram` | base filename for the HTML |
 
 ## Procedure — execute, do not explain
 
 ### 1 — Create the run folder (always, before any work)
-Call the `create_run` tool. It makes `runs/<UTC-timestamp>/phases/` and returns
-the `run_dir`. Everything for this run lives there. Record the start epoch it
-gives you.
+Call the `create_run` tool. It makes `runs/<UTC-timestamp>/phases/` (mirrored to
+the host + sandbox) and returns the `run_dir`, `run_id`, and `started_at`.
+Record all three.
 
 ### 2 — Build the Diagram Spec (skip if `spec=` was given)
 Load the `build_spec` skill. Read any `reference` image as the source of truth
@@ -87,6 +89,11 @@ returned HTML to your own sandbox** via `write_run_file` at
 `<run_dir>/<out_name>[-<variation>].html`. Also write the returned phase trace
 to `<run_dir>/phases/render-<variation>.json`.
 
+After writing the HTML, call `render_screenshot` on it to produce
+`<run_dir>/<out_name>[-<variation>].preview.png` **in your own sandbox** — the
+renderer's screenshot lives in its isolated sandbox, so regenerate the preview
+here so it is included in the report and copied to the host.
+
 Fan out variations in parallel where the runtime supports it. Do not proceed
 until every renderer call has returned. If a renderer fails QC after its retries,
 record `qc.passed: false` in its trace and continue.
@@ -102,30 +109,20 @@ skill) with your phase timing/model. Fill the `tokens` block from the
 `read_usage` returns no data, leave tokens null + `"source": "unavailable"`.
 Timing is always recorded.
 
-### 5 — Delegate to the reporter subagent
-Call the **`reporter`** subagent tool. Its `message` must contain **everything**
-the reporter needs (it has an isolated sandbox and cannot read your files):
+### 5 — Assemble the report (deterministic, no LLM)
+Call the `render_and_save_report` tool with `run_dir`, `run_id`, and (optionally)
+`allow_cost`. It reads `run-meta.json` + every phase trace
+(`orchestrate.json` + all `render-*.json`), computes wall-clock + per-phase
+timing, sums tokens across phases, estimates cost from the shared cost matrix
+(`shared/cost/rates.yaml`), and writes `report.md` + `summary.json` to the run
+folder (mirrored to host + sandbox). It records its own `phases/report.json`
+trace. No subagent is involved.
 
-- `run_dir` and `allow_cost`.
-- The **complete contents of every phase trace JSON** you have written so far
-  (orchestrate.json + all render-*.json). Inline them — the reporter cannot read
-  your sandbox.
-- The **run-meta.json** contents (for models, request, options).
-- The instruction: "Aggregate the phase traces into a report. Compute timing
-  (wall-clock + per-phase), tokens (sum across phases with source=runtime), and
-  cost (only if allow_cost=true, using the cost_rates skill rates). Return the
-  full report.md content and summary.json content."
+### 6 — Copy the run to the host
+Call `sync_run_to_host` with `{ runId }`. This copies the whole run folder back
+to the host workspace, including the binary diagram preview png.
 
-The reporter returns the report and summary content in its response. **Write
-them to your own sandbox** via `write_run_file` at `<run_dir>/report.md` and
-`<run_dir>/summary.json`. Also write the returned report phase trace to
-`<run_dir>/phases/report.json`.
-
-After the reporter returns, call `read_usage` to get the reporter's token usage.
-Update `<run_dir>/phases/report.json` with the reporter's token counts if the
-reporter did not already capture them.
-
-### 6 — Final summary to the user
+### 7 — Final summary to the user
 Print a tight summary: the run folder path, the report path, the diagram html
 path(s), total wall-clock duration, total tokens + cost (or "n/a — runtime did
 not report usage"), QC result per variation, and any genericizations applied.
@@ -136,8 +133,10 @@ Offer: restore real product names, a light/dark counterpart, and SVG/PNG export.
 - `runs/` is committed so history is preserved.
 - Everything you produce is editable plain text in one standalone HTML file —
   no build step, inlined Lucide icons (no emojis), Google Fonts with fallbacks.
-- The renderer and reporter have **isolated sandboxes** — always pass full
-  content in the message, never just a file path. Always write returned content
-  to your own sandbox.
+- The renderer has an **isolated sandbox** — always pass full content in the
+  message, never just a file path. Always write returned content to your own
+  sandbox.
+- Report assembly is deterministic (`render_and_save_report`) — never delegate
+  it to a model.
 - Follow `design_system` exactly; if it could pass for a default template,
   redesign it.

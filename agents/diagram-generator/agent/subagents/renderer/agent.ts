@@ -1,17 +1,21 @@
 import { defineAgent } from "eve";
-import { resolveModel, MODEL_RENDERER } from "#lib/model.js";
+import { resolveModel } from "shared/lib/model.js";
 
-// ── Renderer subagent ─────────────────────────────────────────────────────
-// Produces HTML diagrams from a Diagram Spec. Configured independently via
-// MODEL_RENDERER* env vars (fallback to MODEL*). Use a fast, non-reasoning
+// ── Renderer subagent ────────────────────────────────────────────
+// Produces HTML diagrams from a Diagram Spec. Resolved from MODEL_RENDERER*
+// (model-agnostic, env-driven, no built-in default). Use a fast, non-reasoning
 // model here — rendering is execution-heavy, not reasoning-heavy. A reasoning
-// model (e.g. GLM-5.2) tends to loop indefinitely on the rendering task.
+// model tends to loop indefinitely on the rendering task, so the renderer is
+// additionally capped by RENDER_MAX_ITERATIONS and a per-render wall-clock
+// budget (see this subagent's instructions).
 //
 // This subagent has its OWN isolated sandbox — it cannot read the orchestrator's
 // files. The orchestrator passes the full spec JSON in the delegation message.
 // The renderer returns the full HTML content in its response; the orchestrator
 // writes it to the run folder.
-const model = resolveModel(MODEL_RENDERER);
+const model = resolveModel("renderer", {
+  providerName: "diagram-generator-renderer",
+});
 
 export default defineAgent({
   description:

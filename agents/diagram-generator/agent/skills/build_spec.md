@@ -41,7 +41,7 @@ If a prewritten `spec` path was given, skip building and use that file as-is.
 ## Phase-trace schema
 
 Every phase (orchestrate, render-<variation>, report) writes a JSON file under
-`<run_dir>/phases/`. Use this shape so the reporter can aggregate them:
+`<run_dir>/phases/`. Use this shape so `render_and_save_report` can aggregate them:
 
 ```jsonc
 {
@@ -67,6 +67,6 @@ Timing is always recorded regardless.
 
 The `read_usage` tool returns a map of session IDs to accumulated token counts
 (`inputTokens`, `outputTokens`, `cacheReadTokens`, `cacheWriteTokens`, `steps`).
-The orchestrator calls it after each subagent returns and before the reporter.
-Each phase trace should fill its `tokens` block from the corresponding session's
-usage data and set `"source": "runtime"`.
+The orchestrator calls it after each subagent returns and before assembling the
+report with `render_and_save_report`. Each phase trace should fill its `tokens`
+block from the corresponding session's usage data and set `"source": "runtime"`.

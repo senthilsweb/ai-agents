@@ -1,8 +1,7 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
-
 import { defineTool } from "eve/tools";
 import { z } from "zod";
+
+import { writeRunArtifact } from "shared/lib/run.js";
 
 const inputSchema = z.object({
   path: z
@@ -16,7 +15,7 @@ const inputSchema = z.object({
 
 export default defineTool({
   description:
-    "Write a run artifact into the Eve sandbox and mirror it into the host workspace.",
+    "Write a run artifact into the Eve sandbox and mirror it into the host run folder.",
 
   inputSchema,
 
@@ -25,50 +24,20 @@ export default defineTool({
       .replace(/^\/workspace\//, "")
       .replace(/^\/+/, "");
 
-    if (
-      normalizedPath.includes("..") ||
-      !/^runs\/[^/]+\/.+/.test(normalizedPath)
-    ) {
+    const match = /^runs\/([^/]+)\/(.+)$/.exec(normalizedPath);
+    if (!match || normalizedPath.includes("..")) {
       throw new Error(
         "Output path must be inside a timestamped runs/<run-id>/ directory.",
       );
     }
 
-    const sandbox = await ctx.getSandbox();
-    const sandboxPath = `/workspace/${normalizedPath}`;
-    const sandboxDirectory = path.posix.dirname(sandboxPath);
-
-    await sandbox.run({
-      command: `mkdir -p ${JSON.stringify(sandboxDirectory)}`,
-    });
-
-    await sandbox.writeTextFile({
-      path: sandboxPath,
-      content,
-    });
-
-    const projectRoot = process.env.HOST_REPORT_ROOT ?? process.cwd();
-    const hostWorkspaceRoot = path.resolve(
-      projectRoot,
-      "agent",
-      "sandbox",
-      "workspace",
-    );
-    const hostPath = path.resolve(hostWorkspaceRoot, normalizedPath);
-
-    if (!hostPath.startsWith(`${hostWorkspaceRoot}${path.sep}`)) {
-      throw new Error("Resolved host path escapes the workspace.");
-    }
-
-    await mkdir(path.dirname(hostPath), {
-      recursive: true,
-    });
-    await writeFile(hostPath, content, "utf8");
+    const [, runId, withinRun] = match;
+    const result = await writeRunArtifact(ctx, runId, withinRun, content);
 
     return {
-      sandboxPath,
-      hostPath,
-      bytes: Buffer.byteLength(content, "utf8"),
+      sandboxPath: result.sandboxPath,
+      hostPath: result.hostPath,
+      bytes: result.bytes,
     };
   },
 });

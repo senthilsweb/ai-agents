@@ -1,49 +1,58 @@
-# shared
+# Shared Agent Runtime Kit
 
-Cross-agent utilities shared across all agents in the `ai-agents` monorepo.
+Cross-agent runtime building blocks for the `ai-agents` monorepo. See the ADRs:
 
-## What belongs here
+- [`openspec/adr/0001-shared-agent-runtime-kit.md`](../openspec/adr/0001-shared-agent-runtime-kit.md)
+- [`openspec/adr/0002-cost-matrix.md`](../openspec/adr/0002-cost-matrix.md)
 
-- **Authentication** — OAuth flows, token validation, session helpers
-- **API clients** — shared HTTP clients, retry logic, rate limiting
-- **Tool factories** — reusable `defineTool` factories (database, queue, etc.)
-- **Types** — shared TypeScript types and zod schemas
-- **Logging / observability** — structured logging, metrics helpers
+## Consuming the kit
 
-## What does NOT belong here
-
-- Agent-specific business logic (lives in `agents/<name>/agent/`)
-- Agent-private helpers (lives in `agents/<name>/agent/lib/`)
-- Skills, instructions, or prompts (per-agent, never shared)
-
-## Importing
-
-Each agent's `package.json` exposes `shared/` via the `#shared/*` import map:
+This is a **workspace package**. An agent depends on it and imports by subpath:
 
 ```jsonc
-{
-  "imports": {
-    "#shared/*": "../../shared/*"
-  }
-}
+// agents/<agent>/package.json
+"dependencies": { "shared": "*" }
 ```
 
-Use it from any agent tool or hook:
-
-```typescript
-import { getAuthToken } from "#shared/auth/index.js";
+```ts
+import { resolveModel } from "shared/lib/model.js";
+import { writeRunArtifact, syncRunToHost } from "shared/lib/run.js";
+import { buildRunSummary } from "shared/lib/summary.js";
 ```
 
-## Adding the first shared module
+Use a workspace dependency, **not** a relative `#shared/*` imports map — Eve's
+source snapshot follows workspace dependency symlinks but not bare relative
+imports that escape the agent root (see ADR 0001 §1).
 
-When the first real shared code lands:
+For Eve-discovered **tools** and **hooks**, add a one-line re-export under the
+agent so Eve registers it by filename slug:
 
-1. Create the module folder (e.g. `shared/auth/`)
-2. Add `shared/package.json` (workspace member):
-   ```jsonc
-   { "name": "shared", "private": true, "type": "module" }
-   ```
-3. Export from `shared/auth/index.ts`
-4. Import via `#shared/auth/index.js` from any agent
+```ts
+// agent/hooks/usage.ts
+export { default } from "shared/hooks/usage.js";
+// agent/tools/sync_run_to_host.ts
+export { default } from "shared/tools/sync_run_to_host.js";
+```
 
-Until then, this folder is a placeholder.
+## Surface
+
+| Path | Purpose |
+|------|---------|
+| `lib/model.ts` | `resolveModel(role)` — model-agnostic, env-driven, **no default** (unset role throws). |
+| `lib/run.ts` | `createRunId`, run-folder helpers, `writeRunArtifact` (host+sandbox mirror), `syncRunToHost`. |
+| `lib/usage.ts` | Token-usage accumulator types + `readAllUsage` / `sumUsage`. |
+| `lib/cost.ts` | Rate-card loader + `estimateCost` (per-token / per-request). |
+| `lib/summary.ts` | `buildRunSummary()` → `summary.json` (tokens + cost + budget). |
+| `hooks/usage.ts` | Usage accounting hook + soft step/wall-clock budget flag. |
+| `tools/read_usage.ts` | Read accumulated usage for the current run. |
+| `tools/sync_run_to_host.ts` | Canonical, backend-agnostic, idempotent end-of-run copy-back. |
+| `sandbox/base-sandbox.ts` | `createBaseSandbox()` — image pin + `.DS_Store` purge + extendable bootstrap. |
+| `cost/rates.yaml` | Operator-populated, provider-agnostic cost matrix. |
+
+## Configuration
+
+Models are agnostic and resolved from `.env` per role: `MODEL_<ROLE>_*` →
+`MODEL_*`. There is no built-in default model id. Optional cost/loop budgets:
+`RUN_STEP_BUDGET`, `RUN_WALL_CLOCK_BUDGET_S`, and `COST_RATES_FILE`.
+
+First consumer: [`agents/github-pr-digest`](../agents/github-pr-digest).

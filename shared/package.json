@@ -1,0 +1,36 @@
+{
+  "name": "shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared Agent Runtime Kit for the ai-agents monorepo (see openspec/adr/0001 and 0002).",
+  "exports": {
+    "./lib/model.js": "./lib/model.ts",
+    "./lib/run.js": "./lib/run.ts",
+    "./lib/usage.js": "./lib/usage.ts",
+    "./lib/cost.js": "./lib/cost.ts",
+    "./lib/summary.js": "./lib/summary.ts",
+    "./lib/sandbox-cleanup.js": "./lib/sandbox-cleanup.ts",
+    "./hooks/usage.js": "./hooks/usage.ts",
+    "./tools/read_usage.js": "./tools/read_usage.ts",
+    "./tools/sync_run_to_host.js": "./tools/sync_run_to_host.ts",
+    "./tools/cleanup_sandbox.js": "./tools/cleanup_sandbox.ts",
+    "./sandbox/base-sandbox.js": "./sandbox/base-sandbox.ts",
+    "./cost/rates.yaml": "./cost/rates.yaml"
+  },
+  "scripts": {
+    "typecheck": "tsgo"
+  },
+  "dependencies": {
+    "@ai-sdk/openai-compatible": "3.0.0-beta.57",
+    "ai": "7.0.0-beta.178",
+    "eve": "^0.11.7",
+    "yaml": "^2.6.1",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.x",
+    "@typescript/native-preview": "7.0.0-dev.20260523.1"
+  },
+  "engines": { "node": "24.x" }
+}

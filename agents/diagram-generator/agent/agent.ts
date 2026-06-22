@@ -1,16 +1,18 @@
 import { defineAgent } from "eve";
-import { resolveModel, MODEL_ORCHESTRATOR } from "#lib/model.js";
+import { resolveModel } from "shared/lib/model.js";
 
 // ── Orchestrator model ────────────────────────────────────────────────────
 // The orchestrator needs strong reasoning (spec analysis, image OCR, layout
 // planning). Configure it independently via MODEL_ORCHESTRATOR* env vars,
 // with fallback to the generic MODEL* vars. See .env.example.
 //
-// The renderer and reporter are DECLARED SUBAGENTS (agent/subagents/renderer,
-// agent/subagents/reporter) — each has its own agent.ts reading MODEL_RENDERER*
-// and MODEL_REPORTER* respectively. This lets you use a reasoning model for
-// orchestration and a fast, cheap model for rendering/reporting.
-const model = resolveModel(MODEL_ORCHESTRATOR);
+// The renderer is a DECLARED SUBAGENT (agent/subagents/renderer) with its own
+// agent.ts reading MODEL_RENDERER*. Report assembly is a deterministic tool
+// (render_and_save_report) — there is no reporter model. See
+// openspec/adr/0001-shared-agent-runtime-kit.md §4.
+const model = resolveModel("orchestrator", {
+  providerName: "diagram-generator-orchestrator",
+});
 
 export default defineAgent({
   model,

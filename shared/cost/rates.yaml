@@ -1,0 +1,45 @@
+# Provider-agnostic model cost rate card
+#
+# See openspec/adr/0002-cost-matrix.md.
+#
+# This card is OPERATOR-POPULATED. Keys are the model ids referenced in your
+# .env (the values of MODEL_<ROLE> / MODEL), NOT vendor brand names. Fill in the
+# rates for the models you actually run. Any model or AI gateway is swappable in
+# .env via Eve's model/gateway adapters; update this card to match.
+#
+# Modes:
+#   per_token   — priced per 1M input/output tokens (and optionally cached input).
+#   per_request — a flat price per LLM call (cost = per_request * steps).
+#
+# Unrated models degrade gracefully: cost estimation returns rated:false and a
+# zero amount, and summary.json records that the figure is unrated.
+
+version: 1
+
+defaults:
+  cache:
+    # Fraction of the input rate charged for cache-read tokens when a model has
+    # no explicit cache_read_per_1m. Override per model as needed.
+    read_discount: 0.10
+
+models:
+  # ── Replace the placeholder keys below with YOUR configured model ids. ──
+  #
+  # "<reasoning-class-model-id>":   # e.g. the id in MODEL_ORCHESTRATOR
+  #   mode: per_token
+  #   currency: USD
+  #   input_per_1m: 0.00
+  #   output_per_1m: 0.00
+  #   cache_read_per_1m: 0.00       # optional; omit to use defaults.cache.read_discount
+  #
+  # "<fast-non-reasoning-model-id>":  # e.g. the id in MODEL_SCOUT
+  #   mode: per_token
+  #   currency: USD
+  #   input_per_1m: 0.00
+  #   output_per_1m: 0.00
+  #
+  # "<flat-rate-model-id>":
+  #   mode: per_request
+  #   currency: USD
+  #   per_request: 0.00
+  {}

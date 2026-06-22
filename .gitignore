@@ -33,6 +33,9 @@ agents/*/.env*.local
 # node_modules (per-agent)
 agents/*/node_modules
 
+# node_modules (shared package)
+shared/node_modules
+
 # vercel
 .vercel
 
@@ -47,6 +50,8 @@ next-env.d.ts
 agents/*/.eve
 agents/*/.output
 agents/*/.workflow-data
+shared/.eve
+shared/.output
 
 # live run outputs (keep example runs, ignore new ones)
 agents/diagram-generator/agent/sandbox/workspace/runs/*
@@ -61,6 +66,10 @@ agents/diagram-generator/agent/subagents/*/sandbox/workspace/runs/*
 # linkedin-cover run outputs (keep .gitkeep)
 agents/linkedin-cover-generator/agent/sandbox/workspace/runs/*
 !agents/linkedin-cover-generator/agent/sandbox/workspace/runs/.gitkeep
+
+# github-pr-digest run outputs (live outputs, keep .gitkeep)
+agents/github-pr-digest/agent/sandbox/workspace/runs/*
+!agents/github-pr-digest/agent/sandbox/workspace/runs/.gitkeep
 
 # sandbox workspace inputs (user-provided, not tracked)
 **/sandbox/workspace/inputs/*.md

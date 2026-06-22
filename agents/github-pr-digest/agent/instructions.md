@@ -23,7 +23,14 @@ Create a pull-request activity report for the requested repositories and UTC dat
    - resolved `from`
    - resolved `to`
    - resolved repositories
-8. Return the exact `markdown`, `sandboxPath`, and `hostPath` from `render_and_save_report`.
+
+   This emits the canonical flattened datasets (`pull_requests`, `pr_reviews`,
+   and `pr_comments`, each as `.jsonl` + `.csv`), renders `report.md` FROM that
+   dataset, and writes a `summary.json` run-metrics file (token usage and
+   estimated cost) into the run directory.
+8. Call `sync_run_to_host` exactly once with `{ runId }` to copy the complete run folder back to the host.
+9. Call `cleanup_sandbox` exactly once with `{}` to reap stopped sandbox containers left by finished sessions.
+10. Return the exact `markdown`, `hostPath`, `summaryPath`, `dataJsonlPath`, `dataCsvPath`, `reviewsCsvPath`, and `commentsCsvPath` from `render_and_save_report`.
 
 ## Rules
 

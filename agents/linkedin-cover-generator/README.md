@@ -8,6 +8,9 @@ loop. Built on the [Vercel Eve](https://vercel.com/eve) agent framework.
 This agent lives at `agents/linkedin-cover-generator/` in the `ai-agents` monorepo.
 All paths below are relative to that folder unless noted.
 
+> **Design notes:** see [`DESIGN.md`](DESIGN.md) for the architecture,
+> determinism boundary, model resolution, and cost-effectiveness decisions.
+
 ---
 
 ## Prerequisites
@@ -15,7 +18,8 @@ All paths below are relative to that folder unless noted.
 - **Node 24+** — Eve requires it. Use `nvm use 24` if you have multiple versions.
 - **Docker** — the sandbox uses `ghcr.io/vercel/eve:latest`. On Vercel
   deployments it auto-switches to Vercel Sandbox.
-- Network access to your model provider (z.ai, OpenAI, or Vercel AI Gateway).
+- Network access to your model provider (OpenAI by default, or any
+  OpenAI-compatible provider / Vercel AI Gateway).
 
 ---
 
@@ -41,19 +45,14 @@ cd agents/linkedin-cover-generator
 cp .env.example .env
 ```
 
-Edit `.env` and fill in your provider keys. The default config uses z.ai GLM
-models (cheapest for testing) with OpenAI for image generation:
+Edit `.env` and fill in your provider keys. The finalized config uses OpenAI
+for both the orchestrator and image generation:
 
 ```dotenv
-# Orchestrator — z.ai GLM-4.5-Air (cheap, fast reasoning)
-MODEL_ORCHESTRATOR=glm-4.5-air
-MODEL_ORCHESTRATOR_BASE_URL=https://api.z.ai/api/paas/v4/
-MODEL_ORCHESTRATOR_API_KEY=your-z-ai-key
-
-# Optional reviewer (only used when ENABLE_REVIEW=true)
-MODEL_REVIEWER=glm-4.5-air
-MODEL_REVIEWER_BASE_URL=https://api.z.ai/api/paas/v4/
-MODEL_REVIEWER_API_KEY=your-z-ai-key
+# Orchestrator — one bounded creative cover-spec pass (reasoning + vision)
+MODEL_ORCHESTRATOR=gpt-5.4-mini
+MODEL_ORCHESTRATOR_BASE_URL=https://api.openai.com/v1
+MODEL_ORCHESTRATOR_API_KEY=your-openai-key
 
 # Image generation — OpenAI gpt-image-2
 IMAGE_MODEL=gpt-image-2
@@ -65,7 +64,8 @@ ENABLE_REVIEW=false
 MAX_IMAGE_RETRIES=0
 ```
 
-See [Model configuration](#model-configuration) below for all env vars and
+Models are model-agnostic and env-driven — there is no built-in default model
+id. See [Model configuration](#model-configuration) below for all env vars and
 alternatives.
 
 ---
@@ -209,17 +209,15 @@ multiple of 16 automatically).
 
 ### Environment variables
 
-Set these in `agents/linkedin-cover-generator/.env`. Each role reads role-specific
-env vars that fall back to the generic `MODEL*` vars.
+Set these in `agents/linkedin-cover-generator/.env`. Each role resolves
+`MODEL_<ROLE>_* → MODEL_* →` an explicit startup error (no built-in default,
+per ADR 0001 §4).
 
 | Variable | Fallback | Description |
 |---|---|---|
-| `MODEL_ORCHESTRATOR` | `MODEL` | Model id for the orchestrator |
+| `MODEL_ORCHESTRATOR` | `MODEL` | Model id for the orchestrator (cover-spec pass) |
 | `MODEL_ORCHESTRATOR_BASE_URL` | `MODEL_BASE_URL` | API base URL for the orchestrator |
 | `MODEL_ORCHESTRATOR_API_KEY` | `MODEL_API_KEY` | API key for the orchestrator |
-| `MODEL_REVIEWER` | `MODEL` | Model id for the optional reviewer |
-| `MODEL_REVIEWER_BASE_URL` | `MODEL_BASE_URL` | API base URL for the reviewer |
-| `MODEL_REVIEWER_API_KEY` | `MODEL_API_KEY` | API key for the reviewer |
 | `MODEL_CONTEXT_WINDOW_TOKENS` | `128000` | Context window size for compaction |
 | `IMAGE_MODEL` | `gpt-image-2` | Image generation model id |
 | `IMAGE_BASE_URL` | `MODEL_BASE_URL` | Image API base URL |
@@ -227,32 +225,33 @@ env vars that fall back to the generic `MODEL*` vars.
 | `IMAGE_QUALITY` | `high` | Image quality (`high` / `standard` / `low`) |
 | `ENABLE_REVIEW` | `false` | Enable the optional reviewer call |
 | `MAX_IMAGE_RETRIES` | `0` | Max image regeneration retries on hard failure |
+| `ALLOW_COST` | `true` | Compute cost in the deterministic report tool |
 
-### GPT → GLM/z.ai model mapping
+Report assembly is a deterministic tool, so there is **no reporter model**.
 
-The original GPT-family recommendations map to z.ai GLM equivalents:
+### Finalized model matrix
 
-| Role | GPT recommendation | GLM/z.ai equivalent | Notes |
+| Role | Model | Provider | Notes |
 |---|---|---|---|
-| Orchestrator | `gpt-5.4-mini` | `glm-4.5-air` | Fast, cheap reasoning |
-| Reviewer | `gpt-5.4-nano` | `glm-4.5-air` | Cheapest reasoning model |
-| Image | `gpt-image-2` | `gpt-image-2` (OpenAI) | z.ai has no image model; use OpenAI |
+| Orchestrator | `gpt-5.4-mini` | OpenAI | One bounded creative cover-spec pass; vision-capable for optional reference images |
+| Image | `gpt-image-2` | OpenAI | The cover image itself |
+| Reporter | — | — | Deterministic tool (`render_and_save_report`), no model |
 
 ### Alternative configurations
 
 ```dotenv
-# Same model for orchestrator + reviewer (simplest)
-MODEL=glm-4.5-air
-MODEL_BASE_URL=https://api.z.ai/api/paas/v4/
-MODEL_API_KEY=your-z-ai-key
+# Single generic model for the orchestrator (simplest)
+MODEL=gpt-5.4-mini
+MODEL_BASE_URL=https://api.openai.com/v1
+MODEL_API_KEY=your-openai-key
 
 # Image still needs separate config
 IMAGE_MODEL=gpt-image-2
 IMAGE_BASE_URL=https://api.openai.com/v1
 IMAGE_API_KEY=your-openai-key
 
-# Claude orchestrator via Vercel AI Gateway
-MODEL_ORCHESTRATOR=anthropic/claude-sonnet-4.6
+# Orchestrator via Vercel AI Gateway
+MODEL_ORCHESTRATOR=openai/gpt-5.4-mini
 AI_GATEWAY_API_KEY=...
 ```
 
@@ -274,7 +273,12 @@ The agent is the **Orchestrator**. On each turn it:
    saves `outputs/cover.png`.
 6. **Validates dimensions** — `validate_image` checks exact pixel dimensions
    using sharp (no model call). Reports hard failure on mismatch.
-7. **Writes the report** — `write_report` generates `report.md` + `summary.json`.
+7. **Assembles the report deterministically** — `render_and_save_report` reads
+   the phase traces + `run-meta.json` + `cover-spec.json`, computes timing,
+   token, and cost metrics (from the shared usage hook + cost matrix), and
+   writes `report.md` + `summary.json`. No LLM.
+8. **Copies the run to the host** — `sync_run_to_host` pulls the whole run
+   folder (including the binary `cover.png`) back from the sandbox.
 
 ### Loop policy
 
@@ -325,33 +329,34 @@ npx tsgo
 ```
 agents/linkedin-cover-generator/
 ├── agent/
-│   ├── agent.ts                   # orchestrator model config (MODEL_ORCHESTRATOR*)
+│   ├── agent.ts                   # orchestrator model config (shared resolveModel)
 │   ├── instructions.md            # always-on Orchestrator system prompt
 │   ├── lib/
-│   │   ├── model.ts               # per-role model resolution helper
 │   │   ├── schemas.ts             # Cover Spec zod schema
 │   │   ├── presets.ts             # size presets (linkedin-article, etc.)
 │   │   ├── palettes.ts            # color palette definitions
 │   │   └── prompt-builder.ts      # deterministic image prompt builder
+│   ├── hooks/
+│   │   └── usage.ts               # re-exports the shared token-usage hook
 │   ├── sandbox/
-│   │   ├── sandbox.ts             # Docker backend config
-│   │   └── workspace/             # seeded into /workspace at session start
-│   │       ├── inputs/            #   article files to process
-│   │       ├── references/        #   reference images
-│   │       └── runs/              #   run outputs
+│   │   └── sandbox.ts             # extends the shared base sandbox
 │   ├── skills/
 │   │   ├── art_direction.md       # visual style guidelines
 │   │   ├── linkedin_layout.md     # safe zones, margins, composition
 │   │   ├── brand_safety.md        # what to exclude by default
 │   │   └── title_crafting.md      # title extraction + editing rules
 │   ├── tools/
-│   │   ├── create_run.ts          # make the timestamped run folder
+│   │   ├── create_run.ts          # make the timestamped run folder (shared run)
 │   │   ├── load_input.ts          # load article from file/URL/text
 │   │   ├── build_prompt.ts        # validate spec + build image prompt
 │   │   ├── generate_image.ts      # call image provider, save PNG
 │   │   ├── validate_image.ts      # check exact dimensions with sharp
-│   │   ├── write_report.ts        # write report.md + summary.json
-│   │   └── write_run_file.ts      # write a text artifact into a run
+│   │   ├── write_orchestrate_trace.ts # orchestrate phase trace
+│   │   ├── render_and_save_report.ts  # deterministic report.md + summary.json
+│   │   ├── read_usage.ts          # re-exports the shared usage reader
+│   │   ├── sync_run_to_host.ts    # re-exports the shared copy-back
+│   │   ├── read_run_file.ts       # read a text artifact from a run
+│   │   └── write_run_file.ts      # write a text artifact into a run (shared run)
 │   └── channels/eve.ts            # the eve HTTP/TUI channel
 ├── .env.example                   # per-agent env template
 ├── package.json                   # per-agent manifest
@@ -363,17 +368,21 @@ agents/linkedin-cover-generator/
 
 ## Importing shared code
 
-This agent can import cross-agent utilities from the root `shared/` folder via
-the `#shared/*` import map:
+This agent consumes the shared Agent Runtime Kit (model resolution, run-folder
+mirror, usage hook, cost matrix, copy-back, base sandbox) as the `shared`
+workspace package:
 
 ```typescript
-import { getAuthToken } from "#shared/auth/index.js";
+import { resolveModel } from "shared/lib/model.js";
+import { writeRunArtifact } from "shared/lib/run.js";
 ```
 
 Agent-private helpers live in `agent/lib/` and are imported via `#lib/*`:
 
 ```typescript
-import { resolveModel, MODEL_ORCHESTRATOR } from "#lib/model.js";
+import { CoverSpecSchema } from "#lib/schemas.js";
 ```
 
-See [`shared/README.md`](../../../shared/README.md) for the shared-code contract.
+See [`shared/README.md`](../../../shared/README.md) and
+[`openspec/adr/0001-shared-agent-runtime-kit.md`](../../../openspec/adr/0001-shared-agent-runtime-kit.md)
+for the shared-kit contract.

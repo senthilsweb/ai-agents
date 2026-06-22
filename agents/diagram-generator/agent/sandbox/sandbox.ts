@@ -1,23 +1,12 @@
-import { defineSandbox, defaultBackend } from "eve/sandbox";
+import { createBaseSandbox } from "shared/sandbox/base-sandbox.js";
 
-export default defineSandbox({
-  // Docker is available locally; on Vercel this auto-switches to Vercel Sandbox.
-  // Falls back to microsandbox / just-bash where Docker is absent.
-  backend: defaultBackend({
-    docker: { image: "ghcr.io/vercel/eve:latest" },
-  }),
-  // Bump this when the bootstrap or seeded files change, so eve rebuilds the
-  // template image instead of reusing a stale one.
-  revalidationKey: () => "diagram-generator-bootstrap-v2",
-  async bootstrap({ use }) {
-    const sandbox = await use();
-    // Remove macOS .DS_Store files that may have been seeded from the workspace
-    // folder — they change frequently and trigger unwanted template rebuilds.
-    await sandbox.run({
-      command: "find /workspace -name '.DS_Store' -delete 2>/dev/null; true",
-    });
-    // Install a headless browser once per template so the renderer's
-    // self-verify screenshot works. Cached across sessions by the revalidationKey.
+// The orchestrator sandbox holds the run folder and may run render_screenshot
+// for the final preview, so it needs a headless browser. The shared base
+// sandbox pins the Eve image and purges .DS_Store; the extra bootstrap installs
+// Playwright + Chromium (cached across sessions by the revalidation key).
+export default createBaseSandbox({
+  revalidationKey: "diagram-generator-bootstrap-v3",
+  extraBootstrap: async (sandbox) => {
     await sandbox.run({
       command:
         "npm init -y >/dev/null 2>&1 && " +

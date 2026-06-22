@@ -10,12 +10,12 @@ Use `resolve_report_request` to normalize repositories and the UTC time interval
 
 ## Fan-out
 
-Invoke `repository-scout` once per repository. Each invocation is independent and should receive the same normalized interval and state.
+Invoke `repository-scout` once per repository. Each invocation is independent and should receive the same normalized interval and state. Each scout persists its normalized JSON into `runs/<runId>/repositories/<owner>__<repository>.json`; do not pass PR arrays back through the model.
 
-## Fan-in
+## Assembly
 
-Send every returned repository result, including errors, to `digest-reporter`. The reporter is responsible only for formatting and high-level observations grounded in supplied JSON.
+Call the deterministic `render_and_save_report` tool exactly once with `runId`, `from`, `to`, and the resolved repositories. It reads the persisted per-repository JSON, computes totals, and writes the Markdown digest. There is no LLM reporter — do not invoke `digest-reporter`.
 
 ## Persistence
 
-Save the reporter's exact Markdown with `write_report`. Do not regenerate or edit the report after the reporter returns it.
+Return the exact `markdown`, `sandboxPath`, and `hostPath` from `render_and_save_report`. Do not regenerate, summarize, or edit the report.
