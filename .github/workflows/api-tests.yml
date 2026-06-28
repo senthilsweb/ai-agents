@@ -1,0 +1,180 @@
+# API Test Execution — Phase 2 (no LLM, deterministic)
+#
+# This workflow runs the EXECUTION phase only. The collection artifacts
+# (*_collection.json, *_data.json, api_config.json) must already exist
+# in VCS — produced by the AUTHORING phase (npm run dev inside the agent).
+#
+# Two trigger modes:
+#   1. On-demand: workflow_dispatch with inputs
+#   2. Automatic: push to main when collection artifacts change
+
+name: API Test Execution
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_name:
+        description: 'API name (must match an artifact in runs/)'
+        required: true
+        default: 'PetStore'
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options: [staging, production]
+      run_id:
+        description: 'Specific authoring run ID to execute (blank = latest)'
+        required: false
+
+  push:
+    branches: [main]
+    paths:
+      - 'agents/api-test-generator/runs/**/*_collection.json'
+      - 'agents/api-test-generator/runs/**/api_config.json'
+
+jobs:
+  execute-api-tests:
+    runs-on: ubuntu-latest
+    env:
+      API_NAME:          ${{ github.event.inputs.api_name || 'PetStore' }}
+      TARGET_ENV:        ${{ github.event.inputs.environment || 'staging' }}
+      AGENT_DIR:         agents/api-test-generator
+      PUBLISH_S3_URI:    ${{ secrets.PUBLISH_S3_URI }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install execution dependencies
+        run: |
+          npm install -g newman newman-reporter-htmlextra
+          pip3 install awscli --quiet
+
+      # ── Locate run artifacts ────────────────────────────────────────────────
+      - name: Locate run artifacts
+        id: artifacts
+        run: |
+          cd $AGENT_DIR
+          if [ -n "${{ github.event.inputs.run_id }}" ]; then
+            RUN_DIR="runs/${{ github.event.inputs.run_id }}"
+          else
+            RUN_DIR="runs/$(ls -t runs | head -1)"
+          fi
+          echo "run_dir=$RUN_DIR" >> $GITHUB_OUTPUT
+          echo "collection=$RUN_DIR/${API_NAME}_collection.json" >> $GITHUB_OUTPUT
+          echo "data=$RUN_DIR/${API_NAME}_data.json"             >> $GITHUB_OUTPUT
+          echo "environment=$RUN_DIR/${API_NAME}_environment.json" >> $GITHUB_OUTPUT
+          echo "Using artifacts from: $RUN_DIR" && ls "$RUN_DIR"
+
+      # ── Data setup: inject real IDs from H360 ─────────────────────────────
+      # Runs only when test_data_config.json is present.
+      # DuckDB queries JDBC (PostgreSQL) and Object Store (S3/MinIO Parquet).
+      # Writes data_live.json with real patientId, encounterId etc. injected.
+      - name: Data setup — resolve real resource IDs
+        if: ${{ hashFiles('agents/api-test-generator/test_data_config.json') != '' }}
+        working-directory: ${{ env.AGENT_DIR }}
+        env:
+          H360_DB_HOST:         ${{ secrets.H360_DB_HOST }}
+          H360_DB_USER:         ${{ secrets.H360_DB_USER }}
+          H360_DB_PASSWORD:     ${{ secrets.H360_DB_PASSWORD }}
+          H360_LAKE_URI:        ${{ secrets.H360_LAKE_URI }}
+          H360_LAKE_ACCESS_KEY: ${{ secrets.H360_LAKE_ACCESS_KEY }}
+          H360_LAKE_SECRET_KEY: ${{ secrets.H360_LAKE_SECRET_KEY }}
+        run: |
+          pip3 install duckdb --quiet
+          node scripts/setup_test_data.js \
+            --data  "${{ steps.artifacts.outputs.data }}" \
+            --config test_data_config.json \
+            --output data_live.json
+          echo "data_live=true" >> $GITHUB_OUTPUT
+
+      # ── Newman execution ────────────────────────────────────────────────────
+      - name: Execute API tests
+        id: newman
+        working-directory: ${{ env.AGENT_DIR }}
+        env:
+          BASE_URL:             ${{ secrets[format('API_BASE_URL_{0}', env.TARGET_ENV)] || secrets.API_BASE_URL }}
+          API_TOKEN:            ${{ secrets[format('API_TOKEN_{0}', env.TARGET_ENV)] || secrets.API_TOKEN }}
+          API_USERNAME:         ${{ secrets.API_USERNAME }}
+          API_PASSWORD:         ${{ secrets.API_PASSWORD }}
+        run: |
+          DATA_FILE="${{ steps.artifacts.outputs.data }}"
+          [ -f data_live.json ] && DATA_FILE="data_live.json"
+
+          mkdir -p structured
+
+          newman run "${{ steps.artifacts.outputs.collection }}" \
+            --environment "${{ steps.artifacts.outputs.environment }}" \
+            --iteration-data "$DATA_FILE" \
+            --env-var "base_url=${BASE_URL}" \
+            --env-var "token=${API_TOKEN}" \
+            --env-var "username=${API_USERNAME}" \
+            --env-var "password=${API_PASSWORD}" \
+            --reporters cli,json,htmlextra \
+            --reporter-json-export     structured/newman_report.json \
+            --reporter-htmlextra-export structured/newman_report.html \
+            --timeout-request 30000
+          echo "NEWMAN_EXIT=$?" >> $GITHUB_OUTPUT
+        continue-on-error: true   # capture exit code — don't fail here
+
+      # ── Build structured analytics ──────────────────────────────────────────
+      - name: Build structured analytics (JSONL)
+        working-directory: ${{ env.AGENT_DIR }}
+        run: |
+          DATA_FILE="${{ steps.artifacts.outputs.data }}"
+          [ -f data_live.json ] && DATA_FILE="data_live.json"
+
+          node scripts/postprocess_newman.js \
+            --report    structured/newman_report.json \
+            --data      "$DATA_FILE" \
+            --api-name  "$API_NAME" \
+            --run-id    "ci-${{ github.run_id }}" \
+            --env       "$TARGET_ENV" \
+            --output-dir structured/
+
+      # ── Publish to S3/MinIO data lake ───────────────────────────────────────
+      - name: Publish results to data lake
+        if: ${{ env.PUBLISH_S3_URI != '' }}
+        working-directory: ${{ env.AGENT_DIR }}
+        env:
+          AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          PUBLISH_S3_ENDPOINT_URL: ${{ secrets.PUBLISH_S3_ENDPOINT_URL }}
+        run: |
+          YEAR=$(date +%Y)
+          MONTH=$(date +%m)
+          DAY=$(date +%d)
+          DEST="${PUBLISH_S3_URI}/year=${YEAR}/month=${MONTH}/day=${DAY}/api_name=${API_NAME}/run_id=ci-${{ github.run_id }}/structured/"
+
+          ENDPOINT_FLAG=""
+          [ -n "$PUBLISH_S3_ENDPOINT_URL" ] && ENDPOINT_FLAG="--endpoint-url $PUBLISH_S3_ENDPOINT_URL"
+
+          aws s3 sync structured/ "$DEST" $ENDPOINT_FLAG --no-progress
+          echo "Published to: $DEST"
+          echo ""
+          echo "DuckDB query:"
+          echo "SELECT feature, status, COUNT(*) FROM read_json_auto('${PUBLISH_S3_URI}/**/test_results.jsonl', hive_partitioning=true) GROUP BY ALL;"
+
+      # ── Upload artifacts ────────────────────────────────────────────────────
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-test-results-${{ env.API_NAME }}-${{ github.run_id }}
+          path: |
+            ${{ env.AGENT_DIR }}/structured/
+          retention-days: 30
+
+      # ── CI gate: exit with Newman's exit code ───────────────────────────────
+      - name: CI gate — fail on test failures
+        run: |
+          NEWMAN_EXIT="${{ steps.newman.outputs.NEWMAN_EXIT }}"
+          if [ "${NEWMAN_EXIT}" != "0" ]; then
+            echo "Newman reported failures (exit code ${NEWMAN_EXIT})"
+            exit ${NEWMAN_EXIT}
+          fi
+          echo "All API tests passed."

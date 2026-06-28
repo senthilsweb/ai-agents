@@ -1,5 +1,8 @@
-# Developer Guide
-## API Test Generator — OpenAPI → Postman/Newman with Pairwise Combinatorics
+# Generate Business-Verified API Tests from an OpenAPI Spec: Developer Guide
+
+The agent reads your OpenAPI spec, understands what each endpoint is _supposed to do_,
+generates a minimum pairwise matrix that covers both business rules and HTTP mechanics,
+and produces a Newman-executable Postman collection with structured analytics.
 
 ---
 
@@ -51,9 +54,6 @@ Generate tests for petstore.yaml — api_name: PetStore, auth: basic
 Generate tests for GET /pets only from petstore.yaml — api_name: PetStore
 ```
 
-The orchestrator passes the full endpoint model to the Pairwise Designer
-but instructs it to analyze only the specified path/method.
-
 ### Target specific operations by operationId
 
 ```
@@ -72,8 +72,8 @@ Generate tests from https://petstore3.swagger.io/api/v3/openapi.json — api_nam
 |---|---|---|
 | `spec` | required | `petstore.yaml` or a URL |
 | `api_name` | required | `PetStore` |
-| `product` | derived | `PDC` — stamped on every data row |
-| `domain` | none | `data-governance` — optional classification |
+| `product` | derived | short product identifier — stamped on every data row |
+| `domain` | none | optional business domain (`data-governance`) |
 | `auth` | `none` | `basic`, `bearer`, `apikey`, `none` |
 | `base_url` | `{{base_url}}` | `{{base_url}}` |
 | `strength` | `2` | `3` for high-risk endpoints |
@@ -111,19 +111,393 @@ PUBLISH_INCLUDE_RAW=false
 
 ---
 
-## Test Coverage Requirements & Acceptance Criteria
+## Two Phases: Authoring and Execution
 
-This section confirms every class of test that the agent generates. Use this
-as a checklist when reviewing generated output.
+### Phase 1 — Test Authoring (run once, when the spec changes)
+
+```bash
+# Run the Eve agent — this is the LLM-involved step
+npm run dev
+# > Generate tests for petstore.yaml — api_name: PetStore, auth: bearer
+```
+
+Produces and commits to VCS:
+- `*_collection.json` — Postman collection with embedded assertion scripts
+- `*_data.json` — pairwise iteration rows (structural parameters)
+- `*_environment.json` — base URL and auth variable placeholders
+- `api_config.json` — machine-readable config for the execution runner
+- `pict_models/*.pict` — factor model audit trail
+
+Do NOT re-run authoring on every CI build. Re-run only when:
+- The OpenAPI spec changes (new endpoints, parameter changes)
+- The assertion contract changes
+- The pairwise strength changes for a specific endpoint
+
+### Phase 2 — Test Execution (CI/CD, on-demand, no LLM)
+
+```bash
+# Run the execution runner — deterministic, no LLM
+npm run execute -- --api PetStore --env staging
+```
+
+The execution runner:
+1. Reads `api_config.json` to locate collection + data + environment files
+2. If `test_data_config.json` is present — runs data setup (DuckDB queries JDBC/Object Store)
+3. Runs Newman with the (optionally patched) data file
+4. Produces `structured/test_results.jsonl` and `structured/coverage.json`
+5. Publishes to S3/MinIO if `PUBLISH_S3_URI` is set
+6. Exits with Newman's exit code — CI pass/fail gate
+
+---
+
+## Test Data Setup
+
+### The three types of test data
+
+| Type | What it is | Who provides it | When |
+|---|---|---|---|
+| Structural parameters | `status=available`, `limit=50`, `role=admin` | Agent (pairwise matrix) | Authoring |
+| Resource IDs | `patientId=UUID-001`, `encounterId=ENC-456` | Target environment (JDBC/S3) | Execution pre-flight |
+| Fixture / seed records | Patient, Encounter, Claim records | Data generator (Synthea etc.) | One-time environment setup |
+
+The authoring agent generates structural parameters. Resource IDs must come from
+the target environment — you cannot test `GET /patients/{patientId}` meaningfully
+without a `patientId` that actually exists in that environment.
+
+### `test_data_config.json` — one-time developer setup
+
+Create this file at `agents/api-test-generator/test_data_config.json` (not generated
+by the agent — you provide it once). It describes your data model and data sources:
+
+```json
+{
+  "model_name": "H360 Healthcare 360 (Synthetic)",
+  "description": "Synthea-generated patient records seeded into staging environment",
+  "datasources": {
+    "h360_db": {
+      "type": "jdbc",
+      "driver": "postgresql",
+      "host": "${H360_DB_HOST}",
+      "port": 5432,
+      "database": "h360",
+      "schema": "clinical"
+    },
+    "h360_lake": {
+      "type": "object_store",
+      "uri": "${H360_LAKE_URI}",
+      "format": "parquet",
+      "description": "Synthea Parquet files, Hive-partitioned by entity type"
+    }
+  },
+  "data_injection": {
+    "patientId": {
+      "datasource": "h360_db",
+      "query": "SELECT patient_id FROM clinical.patients WHERE active = true ORDER BY RANDOM() LIMIT 20",
+      "description": "Active patient UUIDs for test scenarios"
+    },
+    "encounterId": {
+      "datasource": "h360_db",
+      "query": "SELECT encounter_id FROM clinical.encounters WHERE status = 'finished' LIMIT 10"
+    },
+    "orgId": {
+      "datasource": "h360_lake",
+      "query": "SELECT org_id FROM read_parquet('${H360_LAKE_URI}/organizations/*.parquet') LIMIT 5"
+    },
+    "claimId": {
+      "datasource": "h360_lake",
+      "query": "SELECT claim_id FROM read_parquet('${H360_LAKE_URI}/claims/*.parquet') WHERE status='active' LIMIT 10"
+    }
+  }
+}
+```
+
+See `test_data_config.example.json` for the complete H360 entity reference.
+
+### How data injection works
+
+DuckDB handles both sources:
+
+```sql
+-- JDBC source (via DuckDB jdbc extension):
+INSTALL jdbc; LOAD jdbc;
+ATTACH 'jdbc:postgresql://${H360_DB_HOST}:5432/h360' AS h360 (TYPE JDBC);
+SELECT patient_id FROM h360.clinical.patients WHERE active = true LIMIT 20;
+
+-- Object Store source (DuckDB native):
+SELECT org_id FROM read_parquet('s3://h360-synthetic/v1/organizations/*.parquet') LIMIT 5;
+```
+
+The execution runner collects these IDs, then patches `*_data.json` rows:
+- Rows with `"patientId": "{{patientId}}"` → replaced with `"patientId": "uuid-abc-123"`
+- Rows with `"orgId": "{{orgId}}"` → replaced with `"orgId": "ORG-007"`
+- Rows without these fields are passed through unchanged
+
+The original `*_data.json` (with placeholders) is never overwritten. A
+`data_live.json` is written to the run folder for this execution only.
+
+### H360 entity reference
+
+When writing your Pairwise Designer delegation notes, use these entity names:
+
+| Entity | Primary ID | Format | Where used in APIs |
+|---|---|---|---|
+| Patient | `patientId` | UUID | `/patients/{id}`, `/encounters?patientId=` |
+| Encounter | `encounterId` | UUID | `/encounters/{id}`, `/claims?encounterId=` |
+| Organization | `orgId` | `ORG-{N}` | `/organizations/{id}`, multi-tenant filters |
+| Claim | `claimId` | `CLM-{N}` | `/claims/{id}`, billing endpoints |
+| Provider | `providerId` | UUID | `/providers/{id}`, care team endpoints |
+| Medication | `medicationId` | `MED-{N}` | `/medications/{id}`, prescriptions |
+
+---
+
+## GitHub Actions — Execution Trigger
+
+The execution phase integrates with GitHub Actions via `.github/workflows/api-tests.yml`.
+Two trigger modes:
+
+```yaml
+# On-demand: workflow_dispatch with inputs
+on:
+  workflow_dispatch:
+    inputs:
+      api_name:    { description: 'API name', required: true, default: 'PetStore' }
+      environment: { description: 'Target env', default: 'staging',
+                     type: choice, options: [staging, production] }
+      run_id:      { description: 'Specific run ID (blank = latest)', required: false }
+
+# Automatic: on push when collection artifacts change
+  push:
+    branches: [main]
+    paths:
+      - 'agents/api-test-generator/runs/**/*_collection.json'
+      - 'agents/api-test-generator/runs/**/api_config.json'
+```
+
+Key steps in the workflow:
+1. Install `newman` + `duckdb` (no Eve, no LLM dependencies)
+2. Locate collection artifacts from `api_config.json`
+3. Run data setup if `test_data_config.json` is present (env vars from GitHub Secrets)
+4. Run Newman → exit code controls CI pass/fail
+5. Publish structured JSONL to S3 (from GitHub Secrets)
+6. Upload test artifacts as workflow artifacts (30-day retention)
+
+Required GitHub Secrets:
+
+| Secret | Purpose |
+|---|---|
+| `API_BASE_URL` | Target environment base URL |
+| `PUBLISH_S3_URI` | Results bucket `s3://bucket/prefix` |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | S3 publish credentials |
+| `H360_DB_HOST` / `H360_DB_USER` / `H360_DB_PASSWORD` | JDBC datasource |
+| `H360_LAKE_URI` | Object Store datasource root URI |
+
+See `.github/workflows/api-tests.yml` for the complete workflow template.
+
+---
+
+## Test Coverage
+
+Coverage has two layers. Both are generated automatically — the spec provides
+everything needed to derive them.
+
+```
+Layer 1 — Business functionality         Layer 2 — HTTP mechanics
+────────────────────────────────────     ────────────────────────────────────
+Does filtering by status=available       Did the server return 200?
+  return ONLY available pets?            Is Content-Type application/json?
+Does limit=5 produce ≤ 5 items?          Does a 401 come back for anonymous?
+Does POST echo name back in response?    Does the schema have required fields?
+Does sort=name produce alpha order?      Does DELETE return 204?
+Does GET /pets/{id} after DELETE → 404?  Does over-limit param → 400?
+```
+
+Layer 1 is derived from the spec's parameter descriptions, response schemas,
+and endpoint summaries — not from generic test type lists.
+
+---
+
+### Business Functionality: How It's Derived
+
+The Pairwise Designer (claude-opus-4-8) reads the full endpoint model —
+parameters, descriptions, response schemas, examples, enum lists — and
+extracts business rules that become test factors and constraints.
+
+#### From parameter descriptions
+
+```yaml
+# Spec fragment:
+  parameters:
+    - name: status
+      description: "Filter results to only pets with this status"
+      schema: { type: string, enum: [available, pending, sold] }
+    - name: limit
+      description: "Maximum items to return"
+      schema: { type: integer, minimum: 1, maximum: 100 }
+```
+
+**What the agent extracts:**
+
+| What it reads | Factor/Level extracted | Business rule encoded |
+|---|---|---|
+| `enum: [available, pending, sold]` | `status: [available, pending, sold, null]` | Each enum value becomes a factor level |
+| "Filter results to only pets with this status" | Business constraint | When `status=available`, every item in response must have `status === "available"` |
+| `minimum: 1, maximum: 100` | `limit: [null, 1, 50, 100, 101]` | Boundary levels auto-derived; 101 → expect 400 |
+| "Maximum items to return" | Business constraint | When `limit=N`, `response.length ≤ N` |
+
+#### From response schemas
+
+```yaml
+# Spec fragment:
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              required: [id, name, status]
+              properties:
+                id:     { type: integer, minimum: 1 }
+                status: { enum: [available, pending, sold] }
+```
+
+**What the agent extracts:**
+
+| What it reads | Assertion generated |
+|---|---|
+| `required: [id, name, status]` | Every response item must have all three fields present |
+| `id: { type: integer, minimum: 1 }` | `id` must be a positive integer |
+| `status.enum: [available, pending, sold]` | Returned `status` must be within declared enum values |
+
+#### From endpoint descriptions (POST / PUT)
+
+```yaml
+# Spec fragment:
+  post:
+    summary: "Create a new pet"
+    description: "Creates a pet. Returns the pet record with an assigned id."
+    requestBody:
+      content:
+        application/json:
+          schema:
+            required: [name]
+            properties:
+              name:   { type: string }
+              status: { enum: [available, pending, sold] }
+```
+
+**What the agent extracts:**
+
+| What it reads | Assertion generated |
+|---|---|
+| "Returns the pet record with an assigned id" | POST 201 → `response.id` must be a positive integer |
+| `required: [name]` in requestBody | Test case: omit `name` → expect 400/422 |
+| Sending `name: "Fido"` in body | Verify `response.name === "Fido"` (echo check) |
+
+---
+
+### Concrete Derivation Chain
+
+Full spec → pairwise factor → assertion → data row:
+
+```
+Spec: GET /pets  parameter: status  enum: [available, pending, sold]
+      description: "Filter results to only pets with this status"
+      response: array of { id, name, status } where status: enum[...]
+
+           ↓  Pairwise Designer (claude-opus-4-8)
+
+factors_model.json:
+  operationId: listPets
+  factors:
+    - name: status
+      levels: [available, pending, sold, null]
+      businessConstraint: |
+        When status is set and response is 200, every item in the response
+        array must have .status === the requested status value.
+        Tests that server-side filtering is actually applied.
+
+           ↓  Assertion Writer (claude-haiku-4-5)
+
+test_scripts/List_Pets.js (excerpt beyond the 3 structural blocks):
+  pm.test("Filter: all items match requested status", function () {
+    var expected = pm.iterationData.get("expectFilterValue");
+    if (!expected || pm.response.code !== 200) return;
+    pm.response.json().forEach(function (item) {
+      pm.expect(item.status).to.eql(expected);
+    });
+  });
+  pm.test("Pagination: response length respects limit", function () {
+    var max = pm.iterationData.get("expectMaxItems");
+    if (!max || pm.response.code !== 200) return;
+    pm.expect(pm.response.json()).to.have.length.at.most(parseInt(max));
+  });
+  pm.test("Schema: id is a positive integer on each item", function () {
+    if (pm.response.code !== 200) return;
+    pm.response.json().forEach(function (item) {
+      pm.expect(item.id).to.be.a("number").above(0);
+    });
+  });
+
+           ↓  assemble_collection
+
+PetStore_data.json row:
+  {
+    "product":               "PetStore",
+    "feature":               "pets",
+    "capability":            "list-pets",
+    "TSName":                "List pets WITH status=available · expect 200 + only available items",
+    "_validation_type":      "Functional",
+    "status":                "available",
+    "limit":                 "10",
+    "responseCodeForListPets":   200,
+    "responseTextForListPets":   "available",
+    "contentTypeForListPets":    "application/json",
+    "expectFilterValue":         "available",
+    "expectMaxItems":            "10"
+  }
+```
+
+No expected values are hard-coded in the test script. Add a new status variant
+by adding a new data row — no collection change needed.
+
+---
+
+### Cross-endpoint Workflow Tests
+
+When the spec contains CRUD operations on the same resource, the Pairwise
+Designer generates lifecycle rows as a `must_include` group:
+
+```
+POST /pets              → TSName: "Create pet as admin · expect 201 + id assigned"
+                          captures id: pm.collectionVariables.set("petId", response.json().id)
+                          business assertion: response.name === sent name
+
+GET /pets/{{petId}}     → TSName: "Get created pet · expect 200 + matches created data"
+                          business assertion: response.id === captured petId
+
+PUT /pets/{{petId}}     → TSName: "Update pet name · expect 200 + name reflected"
+  { name: "Rex" }         business assertion: response.name === "Rex"
+
+DELETE /pets/{{petId}}  → TSName: "Delete pet · expect 204"
+
+GET /pets/{{petId}}     → TSName: "Get deleted pet · expect 404"
+                          business assertion: response body contains "not found"
+```
+
+The RBAC-negative version (anonymous role → 401 at step 1) is a separate
+set of rows with `_validation_type: RBAC -ve`.
+
+---
 
 ### Classification (every row, mandatory)
 
 ```jsonc
 {
-  "product":    "PDC",              // short product identifier
-  "feature":    "pets",            // OpenAPI tag → kebab-case
-  "capability": "list-pets",       // <method>-<resource> → kebab-case
-  "domain":     "catalog"          // optional business domain
+  "product":    "PetStore",     // short product identifier
+  "feature":    "pets",         // OpenAPI tag → kebab-case
+  "capability": "list-pets",    // <method>-<resource> → kebab-case
+  "domain":     "catalog"       // optional business domain
 }
 ```
 
@@ -143,17 +517,14 @@ Every iteration row in `*_data.json` must carry `product`, `feature`,
 | Type | Example TSName |
 |---|---|
 | Smoke | `List pets as admin WITH limit=10 · expect 200 + array` |
+| Functional (business filter) | `List pets WITH status=available · expect 200 + only available items` |
+| Functional (business echo) | `Create pet WITH name=Fido · expect 201 + id assigned + name echoed` |
 | RBAC +ve | `Create pet as editor · expect 201 + id returned` |
 | RBAC -ve | `List pets as anonymous · expect 401` |
 | Negative | `Get pet WITH id=nonexistent · expect 404` |
 | Boundary | `Create pet WITH name over max length · expect 400` |
-| Functional | `Update pet WITH tag=null · expect 200 + tag removed` |
 
-**Rules:**
-- Outcome after `· expect` is mandatory
-- HTTP status always present
-- `as <role>` for RBAC variants, `WITH <param>=<value>` for value variants
-- Max 120 characters
+**Rules:** outcome after `· expect` is mandatory; HTTP status always present; max 120 characters.
 
 **File names:**
 
@@ -165,104 +536,108 @@ Every iteration row in `*_data.json` must carry `product`, `feature`,
 | Config | `api_config.json` | `api_config.json` |
 | Manifest | `collection_data.yml` | `collection_data.yml` |
 
-**Request names** from `operationId`:
-`listPets` → `List Pets` | `createPet` → `Create Pet` | `getPetById` → `Get Pet By Id`
-
-**Folder names** from OpenAPI tags:
-`pets` → `Pets` | `user-auth` → `User Auth`
-
 ---
 
 ### Test Types Generated
 
-#### Positive tests
+#### Smoke (must run first)
 
-| Type | `_validation_type` | When generated |
-|---|---|---|
-| Smoke | `Smoke` | First must-include row per endpoint — all valid values, authorized role |
-| RBAC positive | `RBAC +ve` | Authorized role (admin/viewer) with valid params |
-| Functional | `Functional` | Normal-path variations from pairwise matrix |
+One row per endpoint — all valid parameter values, authorized role — verifies
+the endpoint responds before the matrix expands. Always a `must_include` row.
+`_validation_type: Smoke`
 
-**Smoke rows** are explicit `must_include` entries — guaranteed to appear
-regardless of pairwise reduction.
+#### Functional (business behavior)
 
-#### Negative tests
+Rows where parameter combinations exercise a business rule extracted from the spec:
+- Filter by enum value → verify response reflects the filter
+- Pagination limit → verify response item count
+- Create with a specific field value → verify field echoed in response
+- Update a field → verify updated value appears in response
+
+`_validation_type: Functional`
+
+#### RBAC Positive / Negative
 
 | Type | `_validation_type` | Scenario |
 |---|---|---|
-| RBAC negative | `RBAC -ve` | Anonymous/unauthorized role → expect 401/403 |
-| Not found | `Negative` | Valid ID format, non-existent resource → expect 404 |
-| Missing required | `Negative` | Omit required field → expect 400/422 |
-| Wrong type | `Negative` | String in integer field → expect 400/422 |
-| Duplicate | `Negative` | POST with already-existing resource → expect 409 |
+| RBAC +ve | `RBAC +ve` | Authorized role, valid params → 200/201 |
+| RBAC -ve | `RBAC -ve` | Anonymous / unauthorized → 401/403, HTML error body |
 
-**RBAC -ve rows** are enforced by constraint + must_include — at least one per
-unauthorized role variant per endpoint.
+At least one RBAC -ve row per endpoint is enforced by the PICT model constraint.
 
-#### Boundary / outlier tests
+#### Negative (error paths derived from spec)
 
-| Scenario | `_validation_type` | Factor levels |
+| Scenario | `_validation_type` | Source in spec |
 |---|---|---|
-| At minimum | `Boundary` | `minimum` value from schema |
-| At maximum | `Boundary` | `maximum` value from schema |
-| Below minimum | `Boundary` | `minimum - 1` or `null` if optional |
-| Above maximum | `Boundary` | `maximum + 1` → expect 400/422 |
-| Empty string | `Boundary` | `""` for string params with minLength |
-| Max length + 1 | `Boundary` | String exceeding `maxLength` → expect 400 |
-| Empty collection | `Functional` | `offset` beyond end of result set → empty array |
-| Null optional | `Functional` | `null` / omitted optional field → 200 still returns |
+| Omit required field | `Negative` | `required: [...]` in requestBody schema |
+| Non-existent resource | `Negative` | Path param + `404` in responses block |
+| Wrong field type | `Negative` | Schema type definition |
+| Duplicate resource | `Negative` | `409` in responses block |
+| Semantic validation | `Negative` | `422` in responses block |
 
-#### Error and response code coverage
+#### Boundary / Outlier (derived from numeric constraints)
 
-Every data row drives assertions through three data keys:
+| Scenario | Factor level | Expected |
+|---|---|---|
+| Below minimum | `minimum - 1` or `null` | 400/422 |
+| At minimum | `minimum` value | 200 |
+| At maximum | `maximum` value | 200 |
+| Above maximum | `maximum + 1` | 400/422 |
+| Empty string | `""` for `minLength > 0` | 400 |
+| Max length + 1 | `maxLength + 1` chars | 400 |
 
-```
-responseCodeFor<Suffix>   → integer   e.g. 200, 201, 400, 401, 403, 404, 409, 422
-responseTextFor<Suffix>   → string    expected substring in response body (or null)
-contentTypeFor<Suffix>    → string    e.g. "application/json", "text/html" (or null)
-```
-
-Common response code coverage per endpoint type:
-
-| HTTP Status | When covered |
-|---|---|
-| 200 | GET success (Smoke, Functional, RBAC +ve) |
-| 201 | POST success |
-| 204 | DELETE success (no body) |
-| 400 | Invalid input, boundary violations |
-| 401 | Anonymous / expired token (RBAC -ve) |
-| 403 | Authenticated but unauthorized (RBAC -ve with role != anonymous) |
-| 404 | Valid format but non-existent resource |
-| 409 | Duplicate resource on POST |
-| 422 | Semantic validation failure |
-| 4xx/5xx | From OpenAPI `responses` block — coverage is spec-driven |
+`_validation_type: Boundary`
 
 ---
 
-### Assertion Contract (every request, non-negotiable)
+### HTTP Status Code Coverage
+
+Every data row specifies its expected code via `responseCodeFor<Suffix>`.
+The agent covers every status code declared in the spec's `responses` block:
+
+| HTTP Status | When covered |
+|---|---|
+| 200 | GET success, PUT success |
+| 201 | POST success |
+| 204 | DELETE success (no body) |
+| 400 | Invalid input, boundary violations, missing required field |
+| 401 | Anonymous / expired token (RBAC -ve) |
+| 403 | Authenticated but unauthorized role (RBAC -ve) |
+| 404 | Valid format but non-existent resource |
+| 409 | Duplicate resource on POST |
+| 422 | Semantic validation failure |
+| Any `4xx/5xx` in spec | Derived from `responses` block — spec-driven, not assumed |
+
+---
+
+### Assertion Contract (every request)
 
 ```
 Block 1: Status code          → pm.test("Status code", ...)
 Block 2: Content-Type header  → pm.test("Content-Type header validation", ...)
 Block 3: Response body        → pm.test("Response body validation", ...)
+          - 4xx + HTML: check error message substring
+          - 200 + JSON: check expected body substring
+          - 200 + XML:  check XML element
+          - fallback: body is not empty
+
++ Business assertions derived from spec (see derivation chain above)
+  → filter correctness, pagination bounds, required fields, echo checks
 ```
 
-All values come from `pm.iterationData.get(...)` — no hard-coded expectations
-in scripts. This means the data file is independently extensible: add a row,
-define `responseCodeFor*`, run Newman.
+All values come from `pm.iterationData.get(...)` — nothing hard-coded in scripts.
 
 ---
 
-### What is NOT covered (explicit scope boundary)
+### Out of Scope
 
-| Out of scope | Why |
+| Not covered | Use instead |
 |---|---|
-| Load / performance testing | Newman is sequential; use k6 or Gatling |
-| Security fuzzing | Use OWASP ZAP or Burp Suite |
-| UI / browser automation | Use Playwright |
-| Race conditions / concurrency | Sequential runner; not combinatorially modeled |
-| Contract testing (Pact) | Different protocol — schema validation is included |
-| Mocking / stub servers | Requires separate tooling (WireMock etc.) |
+| Load / performance testing | k6, Gatling |
+| Security fuzzing | OWASP ZAP, Burp Suite |
+| UI / browser automation | Playwright |
+| Race conditions / concurrency | Sequential runner — not combinatorially modeled |
+| Mocking / stub servers | WireMock |
 
 ---
 
@@ -270,15 +645,15 @@ define `responseCodeFor*`, run Newman.
 
 | File | Audience | Purpose |
 |---|---|---|
-| `*_collection.json` | Postman / Newman | Run tests — never edit for data changes |
+| `*_collection.json` | Postman / Newman | Run tests — edit only for assertion logic fixes |
 | `*_data.json` | QA / developers | Add/remove scenarios without touching collection |
 | `*_environment.json` | Postman | Set base URL and auth per environment |
 | `api_config.json` | CI/CD pipelines | Config without opening Postman files |
 | `collection_data.yml` | Test runners | Registry of which collection + data pairs to run |
 | `test_scripts/*.js` | Code reviewers | Human-readable assertion scripts for PR review |
 | `pict_models/*.pict` | Test architects | Factor model audit trail — **check this in to VCS** |
-| `pairwise_matrix.csv` | Test leads | Human-readable matrix — what scenarios were generated |
-| `structured/test_results.jsonl` | Analytics | DuckDB / BI tools — per-execution results |
+| `pairwise_matrix.csv` | Test leads | Human-readable matrix — all scenarios at a glance |
+| `structured/test_results.jsonl` | Analytics | DuckDB / BI — per-execution results with product/feature/capability |
 | `structured/coverage.json` | Dashboards | Run-level metrics in machine-readable form |
 | `validation_report.md` | Pipeline | Automated quality gate |
 
@@ -286,18 +661,25 @@ define `responseCodeFor*`, run Newman.
 
 ## DuckDB Query Cookbook
 
-Run these locally against the `structured/` folder, or against S3 after publishing:
-
 ```sql
--- Test results from a single run
-SELECT request_name, validation_type, status, http_status_code, response_time_ms
+-- What did the tests cover? (per capability + validation type)
+SELECT capability, validation_type, COUNT(*) AS n,
+       SUM(CASE WHEN status='passed' THEN 1 ELSE 0 END) AS passed
 FROM read_json_auto('runs/*/structured/test_results.jsonl', union_by_name=true)
-ORDER BY validation_type, request_name;
+GROUP BY capability, validation_type ORDER BY capability;
 
--- Failures only — with assertion errors
-SELECT ts_name, assertion_errors
+-- Which business assertions failed?
+SELECT ts_name, http_status_code, assertion_errors
 FROM read_json_auto('runs/*/structured/test_results.jsonl', union_by_name=true)
-WHERE status = 'failed';
+WHERE status = 'failed'
+ORDER BY capability;
+
+-- RBAC gaps — endpoints missing at least one RBAC -ve row
+SELECT capability,
+       SUM(CASE WHEN validation_type = 'RBAC -ve' THEN 1 ELSE 0 END) AS rbac_neg_rows
+FROM read_json_auto('runs/*/structured/test_results.jsonl', union_by_name=true)
+GROUP BY capability
+HAVING rbac_neg_rows = 0;
 
 -- Coverage trend across CI runs (after S3 publish)
 SELECT year, month, day, api_name, newman_pass_rate_pct, pair_coverage_pct
@@ -307,63 +689,47 @@ ORDER BY year, month, day;
 
 -- P95 response time per capability
 SELECT capability,
-       PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY response_time_ms) AS p95_ms,
-       COUNT(*) AS n
+       PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY response_time_ms) AS p95_ms
 FROM read_json_auto('s3://bucket/api-tests/**/test_results.jsonl',
                     hive_partitioning=true, union_by_name=true)
 WHERE status = 'passed'
 GROUP BY capability ORDER BY p95_ms DESC;
-
--- RBAC coverage — confirm every endpoint has at least one -ve row
-SELECT request_name,
-       SUM(CASE WHEN validation_type = 'RBAC -ve' THEN 1 ELSE 0 END) AS rbac_neg_rows,
-       SUM(CASE WHEN validation_type = 'Smoke'    THEN 1 ELSE 0 END) AS smoke_rows
-FROM read_json_auto('runs/*/structured/test_results.jsonl', union_by_name=true)
-GROUP BY request_name
-HAVING rbac_neg_rows = 0;  -- ← find endpoints missing RBAC -ve coverage
 ```
 
 ---
 
 ## Extending the Agent
 
-### Add a new validation type
+### Add business rules the spec doesn't state
 
-1. Add the label to `_validation_type` values table in `agent/skills/naming_rules.md`.
-2. Update `assemble_collection.ts` to detect and assign the new type based on row content.
-3. Update `assemble_report.ts` structured output if you want it reported separately.
-
-### Customize the factor analysis
-
-Edit `agent/subagents/pairwise-designer/skills/factor_analysis.md` to add your
-domain-specific factor types (e.g., multi-tenancy, data-residency, feature flags).
-The Pairwise Designer loads this skill and applies it per endpoint.
-
-### Add a constraint rule
-
-In the Pairwise Designer delegation message, include domain rules:
+In the Pairwise Designer delegation message:
 
 ```
 Additional constraints:
-- If the endpoint requires a parent_id and parent does not exist, expect 404.
-- If user.role = 'guest', limit is always capped at 10 regardless of the limit param.
+- GET /pets?status=available must only return pets whose status field is "available".
+  Add a business constraint: IF status is set AND response is 200,
+  all response items must have status === the requested value.
+- If the endpoint requires a parent_id that doesn't exist, expect 404.
+- Guest role: limit is always server-capped at 10 regardless of the limit param.
 ```
 
-The designer encodes these into `constraints[]` in `factors_model.json`.
-The IPOG tool enforces them deterministically.
+### Increase pairwise strength for high-risk endpoints
 
-### Increase pairwise strength for a specific endpoint
+```
+Generate tests for operationIds: authorizeGrant — strength: 3
+```
 
-Set `strength: 3` in the factors_model for that operationId (you can instruct
-the Pairwise Designer to use strength 3 for high-risk endpoints). Strength 3
-means every triple of parameter values is covered — more rows, but justified for
-auth grant/revoke, financial ops, or data lineage endpoints.
+Strength 3 = every triple of parameter values covered.
+Use for auth grant/revoke, financial, or data-lineage endpoints.
 
-### Add JSON schema validation to assertions
+### Add JSON schema validation
 
-In the Assertion Writer delegation message, include the resolved JSON schema for
-each response. The writer adds `pm.response.to.have.jsonSchema(schema)` in
-Branch B of the assertion contract.
+In the Assertion Writer delegation message:
+
+```
+For listPets, include JSON schema validation:
+pm.response.to.have.jsonSchema(<paste the resolved JSON schema here>)
+```
 
 ### Publish to a different S3-compatible store
 
@@ -381,9 +747,6 @@ PUBLISH_S3_URI=s3://my-bucket/api-tests
 PUBLISH_S3_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com
 ```
 
-The `publish_results` tool passes `--endpoint-url` to the AWS CLI — compatible
-with any S3-protocol store.
-
 ---
 
 ## Troubleshooting
@@ -391,33 +754,30 @@ with any S3-protocol store.
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | `MODEL_* not set` startup error | Missing env var | Set all three `MODEL_*` vars in `.env` |
-| `parse_openapi` warnings about unresolved `$ref` | Spec uses external refs | Pass `--bundle` the spec first with `swagger-bundle` |
-| Pairwise Designer returns no constraints | Sparse spec (no auth, no limits) | Add a delegation note: "add RBAC constraints — assume anonymous role should be rejected" |
-| Newman fails with `ECONNREFUSED` | Base URL not reachable from sandbox | Update `{{base_url}}` in environment JSON to an accessible host |
-| `structured/test_results.jsonl` has `status: "not_run"` | Newman was skipped or failed | Re-run with `run_newman=true` and a reachable base URL |
-| `validate_collection` fails on classification | `product` missing from data rows | Pass `--product YourProduct` option when running the agent |
-| AWS CLI not found in sandbox | Minimal Docker image | Pre-install `awscli` in sandbox or use the `PUBLISH_S3_ENDPOINT_URL` env to route via MinIO |
+| `parse_openapi` unresolved `$ref` warnings | Spec uses external refs | Bundle first: `swagger-cli bundle spec.yaml -o bundled.yaml` |
+| Pairwise Designer returns no business constraints | Sparse spec (no descriptions, no examples) | Add explicit delegation note: "Derive these business rules: [list them]" |
+| Tests pass but business behavior is wrong | Business constraints not in factors_model | Check `pict_models/*.pict` — if missing, add rules via delegation message |
+| Newman fails with `ECONNREFUSED` | Base URL unreachable from sandbox | Update `{{base_url}}` in environment JSON to an accessible host |
+| `test_results.jsonl` has `status: "not_run"` | Newman skipped or failed | Re-run with `run_newman=true` and a reachable base URL |
+| `validate_collection` fails on classification | `product` missing from data rows | Pass `--product YourProduct` when running the agent |
 | DuckDB `hive_partitioning` returns empty | Wrong glob path | Ensure path ends with `/**/*.jsonl` not `/*.jsonl` |
 
 ---
 
 ## References
 
-- **Combinatorial testing theory and PICT model design**
-  [Applying Combinatorial Science & Discrete Mathematics to API Testing](https://www.linkedin.com/pulse/applying-combinatorial-science-discrete-mathematics-karuppaiah-qgste/)
-  — Three-layer PICT model, constraint block importance, C(4,2) pair reduction math
+- **Combinatorial testing theory and PICT model design**  
+  [Applying Combinatorial Science & Discrete Mathematics to API Testing](https://www.linkedin.com/pulse/applying-combinatorial-science-discrete-mathematics-karuppaiah-qgste/)  
+  Senthilnathan Karuppaiah — three-layer PICT model, constraint block importance, C(4,2) pair reduction math
 
 - **IPOG algorithm** — Lei, Y. & Tai, K.-C. (1998). "In-Parameter-Order: A Test Generation
-  Strategy for Pairwise Testing." IEEE HASE 1998. The deterministic algorithm implemented
-  in `agent/tools/generate_pairwise_matrix.ts`.
+  Strategy for Pairwise Testing." IEEE HASE 1998. Implemented in `generate_pairwise_matrix.ts`.
 
-- **Postman Collection v2.1.0 schema**
-  https://schema.getpostman.com/json/collection/v2.1.0/collection.json
+- **Postman Collection v2.1.0 schema** — https://schema.getpostman.com/json/collection/v2.1.0/collection.json
 
 - **Newman CLI** — https://www.npmjs.com/package/newman
 
-- **DuckDB JSONL + Hive partitioning**
-  https://duckdb.org/docs/data/json/overview — `read_json_auto` with `hive_partitioning=true`
+- **DuckDB JSONL + Hive partitioning** — https://duckdb.org/docs/data/json/overview
 
 - **OpenAPI 3.x specification** — https://spec.openapis.org/oas/v3.1.0
 

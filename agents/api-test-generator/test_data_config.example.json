@@ -1,0 +1,137 @@
+{
+  "_comment": "Copy to test_data_config.json and configure for your environment. Use ${ENV_VAR} for secrets — never commit real credentials.",
+  "model_name": "H360 Healthcare 360 (Synthetic)",
+  "description": "Synthetic healthcare data model with Synthea-generated patient records. Supports JDBC (PostgreSQL) and Object Store (S3/MinIO Parquet) sources. One-time environment setup required — populate using a Synthea data generator run before executing tests.",
+
+  "datasources": {
+    "h360_db": {
+      "type": "jdbc",
+      "driver": "postgresql",
+      "host": "${H360_DB_HOST}",
+      "port": 5432,
+      "database": "h360",
+      "schema": "clinical",
+      "username": "${H360_DB_USER}",
+      "password": "${H360_DB_PASSWORD}",
+      "duckdb_attach": "jdbc:postgresql://${H360_DB_HOST}:5432/h360",
+      "description": "H360 clinical PostgreSQL database — Synthea-seeded"
+    },
+    "h360_lake": {
+      "type": "object_store",
+      "uri": "${H360_LAKE_URI}",
+      "format": "parquet",
+      "partitioning": "hive",
+      "description": "Synthea-generated Parquet files in S3/MinIO, Hive-partitioned by entity type",
+      "s3_access_key": "${H360_LAKE_ACCESS_KEY}",
+      "s3_secret_key": "${H360_LAKE_SECRET_KEY}",
+      "s3_endpoint_url": "${H360_LAKE_ENDPOINT_URL}"
+    }
+  },
+
+  "entities": {
+    "Patient": {
+      "description": "Synthetic patient record (Synthea-generated)",
+      "id_column": "patient_id",
+      "id_format": "UUID",
+      "jdbc_table": "clinical.patients",
+      "parquet_path": "${H360_LAKE_URI}/patients/*.parquet",
+      "sample_count": 20,
+      "filter": "active = true"
+    },
+    "Encounter": {
+      "description": "Clinical encounter (visit, telehealth, inpatient)",
+      "id_column": "encounter_id",
+      "id_format": "UUID",
+      "jdbc_table": "clinical.encounters",
+      "parquet_path": "${H360_LAKE_URI}/encounters/*.parquet",
+      "sample_count": 10,
+      "filter": "status = 'finished'"
+    },
+    "Organization": {
+      "description": "Healthcare organization (hospital, clinic, payer)",
+      "id_column": "org_id",
+      "id_format": "ORG-{N}",
+      "jdbc_table": "clinical.organizations",
+      "parquet_path": "${H360_LAKE_URI}/organizations/*.parquet",
+      "sample_count": 5
+    },
+    "Claim": {
+      "description": "Healthcare claim (professional, institutional)",
+      "id_column": "claim_id",
+      "id_format": "CLM-{N}",
+      "jdbc_table": "clinical.claims",
+      "parquet_path": "${H360_LAKE_URI}/claims/*.parquet",
+      "sample_count": 10,
+      "filter": "status = 'active'"
+    },
+    "Provider": {
+      "description": "Healthcare provider (physician, specialist, facility)",
+      "id_column": "provider_id",
+      "id_format": "UUID",
+      "jdbc_table": "clinical.providers",
+      "parquet_path": "${H360_LAKE_URI}/providers/*.parquet",
+      "sample_count": 5
+    },
+    "Medication": {
+      "description": "Medication / prescription record",
+      "id_column": "medication_id",
+      "id_format": "MED-{N}",
+      "jdbc_table": "clinical.medications",
+      "parquet_path": "${H360_LAKE_URI}/medications/*.parquet",
+      "sample_count": 15
+    }
+  },
+
+  "data_injection": {
+    "_comment": "Maps API parameter names to datasource queries. Keys match placeholder variable names in *_data.json rows (e.g. '{{patientId}}' in the data file → resolved by query below).",
+
+    "patientId": {
+      "datasource": "h360_db",
+      "query": "SELECT patient_id FROM clinical.patients WHERE active = true ORDER BY RANDOM() LIMIT 20",
+      "description": "Active patient UUIDs — used in /patients/{patientId} and as filter on child resources"
+    },
+    "encounterId": {
+      "datasource": "h360_db",
+      "query": "SELECT encounter_id FROM clinical.encounters WHERE status = 'finished' LIMIT 10",
+      "description": "Completed encounter UUIDs — used in /encounters/{encounterId}"
+    },
+    "orgId": {
+      "datasource": "h360_lake",
+      "query": "SELECT org_id FROM read_parquet('${H360_LAKE_URI}/organizations/*.parquet') LIMIT 5",
+      "description": "Organization IDs — used for multi-tenant filtering and org-scoped endpoints"
+    },
+    "claimId": {
+      "datasource": "h360_lake",
+      "query": "SELECT claim_id FROM read_parquet('${H360_LAKE_URI}/claims/*.parquet') WHERE status = 'active' LIMIT 10",
+      "description": "Active claim IDs — used in /claims/{claimId}"
+    },
+    "providerId": {
+      "datasource": "h360_db",
+      "query": "SELECT provider_id FROM clinical.providers LIMIT 5",
+      "description": "Provider UUIDs — used in /providers/{providerId} and care team assignments"
+    },
+    "medicationId": {
+      "datasource": "h360_lake",
+      "query": "SELECT medication_id FROM read_parquet('${H360_LAKE_URI}/medications/*.parquet') LIMIT 15",
+      "description": "Medication record IDs — used in /medications/{medicationId}"
+    }
+  },
+
+  "duckdb_examples": {
+    "_comment": "DuckDB is used as the unified query layer for both JDBC and Object Store sources.",
+    "jdbc_attach": "INSTALL jdbc; LOAD jdbc; ATTACH 'jdbc:postgresql://${H360_DB_HOST}:5432/h360' AS h360 (TYPE JDBC); SELECT patient_id FROM h360.clinical.patients WHERE active=true LIMIT 20;",
+    "parquet_s3": "SELECT org_id FROM read_parquet('s3://h360-synthetic/v1/organizations/*.parquet') LIMIT 5;",
+    "cross_source": "SELECT p.patient_id, o.org_id FROM h360.clinical.patients p JOIN read_parquet('s3://bucket/orgs/*.parquet') o ON p.org_id = o.org_id WHERE p.active = true LIMIT 10;"
+  },
+
+  "environment_setup": {
+    "description": "One-time setup steps before running tests",
+    "steps": [
+      "1. Generate synthetic data: run Synthea (https://synthea.mitre.org/) with desired population size",
+      "2. Load JDBC data: import Synthea CSV output into PostgreSQL h360.clinical schema",
+      "3. Load Object Store data: upload Synthea Parquet output to ${H360_LAKE_URI}",
+      "4. Verify: run DuckDB examples above to confirm data is accessible",
+      "5. Set env vars: H360_DB_HOST, H360_DB_USER, H360_DB_PASSWORD, H360_LAKE_URI, H360_LAKE_ACCESS_KEY, H360_LAKE_SECRET_KEY"
+    ]
+  }
+}
