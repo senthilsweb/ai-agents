@@ -713,3 +713,51 @@ Resolves `MODEL_<ROLE>_* → MODEL_* → startup error`. No built-in default.
 - ≥ 85% Newman pass rate on well-formed OpenAPI specs against a live environment.
 - DuckDB cross-run analytics work immediately after first S3 publish — no ETL.
 - PICT model files can be diffed in PRs to show spec coverage changes.
+
+---
+
+## 17. Changelog
+
+### v2.0 (current)
+
+Features added since v1.0 — all items below moved from "Future Enhancements" to implemented:
+
+| Feature | Where |
+|---|---|
+| Two-phase architecture (authoring vs execution separated) | `ARCHITECTURE.md`, `openspec.md §4` |
+| Business assertion generation (filter correctness, echo, schema) | `assemble_collection.ts`, `assertion_contract.md` |
+| Business constraint flow (Pairwise Designer → Assertion Writer) | `factors_model.json.businessConstraint`, `instructions.md §6` |
+| Classification taxonomy (`product`/`feature`/`capability`/`domain`) | `assemble_collection.ts`, `naming_rules.md` |
+| PICT model file output per endpoint (`.pict`) | `generate_pairwise_matrix.ts` |
+| Artifact separation (6 output files: collection, data, env, api_config, manifest, test_scripts) | `assemble_collection.ts`, `collection_assembly.md` |
+| Structured analytics (test_results.jsonl, coverage.json, matrix.jsonl) | `assemble_report.ts` |
+| S3/MinIO publish with Hive partitioning (DuckDB-queryable, no ETL) | `publish_results.ts` |
+| 8 validation gates (was 6; added classification and credential hygiene) | `validate_collection.ts` |
+| Test data config (`test_data_config.example.json`) — H360 JDBC + Object Store | `test_data_config.example.json` |
+| GitHub Actions execution workflow | `.github/workflows/api-tests.yml` |
+| `setup_test_data` tool contract (JDBC + Object Store via DuckDB) | `openspec.md §7` |
+
+### v1.0 (original)
+
+- `parse_openapi`, `apply_naming_rules`, `generate_pairwise_matrix`
+- `assemble_collection`, `run_newman`, `validate_collection`, `assemble_report`
+- Three-model strategy (Sonnet orchestrator, Opus designer, Haiku writer)
+- IPOG algorithm (deterministic combination math)
+- 6 validation gates
+
+---
+
+## 18. Roadmap
+
+Items not yet implemented — code contracts are defined in this spec, scripts are not yet written:
+
+| Item | Priority | Status | Notes |
+|---|---|---|---|
+| `scripts/setup_test_data.js` | HIGH | Not written | Tool contract in §7; needed for H360 JDBC/Object Store injection before Newman |
+| `scripts/postprocess_newman.js` | HIGH | Not written | Converts `newman_report.json` + `*_data.json` → `test_results.jsonl`; used by GitHub Actions |
+| `npm run execute` script in `package.json` | HIGH | Not written | Standalone execution runner (no LLM); referenced in ARCHITECTURE.md |
+| End-to-end test run against `h360_patients_api.yaml` | HIGH | Pending | See `openspec/test_run_spec.md` for acceptance criteria |
+| AsyncAPI / gRPC spec support | MEDIUM | Planned | After OpenAPI 3.x path is fully validated |
+| Direct Postman workspace upload via API | LOW | Planned | Push generated collection to Postman cloud after authoring |
+| Evaluation dataset from accumulated runs | LOW | Future | Build from high-quality run history for model fine-tuning |
+| Distill assertion patterns into smaller model | LOW | Future | After sufficient run volume to identify stable patterns |
