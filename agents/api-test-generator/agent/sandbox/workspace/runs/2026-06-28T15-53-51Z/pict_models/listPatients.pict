@@ -1,0 +1,27 @@
+# PICT Model — listPatients (GET /<listPatients>)
+# Strength: 2 (pairwise)
+# Generated: 2026-06-28T15:56:33.619Z
+# Tip: The constraint block is the most valuable part — keep it version-controlled.
+
+role: read_token, write_token, no_token, insufficient_scope_token
+status: omitted, active, inactive, deceased
+limit: null, 1, 20, 99, 100, 101
+offset: omitted, 0, 1, large_value
+orgId: omitted, valid_org, unknown_org
+
+# Constraints
+# IF [role] = "no_token" → expect HTTP 401 (see constraints in factors_model.json)
+# IF [role] = "insufficient_scope_token" → expect HTTP 403 (see constraints in factors_model.json)
+# IF [role] = "write_token" → expect HTTP 403 (see constraints in factors_model.json)
+# IF [limit] = "101" → expect HTTP 400 (see constraints in factors_model.json)
+# IF [limit] = "null" → expect HTTP 200 (see constraints in factors_model.json)
+
+# Must-include rows (≥1 Smoke + ≥1 RBAC-negative per endpoint)
+# MUST: [_validation_type]="Smoke", [description]="Authorized read_token, no filters, default pagination — expects 200 with patients array", [role]="read_token", [status]="omitted", [limit]="20", [offset]="0", [orgId]="valid_org"
+# MUST: [_validation_type]="RBAC -ve", [description]="Missing token — expects 401", [role]="no_token", [status]="omitted", [limit]="20", [offset]="0", [orgId]="valid_org"
+# MUST: [_validation_type]="RBAC -ve", [description]="Wrong scope token — expects 403", [role]="insufficient_scope_token", [status]="omitted", [limit]="20", [offset]="0", [orgId]="valid_org"
+# MUST: [_validation_type]="Functional", [description]="Status filter=active — expects 200, all returned patients have status active", [role]="read_token", [status]="active", [limit]="20", [offset]="0", [orgId]="valid_org"
+# MUST: [_validation_type]="Functional", [description]="Status filter=deceased — expects 200, all returned patients have status deceased", [role]="read_token", [status]="deceased", [limit]="20", [offset]="0", [orgId]="valid_org"
+# MUST: [_validation_type]="Boundary", [description]="limit=100 (maximum) — expects 200 with <= 100 patients", [role]="read_token", [status]="omitted", [limit]="100", [offset]="0", [orgId]="valid_org"
+# MUST: [_validation_type]="Boundary", [description]="limit=101 (over maximum) — expects 400", [role]="read_token", [status]="omitted", [limit]="101", [offset]="0", [orgId]="valid_org"
+# MUST: [_validation_type]="Boundary", [description]="limit=1 (minimum) — expects 200 with <= 1 patient", [role]="read_token", [status]="omitted", [limit]="1", [offset]="0", [orgId]="valid_org"

@@ -22,6 +22,7 @@
     "typecheck": "tsgo"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.1",
     "@ai-sdk/openai-compatible": "3.0.0-beta.57",
     "ai": "7.0.0-beta.178",
     "eve": "^0.11.7",
@@ -32,5 +33,7 @@
     "@types/node": "24.x",
     "@typescript/native-preview": "7.0.0-dev.20260523.1"
   },
-  "engines": { "node": "24.x" }
+  "engines": {
+    "node": "24.x"
+  }
 }

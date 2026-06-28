@@ -1,0 +1,69 @@
+{
+  "api_name": "H360Patients",
+  "collection_file": "H360Patients_collection.json",
+  "data_file": "H360Patients_data.json",
+  "environment_file": "H360Patients_environment.json",
+  "base_url_var": "{{base_url}}",
+  "auth": {
+    "type": "bearer",
+    "token_var": "bearer_token"
+  },
+  "environment_name": "H360Patients Local",
+  "defaults": {
+    "timeout_ms": 30000,
+    "insecure": true,
+    "bail_on_failure": false
+  },
+  "endpoints": [
+    {
+      "operationId": "listPatients",
+      "method": "GET",
+      "path": "/patients",
+      "request_name": "List Patients",
+      "product": "H360",
+      "feature": "patients",
+      "capability": "list-patients",
+      "domain": "clinical-data"
+    },
+    {
+      "operationId": "createPatient",
+      "method": "POST",
+      "path": "/patients",
+      "request_name": "Create Patient",
+      "product": "H360",
+      "feature": "patients",
+      "capability": "create-patients",
+      "domain": "clinical-data"
+    },
+    {
+      "operationId": "getPatient",
+      "method": "GET",
+      "path": "/patients/{patientId}",
+      "request_name": "Get Patient",
+      "product": "H360",
+      "feature": "patients",
+      "capability": "get-patients",
+      "domain": "clinical-data"
+    },
+    {
+      "operationId": "updatePatient",
+      "method": "PUT",
+      "path": "/patients/{patientId}",
+      "request_name": "Update Patient",
+      "product": "H360",
+      "feature": "patients",
+      "capability": "update-patients",
+      "domain": "clinical-data"
+    },
+    {
+      "operationId": "deletePatient",
+      "method": "DELETE",
+      "path": "/patients/{patientId}",
+      "request_name": "Delete Patient",
+      "product": "H360",
+      "feature": "patients",
+      "capability": "delete-patients",
+      "domain": "clinical-data"
+    }
+  ]
+}

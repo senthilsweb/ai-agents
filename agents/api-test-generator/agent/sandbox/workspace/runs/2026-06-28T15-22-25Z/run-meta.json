@@ -1,0 +1,23 @@
+{
+  "run_id": "2026-06-28T15-22-25Z",
+  "started_at": "2026-06-28T15:22:25.060Z",
+  "start_epoch": 1782660145,
+  "request": "Generate Postman/Newman tests for H360 Patients API — api_name: H360Patients, product: H360, domain: clinical-data, auth: bearer, strength: 2, run_newman: false",
+  "options": {
+    "spec": "h360_patients_api.yaml",
+    "api_name": "H360Patients",
+    "product": "H360",
+    "domain": "clinical-data",
+    "auth": "bearer",
+    "strength": 2,
+    "run_newman": false,
+    "allow_cost": true
+  },
+  "models": {
+    "orchestrator": "claude-sonnet-4-6",
+    "pairwise_designer": "claude-opus-4-8",
+    "assertion_writer": "claude-haiku-4-5-20251001"
+  },
+  "host": "eve",
+  "agent": "api-test-generator"
+}

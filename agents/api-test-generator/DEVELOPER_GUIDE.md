@@ -753,7 +753,7 @@ PUBLISH_S3_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| `MODEL_* not set` startup error | Missing env var | Set all three `MODEL_*` vars in `.env` |
+| `MODEL_* not set` startup error | Missing env var | Set all three `MODEL_*` vars in `.env`; or set `ANTHROPIC_API_KEY` directly (no gateway needed) |
 | `parse_openapi` unresolved `$ref` warnings | Spec uses external refs | Bundle first: `swagger-cli bundle spec.yaml -o bundled.yaml` |
 | Pairwise Designer returns no business constraints | Sparse spec (no descriptions, no examples) | Add explicit delegation note: "Derive these business rules: [list them]" |
 | Tests pass but business behavior is wrong | Business constraints not in factors_model | Check `pict_models/*.pict` — if missing, add rules via delegation message |
@@ -761,6 +761,10 @@ PUBLISH_S3_ENDPOINT_URL=https://<account-id>.r2.cloudflarestorage.com
 | `test_results.jsonl` has `status: "not_run"` | Newman skipped or failed | Re-run with `run_newman=true` and a reachable base URL |
 | `validate_collection` fails on classification | `product` missing from data rows | Pass `--product YourProduct` when running the agent |
 | DuckDB `hive_partitioning` returns empty | Wrong glob path | Ensure path ends with `/**/*.jsonl` not `/*.jsonl` |
+| Data file has 0 rows; `validate_collection` reports ERROR | Pairwise Designer returned `endpoints` as an array instead of a dict | `generate_pairwise_matrix` auto-normalizes the array to a dict; check `factors_model.json` — if keys are `"0","1","2"` normalization fired but content may be wrong; inspect the Designer output |
+| RBAC -ve rows show status 200 instead of 401/403 | Role code not recognized (`no_token`, `insufficient_scope_token`) | `assemble_collection` maps `no_token`→401, `insufficient_scope_token`→403; verify role factor levels match these codes exactly in `factors_model.json` |
+| Boundary rows (`limit=101`) carry the wrong expected status | `expect_status` constraint not in factors_model | Add `{ "if": { "limit": "101" }, "expect_status": 400 }` to the endpoint constraints; `generate_pairwise_matrix` propagates it to each matching matrix row |
+| `test_scripts/` file names contain spaces | Pre-fix run artifact | Current code replaces spaces with underscores; re-run authoring or rename the files manually |
 
 ---
 

@@ -1,5 +1,6 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
+import { writeRunArtifact } from "shared/lib/run.js";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -257,7 +258,6 @@ export default defineTool({
 
     // ── Write a _query_hints.sql file to the run for convenience ─────────────
     try {
-      const { writeRunArtifact } = await import("shared/lib/run.js");
       await writeRunArtifact(
         ctx,
         run_id,

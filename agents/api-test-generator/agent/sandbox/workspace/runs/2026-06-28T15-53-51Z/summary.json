@@ -1,0 +1,70 @@
+{
+  "runId": "2026-06-28T15-53-51Z",
+  "generatedAt": "2026-06-28T15:59:46.246Z",
+  "models": {
+    "orchestrator": "claude-sonnet-4-6",
+    "pairwise_designer": "claude-opus-4-8",
+    "assertion_writer": "claude-haiku-4-5-20251001"
+  },
+  "totals": {
+    "inputTokens": 3527111,
+    "outputTokens": 65683,
+    "cacheReadTokens": 3114241,
+    "cacheWriteTokens": 255664,
+    "steps": 66,
+    "sessions": 3
+  },
+  "perSession": [
+    {
+      "sessionId": "wrun_01KW7BET8B90SNAGM0C03NXCMM",
+      "inputTokens": 1155246,
+      "outputTokens": 18636,
+      "cacheReadTokens": 1030935,
+      "cacheWriteTokens": 76904,
+      "steps": 22,
+      "budgetExceeded": false
+    },
+    {
+      "sessionId": "wrun_01KW7D5XX3N8VW971TS23JKY3B",
+      "inputTokens": 1619873,
+      "outputTokens": 25643,
+      "cacheReadTokens": 1460047,
+      "cacheWriteTokens": 98137,
+      "steps": 27,
+      "budgetExceeded": false
+    },
+    {
+      "sessionId": "wrun_01KW7EZCN5A2M97X51CG1VN3KC",
+      "inputTokens": 751992,
+      "outputTokens": 21404,
+      "cacheReadTokens": 623259,
+      "cacheWriteTokens": 80623,
+      "steps": 17,
+      "budgetExceeded": false
+    }
+  ],
+  "cost": {
+    "amount": 0,
+    "rated": false,
+    "byModel": [
+      {
+        "modelId": "claude-sonnet-4-6",
+        "rated": false,
+        "amount": 0
+      },
+      {
+        "modelId": "claude-sonnet-4-6",
+        "rated": false,
+        "amount": 0
+      },
+      {
+        "modelId": "claude-sonnet-4-6",
+        "rated": false,
+        "amount": 0
+      }
+    ]
+  },
+  "budget": {
+    "exceeded": false
+  }
+}

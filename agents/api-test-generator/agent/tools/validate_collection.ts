@@ -176,6 +176,15 @@ export default defineTool({
       });
     }
 
+    if (dataRows.length === 0 && namedModel.endpoints.length > 0) {
+      violations.push({
+        severity: "ERROR",
+        rule: "Empty data file",
+        location: "data file",
+        detail: `Data file is empty (0 rows) but ${namedModel.endpoints.length} endpoint(s) were parsed — assemble_collection likely failed to read the pairwise matrix`,
+      });
+    }
+
     for (let i = 0; i < dataRows.length; i++) {
       const row = dataRows[i];
       const rowId = String(row.TSName ?? `row[${i}]`);

@@ -40,6 +40,73 @@ function deriveFeature(tag: string): string {
   return tag.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
+// ── Business assertion key derivation ────────────────────────────────────────
+// Derives extra iteration-data keys that test scripts read via pm.iterationData.
+// These are driven by spec semantics: filter params, pagination params, echo fields.
+
+interface SpecParameter {
+  name: string;
+  in?: string;
+  required?: boolean;
+  schema?: {
+    type?: string;
+    enum?: string[];
+    minimum?: number;
+    maximum?: number;
+    maxLength?: number;
+    format?: string;
+  };
+  description?: string;
+}
+
+function deriveBusinessKeys(
+  endpoint: Record<string, unknown>,
+  row: Record<string, string>,
+  expectedStatus: number,
+): Record<string, unknown> {
+  const extra: Record<string, unknown> = {};
+  if (expectedStatus < 200 || expectedStatus >= 300) return extra;
+
+  const method = String(endpoint.method ?? "GET").toUpperCase();
+  const params = (endpoint.parameters as SpecParameter[]) ?? [];
+  const NULL_LEVELS = new Set(["omit", "omitted", "null", "none", ""]);
+
+  for (const param of params) {
+    const value = row[param.name];
+    if (!value || NULL_LEVELS.has(value.toLowerCase())) continue;
+
+    // Enum filter param: all items in response should match the filter value
+    if (param.schema?.enum && param.in === "query") {
+      extra.expectFilterField = param.name;
+      extra.expectFilterValue = value;
+    }
+
+    // Pagination limit param: response item count ≤ limit
+    if (
+      (param.name === "limit" || (param.schema?.type === "integer" && param.schema?.maximum)) &&
+      /^\d+$/.test(value)
+    ) {
+      extra.expectMaxItems = value;
+    }
+  }
+
+  // Echo check for POST 201 / PUT 200: string request body fields
+  if ((method === "POST" && expectedStatus === 201) || (method === "PUT" && expectedStatus === 200)) {
+    const rb = endpoint.requestBody as { schema?: { properties?: Record<string, { type?: string }> } } | null | undefined;
+    const bodyProps = rb?.schema?.properties;
+    if (bodyProps) {
+      for (const [fieldName, fieldDef] of Object.entries(bodyProps)) {
+        const sentValue = row[fieldName];
+        if (sentValue && !NULL_LEVELS.has(sentValue.toLowerCase()) && fieldDef.type === "string") {
+          extra[`expectEcho_${fieldName}`] = sentValue;
+        }
+      }
+    }
+  }
+
+  return extra;
+}
+
 // ── Postman collection builder ───────────────────────────────────────────────
 
 function buildAuth(profile: AuthProfile): Record<string, unknown> | undefined {
@@ -244,11 +311,27 @@ export default defineTool({
     try {
       const raw = await readHostRunArtifact(runId, "assertion_scripts.json");
       const parsed = JSON.parse(raw) as {
+        // Assertion Writer may emit "scripts" or "assertion_scripts" — accept both
+        scripts?: Record<string, string>;
         assertion_scripts?: Record<string, string>;
+        // TSName suggestions: dict form OR list of {operationId, row, tsname} objects
         tsname_suggestions?: Record<string, string>;
+        tsnames?: Record<string, string>;
+        tsname_examples?: Array<{ operationId?: string; row?: number; tsname?: string }>;
       };
-      assertionScripts = parsed.assertion_scripts ?? {};
-      tsnameMap = parsed.tsname_suggestions ?? {};
+      assertionScripts = parsed.assertion_scripts ?? parsed.scripts ?? {};
+      if (parsed.tsname_suggestions) {
+        tsnameMap = parsed.tsname_suggestions;
+      } else if (parsed.tsnames) {
+        tsnameMap = parsed.tsnames;
+      } else if (Array.isArray(parsed.tsname_examples)) {
+        // Convert list [{operationId, row, tsname}] → {"opId.rowIdx": "TSName"}
+        for (const ex of parsed.tsname_examples) {
+          if (ex.operationId && typeof ex.row === "number" && ex.tsname) {
+            tsnameMap[`${ex.operationId}.${ex.row}`] = ex.tsname;
+          }
+        }
+      }
     } catch {
       // Assertion scripts optional; fallback scripts generated below
     }
@@ -338,14 +421,32 @@ export default defineTool({
       const folderName = String(endpoint.folderName ?? feature);
       if (!testCasesByCategory[folderName]) testCasesByCategory[folderName] = [];
 
-      epMatrix.rows.forEach((row, idx) => {
-        const tsnameKey = `${opId}.${idx}`;
-        const isRbacNeg = ["anonymous", "unauthorized", "none", ""].includes(
-          (row.role ?? row.auth_role ?? "").toLowerCase(),
+      epMatrix.rows.forEach((rawRow, idx) => {
+        // Strip non-factor metadata keys the Pairwise Designer may add to must_include rows.
+        // "description" is intentionally excluded — it's prose, not a test param, and pollutes TSNames.
+        const METADATA_KEYS = new Set(["row", "note", "expected_status", "_validation_type", "_comments", "description"]);
+        const row: Record<string, string> = Object.fromEntries(
+          Object.entries(rawRow).filter(([k, v]) => !METADATA_KEYS.has(k) && typeof v === "string"),
         );
+
+        // Use expected_status annotated by generate_pairwise_matrix (from constraint rules);
+        // rawRow.expected_status may be a string (annotated) or number (must_include metadata).
+        const rawStatus = rawRow.expected_status;
+        const designerStatus =
+          typeof rawStatus === "number" ? rawStatus :
+          typeof rawStatus === "string" && /^\d+$/.test(rawStatus) ? parseInt(rawStatus) :
+          null;
+
+        const tsnameKey = `${opId}.${idx}`;
+        const roleValue = (row.role ?? row.auth_role ?? "").toLowerCase();
+        // Roles that indicate missing / insufficient auth (401/403)
+        const UNAUTH_ROLES = new Set(["anonymous", "unauthorized", "none", "", "no_token", "no_auth", "unauthenticated"]);
+        const WRONG_SCOPE_ROLES = new Set(["insufficient_scope_token", "wrong_scope", "insufficient_scope", "read_only"]);
+        const isRbacNeg = UNAUTH_ROLES.has(roleValue) || WRONG_SCOPE_ROLES.has(roleValue);
+        const rbacStatus = UNAUTH_ROLES.has(roleValue) ? 401 : WRONG_SCOPE_ROLES.has(roleValue) ? 403 : null;
         const isOverBoundary = Object.values(row).some((v) => String(v).includes("+1"));
 
-        const expectedStatus = isRbacNeg ? 401 : isOverBoundary ? 400 : defaultStatus;
+        const expectedStatus = designerStatus ?? (rbacStatus ?? (isOverBoundary ? 400 : defaultStatus));
         const expectedCt = isRbacNeg ? "text/html" : defaultCt;
         const validationType = isRbacNeg
           ? "RBAC -ve"
@@ -355,17 +456,39 @@ export default defineTool({
               ? "Boundary"
               : "Functional";
 
-        const defaultTSName = [
-          requestName,
-          Object.entries(row)
-            .filter(([k]) => !["username", "password", "bearer_token", "api_key"].includes(k))
-            .slice(0, 3)
-            .map(([k, v]) => `${k}=${v}`)
-            .join(" "),
-          `· expect ${expectedStatus}`,
-        ]
-          .filter(Boolean)
-          .join(" · ");
+        // Role label translation — convert internal role codes to human-readable labels
+        const ROLE_LABELS: Record<string, string> = {
+          no_token: "anonymous",
+          no_auth: "anonymous",
+          unauthenticated: "anonymous",
+          anonymous: "anonymous",
+          insufficient_scope_token: "viewer",
+          wrong_scope: "viewer",
+          read_only: "viewer",
+          read_token: "reader",
+          write_token: "editor",
+          delete_token: "admin",
+          admin_token: "admin",
+          admin: "admin",
+        };
+        const roleLabel = ROLE_LABELS[roleValue] ?? roleValue;
+
+        // Build a meaningful default TSName: highlight the key variant being tested
+        // Values that are "default/boring" and shouldn't dominate the TSName
+        const NEUTRAL_VALUES = new Set(["omitted", "omit", "null", "valid_org", "0", "20"]);
+        const variantParts = Object.entries(row)
+          .filter(([k, v]) => !["role", "auth_role"].includes(k) && v && !NEUTRAL_VALUES.has(v))
+          .slice(0, 2)
+          .map(([k, v]) => `${k}=${v}`);
+
+        let defaultTSName: string;
+        if (isRbacNeg) {
+          defaultTSName = `${requestName} as ${roleLabel} · expect ${expectedStatus}`;
+        } else if (variantParts.length > 0) {
+          defaultTSName = `${requestName} WITH ${variantParts.join(", ")} · expect ${expectedStatus}`;
+        } else {
+          defaultTSName = `${requestName} · expect ${expectedStatus}`;
+        }
 
         const tsName = tsnameMap[tsnameKey] ?? defaultTSName;
 
@@ -384,6 +507,8 @@ export default defineTool({
           ...(auth_profile.type === "apikey" ? { [auth_profile.key_var]: `{{${auth_profile.key_var}}}` } : {}),
           // Spread pairwise factor values (params, body fields)
           ...row,
+          // Business assertion keys derived from endpoint semantics
+          ...deriveBusinessKeys(endpoint, row, expectedStatus),
           // Assertion keys — read by pm.iterationData.get() in the test script
           [`responseCodeFor${suffix}`]: expectedStatus,
           [`responseTextFor${suffix}`]: isRbacNeg ? "Unauthorized" : "",
@@ -522,7 +647,7 @@ export default defineTool({
 
     // test_scripts/ — one .js file per request (read-only reference)
     for (const [name, script] of Object.entries(scriptsByRequest)) {
-      const safeName = name.replace(/[/\\:*?"<>|]/g, "_");
+      const safeName = name.replace(/\s+/g, "_").replace(/[/\\:*?"<>|]/g, "_");
       writes.push(
         writeRunArtifact(
           ctx,

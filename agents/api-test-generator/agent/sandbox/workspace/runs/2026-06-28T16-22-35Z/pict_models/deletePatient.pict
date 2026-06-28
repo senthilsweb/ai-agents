@@ -1,0 +1,26 @@
+# PICT Model — deletePatient (GET /<deletePatient>)
+# Strength: 2 (pairwise)
+# Generated: 2026-06-28T16:25:54.024Z
+# Tip: The constraint block is the most valuable part — keep it version-controlled.
+
+role: no_token, insufficient_scope_token, read_token, write_token, admin_token
+patientId: valid_existing_uuid, valid_nonexistent_uuid, malformed_non_uuid, already_deleted_uuid
+
+# Constraints
+# IF [role] = "no_token" → expect HTTP 401 (see constraints in factors_model.json)
+# IF [role] = "insufficient_scope_token" → expect HTTP 403 (see constraints in factors_model.json)
+# IF [role] = "read_token" → expect HTTP 403 (see constraints in factors_model.json)
+# IF [role] = "write_token" → expect HTTP 403 (see constraints in factors_model.json)
+# IF [patientId] = "valid_nonexistent_uuid" → expect HTTP 404 (see constraints in factors_model.json)
+# IF [patientId] = "already_deleted_uuid" → expect HTTP 404 (see constraints in factors_model.json)
+# IF [patientId] = "malformed_non_uuid" → expect HTTP 400 (see constraints in factors_model.json)
+
+# Must-include rows (≥1 Smoke + ≥1 RBAC-negative per endpoint)
+# MUST: [row]="[object Object]", [_validation_type]="Smoke", [note]="Happy path: admin token, existing patient — expect 204; subsequent GET must return 404"
+# MUST: [row]="[object Object]", [_validation_type]="RBAC-Negative", [note]="No token — expect 401"
+# MUST: [row]="[object Object]", [_validation_type]="RBAC-Negative", [note]="Read-only scope attempting delete — expect 403"
+# MUST: [row]="[object Object]", [_validation_type]="RBAC-Negative", [note]="write:patients scope without delete:patients — expect 403"
+# MUST: [row]="[object Object]", [_validation_type]="RBAC-Negative", [note]="Insufficient scope — expect 403"
+# MUST: [row]="[object Object]", [_validation_type]="NotFound", [note]="Valid UUID, no record — expect 404"
+# MUST: [row]="[object Object]", [_validation_type]="Idempotency", [note]="Re-delete of already-deleted patient — expect 404 (idempotency)"
+# MUST: [row]="[object Object]", [_validation_type]="Validation-Format", [note]="Malformed patientId — expect 400"

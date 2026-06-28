@@ -1,0 +1,157 @@
+Patients:
+  - collectionName: H360Patients_collection.json
+    description: API tests for Patients
+    testDataName: H360Patients_data.json
+    product: H360
+    feature: patients
+    testCases:
+      - testCaseName: "List Patients · row=[object Object] _validation_type=Smoke expected_status=200 · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · row=[object Object] _validation_type=Functional expected_status=200 · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · row=[object Object] _validation_type=Functional expected_status=200 · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · row=[object Object] _validation_type=Functional expected_status=200 · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · row=[object Object] _validation_type=RBAC -ve expected_status=401 · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · row=[object Object] _validation_type=RBAC -ve expected_status=403 · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · row=[object Object] _validation_type=RBAC -ve expected_status=403 · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · row=[object Object] _validation_type=Boundary expected_status=200 · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · row=[object Object] _validation_type=Negative expected_status=400 · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · row=[object Object] _validation_type=Boundary expected_status=200 · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · row=[object Object] _validation_type=Boundary expected_status=200 · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · row=[object Object] _validation_type=Functional expected_status=200 · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=read_token status=omitted limit=1 · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=read_token status=active limit=1 · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=read_token status=inactive limit=1 · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=read_token status=deceased limit=1 · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=write_token status=omitted limit=1 · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=write_token status=active limit=null · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=write_token status=inactive limit=null · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=write_token status=deceased limit=null · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=full_token status=omitted limit=1 · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=full_token status=active limit=null · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=full_token status=inactive limit=null · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=full_token status=deceased limit=null · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=no_token status=omitted limit=1 · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=no_token status=active limit=null · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=no_token status=inactive limit=null · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=no_token status=deceased limit=null · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=insufficient_scope_token status=omitted limit=1 · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=insufficient_scope_token status=active limit=null · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=insufficient_scope_token status=inactive limit=null · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=insufficient_scope_token status=deceased limit=null · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=read_token limit=20 status=omitted · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=read_token limit=99 status=omitted · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=read_token limit=100 status=omitted · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=read_token limit=101 status=omitted · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=write_token limit=20 status=active · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=write_token limit=99 status=active · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=write_token limit=100 status=active · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=write_token limit=101 status=active · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=full_token limit=20 status=inactive · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=full_token limit=99 status=inactive · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=full_token limit=100 status=inactive · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=full_token limit=101 status=inactive · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=no_token limit=20 status=deceased · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=no_token limit=99 status=deceased · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=no_token limit=100 status=deceased · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=no_token limit=101 status=deceased · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=insufficient_scope_token limit=20 status=omitted · · expect 200"
+        requests:
+          - List Patients
+      - testCaseName: "List Patients · role=insufficient_scope_token limit=99 status=omitted · · expect 200"
+        requests:
+          - List Patients

@@ -1,0 +1,779 @@
+{
+  "info": {
+    "title": "H360 Patient API",
+    "version": "1.0.0",
+    "description": "Healthcare 360 patient management API backed by Synthea-generated synthetic data. Supports patient enrollment lifecycle, organization-scoped access, and paginated list retrieval with status-based filtering.\n"
+  },
+  "endpoints": [
+    {
+      "operationId": "listPatients",
+      "method": "GET",
+      "path": "/patients",
+      "tag": "patients",
+      "summary": "List patients",
+      "description": "Returns a paginated list of patients. When the `status` filter is provided, only patients with that exact enrollment status are returned — the server applies the filter before pagination. The `total` field in the response always reflects the unfiltered count for the given `orgId`.\n",
+      "deprecated": false,
+      "parameters": [
+        {
+          "name": "status",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive",
+              "deceased"
+            ]
+          },
+          "description": "Filter patients by enrollment status. All patients in the response will have status equal to this value.\n"
+        },
+        {
+          "name": "orgId",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Restrict results to patients belonging to this organization."
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "description": "Maximum number of patients to return per page. The response array will never contain more items than this value.\n"
+        },
+        {
+          "name": "offset",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          },
+          "description": "Number of records to skip before returning results."
+        }
+      ],
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "description": "Patients retrieved successfully",
+          "content_type": "application/json",
+          "schema": {
+            "type": "object",
+            "required": [
+              "patients",
+              "total",
+              "limit",
+              "offset"
+            ],
+            "properties": {
+              "patients": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Patient"
+                }
+              },
+              "total": {
+                "type": "integer",
+                "description": "Total matching records (before pagination)"
+              },
+              "limit": {
+                "type": "integer"
+              },
+              "offset": {
+                "type": "integer"
+              }
+            }
+          },
+          "example": {
+            "patients": [
+              {
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "firstName": "Alice",
+                "lastName": "Smith",
+                "status": "active",
+                "orgId": "ORG-001",
+                "dateOfBirth": "1985-03-12"
+              }
+            ],
+            "total": 142,
+            "limit": 20,
+            "offset": 0
+          }
+        },
+        "400": {
+          "description": "Invalid query parameter (e.g. limit out of range)",
+          "content_type": "application/json",
+          "schema": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Missing or invalid bearer token",
+          "content_type": "text/html",
+          "schema": {
+            "type": "string"
+          }
+        },
+        "403": {
+          "description": "Token does not have read:patients scope",
+          "content_type": "application/json",
+          "schema": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      },
+      "security": [
+        "bearerAuth"
+      ]
+    },
+    {
+      "operationId": "createPatient",
+      "method": "POST",
+      "path": "/patients",
+      "tag": "patients",
+      "summary": "Create a patient",
+      "description": "Creates a new patient enrollment record. Returns the created patient with a server-assigned UUID in the `id` field. The `status` field defaults to `active` if not provided. The `firstName` and `lastName` from the request body are echoed back unchanged in the response.\n",
+      "deprecated": false,
+      "parameters": [],
+      "requestBody": {
+        "required": true,
+        "content_type": "application/json",
+        "schema": {
+          "type": "object",
+          "required": [
+            "firstName",
+            "lastName",
+            "orgId"
+          ],
+          "properties": {
+            "firstName": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "lastName": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "active",
+                "inactive",
+                "deceased"
+              ],
+              "default": "active"
+            },
+            "orgId": {
+              "type": "string"
+            },
+            "dateOfBirth": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        },
+        "example": {
+          "firstName": "Bob",
+          "lastName": "Jones",
+          "status": "active",
+          "orgId": "ORG-001",
+          "dateOfBirth": "1972-09-04"
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Patient created successfully",
+          "content_type": "application/json",
+          "schema": {
+            "type": "object",
+            "required": [
+              "id",
+              "firstName",
+              "lastName",
+              "status",
+              "orgId"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Server-assigned unique identifier"
+              },
+              "firstName": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "lastName": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "inactive",
+                  "deceased"
+                ]
+              },
+              "orgId": {
+                "type": "string"
+              },
+              "dateOfBirth": {
+                "type": "string",
+                "format": "date"
+              }
+            }
+          },
+          "example": {
+            "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+            "firstName": "Bob",
+            "lastName": "Jones",
+            "status": "active",
+            "orgId": "ORG-001",
+            "dateOfBirth": "1972-09-04"
+          }
+        },
+        "400": {
+          "description": "Missing required field or invalid value",
+          "content_type": "application/json",
+          "schema": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Missing or invalid bearer token",
+          "content_type": "text/html",
+          "schema": {
+            "type": "string"
+          }
+        },
+        "403": {
+          "description": "Token does not have write:patients scope",
+          "content_type": "application/json",
+          "schema": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "409": {
+          "description": "A patient with the same demographic key already exists for this organization",
+          "content_type": "application/json",
+          "schema": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Request body is syntactically valid but semantically invalid (e.g. future dateOfBirth)",
+          "content_type": "application/json",
+          "schema": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      },
+      "security": [
+        "bearerAuth"
+      ]
+    },
+    {
+      "operationId": "getPatient",
+      "method": "GET",
+      "path": "/patients/{patientId}",
+      "tag": "patients",
+      "summary": "Get a patient",
+      "description": "Returns the full patient record for the given UUID. The response will include all fields including those not present at creation time.\n",
+      "deprecated": false,
+      "parameters": [
+        {
+          "name": "patientId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "UUID of the patient record"
+        }
+      ],
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "description": "Patient found",
+          "content_type": "application/json",
+          "schema": {
+            "type": "object",
+            "required": [
+              "id",
+              "firstName",
+              "lastName",
+              "status",
+              "orgId"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Server-assigned unique identifier"
+              },
+              "firstName": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "lastName": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "inactive",
+                  "deceased"
+                ]
+              },
+              "orgId": {
+                "type": "string"
+              },
+              "dateOfBirth": {
+                "type": "string",
+                "format": "date"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Missing or invalid bearer token",
+          "content_type": "text/html",
+          "schema": {
+            "type": "string"
+          }
+        },
+        "403": {
+          "description": "Token does not have read:patients scope",
+          "content_type": "application/json",
+          "schema": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No patient found with this ID",
+          "content_type": "application/json",
+          "schema": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object"
+              }
+            }
+          },
+          "example": {
+            "code": "PATIENT_NOT_FOUND",
+            "message": "Patient not found"
+          }
+        }
+      },
+      "security": [
+        "bearerAuth"
+      ]
+    },
+    {
+      "operationId": "updatePatient",
+      "method": "PUT",
+      "path": "/patients/{patientId}",
+      "tag": "patients",
+      "summary": "Update a patient",
+      "description": "Replaces the mutable fields of a patient record. The `id` and `orgId` cannot be changed. All provided fields are echoed back in the response exactly as sent (no server-side transformation). The `status` field transitions the patient'\"'\"'s enrollment lifecycle.\n",
+      "deprecated": false,
+      "parameters": [
+        {
+          "name": "patientId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "UUID of the patient record"
+        }
+      ],
+      "requestBody": {
+        "required": true,
+        "content_type": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "firstName": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "lastName": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "active",
+                "inactive",
+                "deceased"
+              ]
+            },
+            "dateOfBirth": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Patient updated successfully",
+          "content_type": "application/json",
+          "schema": {
+            "type": "object",
+            "required": [
+              "id",
+              "firstName",
+              "lastName",
+              "status",
+              "orgId"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Server-assigned unique identifier"
+              },
+              "firstName": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "lastName": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "inactive",
+                  "deceased"
+                ]
+              },
+              "orgId": {
+                "type": "string"
+              },
+              "dateOfBirth": {
+                "type": "string",
+                "format": "date"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Invalid field value",
+          "content_type": "application/json",
+          "schema": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "Missing or invalid bearer token",
+          "content_type": "text/html",
+          "schema": {
+            "type": "string"
+          }
+        },
+        "403": {
+          "description": "Token does not have write:patients scope",
+          "content_type": "application/json",
+          "schema": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No patient found with this ID",
+          "content_type": "application/json",
+          "schema": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Semantically invalid update (e.g. deceased → active transition not allowed)",
+          "content_type": "application/json",
+          "schema": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      },
+      "security": [
+        "bearerAuth"
+      ]
+    },
+    {
+      "operationId": "deletePatient",
+      "method": "DELETE",
+      "path": "/patients/{patientId}",
+      "tag": "patients",
+      "summary": "Delete a patient",
+      "description": "Permanently removes the patient record. After a successful delete, any subsequent GET /patients/{patientId} for the same ID must return 404.\n",
+      "deprecated": false,
+      "parameters": [
+        {
+          "name": "patientId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "UUID of the patient record"
+        }
+      ],
+      "requestBody": null,
+      "responses": {
+        "204": {
+          "description": "Patient deleted successfully (no body)",
+          "content_type": null
+        },
+        "401": {
+          "description": "Missing or invalid bearer token",
+          "content_type": "text/html",
+          "schema": {
+            "type": "string"
+          }
+        },
+        "403": {
+          "description": "Token does not have delete:patients scope",
+          "content_type": "application/json",
+          "schema": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "404": {
+          "description": "No patient found with this ID",
+          "content_type": "application/json",
+          "schema": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      },
+      "security": [
+        "bearerAuth"
+      ]
+    }
+  ],
+  "warnings": []
+}

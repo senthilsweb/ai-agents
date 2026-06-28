@@ -1,0 +1,1860 @@
+{
+  "endpoints": {
+    "listPatients": {
+      "strength": 2,
+      "factors": 5,
+      "rows": [
+        {
+          "row": {
+            "role": "read_token",
+            "status": "omitted",
+            "limit": "20",
+            "offset": "0",
+            "orgId": "valid_org"
+          },
+          "_validation_type": "Smoke",
+          "expected_status": 200,
+          "note": "Happy path: authorized read with typical parameters.",
+          "role": "read_token",
+          "status": "omitted",
+          "limit": "null",
+          "offset": "null",
+          "orgId": "omitted"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "status": "active",
+            "limit": "20",
+            "offset": "0",
+            "orgId": "valid_org"
+          },
+          "_validation_type": "Functional",
+          "expected_status": 200,
+          "note": "Status filter active: all returned records must have status=active.",
+          "role": "read_token",
+          "status": "omitted",
+          "limit": "null",
+          "offset": "null",
+          "orgId": "omitted"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "status": "inactive",
+            "limit": "20",
+            "offset": "0",
+            "orgId": "valid_org"
+          },
+          "_validation_type": "Functional",
+          "expected_status": 200,
+          "note": "Status filter inactive: all returned records must have status=inactive.",
+          "role": "read_token",
+          "status": "omitted",
+          "limit": "null",
+          "offset": "null",
+          "orgId": "omitted"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "status": "deceased",
+            "limit": "20",
+            "offset": "0",
+            "orgId": "valid_org"
+          },
+          "_validation_type": "Functional",
+          "expected_status": 200,
+          "note": "Status filter deceased: all returned records must have status=deceased.",
+          "role": "read_token",
+          "status": "omitted",
+          "limit": "null",
+          "offset": "null",
+          "orgId": "omitted"
+        },
+        {
+          "row": {
+            "role": "no_token",
+            "status": "omitted",
+            "limit": "20",
+            "offset": "0",
+            "orgId": "valid_org"
+          },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 401,
+          "note": "No token: must return 401.",
+          "role": "read_token",
+          "status": "omitted",
+          "limit": "null",
+          "offset": "null",
+          "orgId": "omitted"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "status": "omitted",
+            "limit": "20",
+            "offset": "0",
+            "orgId": "valid_org"
+          },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "write_token lacks read scope: must return 403.",
+          "role": "read_token",
+          "status": "omitted",
+          "limit": "null",
+          "offset": "null",
+          "orgId": "omitted"
+        },
+        {
+          "row": {
+            "role": "insufficient_scope_token",
+            "status": "omitted",
+            "limit": "20",
+            "offset": "0",
+            "orgId": "valid_org"
+          },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "Insufficient scope token: must return 403.",
+          "role": "read_token",
+          "status": "omitted",
+          "limit": "null",
+          "offset": "null",
+          "orgId": "omitted"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "status": "omitted",
+            "limit": "100",
+            "offset": "0",
+            "orgId": "valid_org"
+          },
+          "_validation_type": "Boundary",
+          "expected_status": 200,
+          "note": "limit at maximum boundary (100): must return 200 with at most 100 records.",
+          "role": "read_token",
+          "status": "omitted",
+          "limit": "null",
+          "offset": "null",
+          "orgId": "omitted"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "status": "omitted",
+            "limit": "101",
+            "offset": "0",
+            "orgId": "valid_org"
+          },
+          "_validation_type": "Negative",
+          "expected_status": 400,
+          "note": "limit over maximum (101): must return 400.",
+          "role": "read_token",
+          "status": "omitted",
+          "limit": "null",
+          "offset": "null",
+          "orgId": "omitted"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "status": "omitted",
+            "limit": "1",
+            "offset": "0",
+            "orgId": "valid_org"
+          },
+          "_validation_type": "Boundary",
+          "expected_status": 200,
+          "note": "limit at minimum boundary (1): must return at most 1 record.",
+          "role": "read_token",
+          "status": "omitted",
+          "limit": "null",
+          "offset": "null",
+          "orgId": "omitted"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "status": "omitted",
+            "limit": "20",
+            "offset": "beyond_end",
+            "orgId": "valid_org"
+          },
+          "_validation_type": "Boundary",
+          "expected_status": 200,
+          "note": "offset beyond total count: data array must be empty.",
+          "role": "read_token",
+          "status": "omitted",
+          "limit": "null",
+          "offset": "null",
+          "orgId": "omitted"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "status": "omitted",
+            "limit": "20",
+            "offset": "0",
+            "orgId": "unknown_org"
+          },
+          "_validation_type": "Functional",
+          "expected_status": 200,
+          "note": "Unknown orgId: data array must be empty, total must be 0.",
+          "role": "read_token",
+          "status": "omitted",
+          "limit": "null",
+          "offset": "null",
+          "orgId": "omitted"
+        },
+        {
+          "role": "read_token",
+          "status": "omitted",
+          "limit": "1",
+          "offset": "0",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "read_token",
+          "status": "active",
+          "limit": "1",
+          "offset": "0",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "read_token",
+          "status": "inactive",
+          "limit": "1",
+          "offset": "0",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "read_token",
+          "status": "deceased",
+          "limit": "1",
+          "offset": "0",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "write_token",
+          "status": "omitted",
+          "limit": "1",
+          "offset": "0",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "write_token",
+          "status": "active",
+          "limit": "null",
+          "offset": "0",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "write_token",
+          "status": "inactive",
+          "limit": "null",
+          "offset": "0",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "write_token",
+          "status": "deceased",
+          "limit": "null",
+          "offset": "0",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "full_token",
+          "status": "omitted",
+          "limit": "1",
+          "offset": "0",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "full_token",
+          "status": "active",
+          "limit": "null",
+          "offset": "0",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "full_token",
+          "status": "inactive",
+          "limit": "null",
+          "offset": "0",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "full_token",
+          "status": "deceased",
+          "limit": "null",
+          "offset": "0",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "no_token",
+          "status": "omitted",
+          "limit": "1",
+          "offset": "0",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "no_token",
+          "status": "active",
+          "limit": "null",
+          "offset": "0",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "no_token",
+          "status": "inactive",
+          "limit": "null",
+          "offset": "0",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "no_token",
+          "status": "deceased",
+          "limit": "null",
+          "offset": "0",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "status": "omitted",
+          "limit": "1",
+          "offset": "0",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "status": "active",
+          "limit": "null",
+          "offset": "0",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "status": "inactive",
+          "limit": "null",
+          "offset": "0",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "status": "deceased",
+          "limit": "null",
+          "offset": "0",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "read_token",
+          "limit": "20",
+          "status": "omitted",
+          "offset": "1",
+          "orgId": "unknown_org"
+        },
+        {
+          "role": "read_token",
+          "limit": "99",
+          "status": "omitted",
+          "offset": "beyond_end",
+          "orgId": "omitted"
+        },
+        {
+          "role": "read_token",
+          "limit": "100",
+          "status": "omitted",
+          "offset": "null",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "read_token",
+          "limit": "101",
+          "status": "omitted",
+          "offset": "null",
+          "orgId": "unknown_org"
+        },
+        {
+          "role": "write_token",
+          "limit": "20",
+          "status": "active",
+          "offset": "null",
+          "orgId": "omitted"
+        },
+        {
+          "role": "write_token",
+          "limit": "99",
+          "status": "active",
+          "offset": "1",
+          "orgId": "unknown_org"
+        },
+        {
+          "role": "write_token",
+          "limit": "100",
+          "status": "active",
+          "offset": "beyond_end",
+          "orgId": "unknown_org"
+        },
+        {
+          "role": "write_token",
+          "limit": "101",
+          "status": "active",
+          "offset": "0",
+          "orgId": "omitted"
+        },
+        {
+          "role": "full_token",
+          "limit": "20",
+          "status": "inactive",
+          "offset": "beyond_end",
+          "orgId": "omitted"
+        },
+        {
+          "role": "full_token",
+          "limit": "99",
+          "status": "inactive",
+          "offset": "null",
+          "orgId": "unknown_org"
+        },
+        {
+          "role": "full_token",
+          "limit": "100",
+          "status": "inactive",
+          "offset": "1",
+          "orgId": "omitted"
+        },
+        {
+          "role": "full_token",
+          "limit": "101",
+          "status": "inactive",
+          "offset": "1",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "no_token",
+          "limit": "20",
+          "status": "deceased",
+          "offset": "null",
+          "orgId": "omitted"
+        },
+        {
+          "role": "no_token",
+          "limit": "99",
+          "status": "deceased",
+          "offset": "1",
+          "orgId": "unknown_org"
+        },
+        {
+          "role": "no_token",
+          "limit": "100",
+          "status": "deceased",
+          "offset": "beyond_end",
+          "orgId": "valid_org"
+        },
+        {
+          "role": "no_token",
+          "limit": "101",
+          "status": "deceased",
+          "offset": "beyond_end",
+          "orgId": "omitted"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "limit": "20",
+          "status": "omitted",
+          "offset": "null",
+          "orgId": "omitted"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "limit": "99",
+          "status": "omitted",
+          "offset": "0",
+          "orgId": "unknown_org"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "limit": "100",
+          "status": "omitted",
+          "offset": "0",
+          "orgId": "omitted"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "limit": "101",
+          "status": "omitted",
+          "offset": "1",
+          "orgId": "omitted"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "offset": "beyond_end",
+          "status": "omitted",
+          "limit": "null",
+          "orgId": "unknown_org"
+        },
+        {
+          "limit": "null",
+          "offset": "1",
+          "role": "read_token",
+          "status": "omitted",
+          "orgId": "omitted"
+        },
+        {
+          "limit": "1",
+          "offset": "null",
+          "role": "read_token",
+          "status": "omitted",
+          "orgId": "omitted"
+        },
+        {
+          "limit": "1",
+          "offset": "1",
+          "role": "read_token",
+          "status": "omitted",
+          "orgId": "unknown_org"
+        },
+        {
+          "limit": "1",
+          "offset": "beyond_end",
+          "role": "read_token",
+          "status": "omitted",
+          "orgId": "omitted"
+        },
+        {
+          "limit": "20",
+          "offset": "0",
+          "role": "read_token",
+          "status": "omitted",
+          "orgId": "valid_org"
+        },
+        {
+          "limit": "99",
+          "orgId": "valid_org",
+          "role": "read_token",
+          "status": "omitted",
+          "offset": "null"
+        }
+      ],
+      "total_possible_pairs": 191,
+      "feasible_pairs": 191,
+      "covered_pairs": 191,
+      "pair_coverage_pct": 100,
+      "generated_rows": 59,
+      "must_include_rows": 12
+    },
+    "createPatient": {
+      "strength": 2,
+      "factors": 6,
+      "rows": [
+        {
+          "row": {
+            "role": "write_token",
+            "firstName": "short",
+            "lastName": "short",
+            "status": "omitted",
+            "orgId": "valid_org",
+            "dateOfBirth": "omitted"
+          },
+          "_validation_type": "Smoke",
+          "expected_status": 201,
+          "note": "Happy path: minimal valid payload, status defaults to active.",
+          "role": "write_token",
+          "firstName": "short",
+          "lastName": "short",
+          "status": "omitted",
+          "orgId": "valid_org",
+          "dateOfBirth": "omitted"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "firstName": "short",
+            "lastName": "short",
+            "status": "active",
+            "orgId": "valid_org",
+            "dateOfBirth": "valid_date"
+          },
+          "_validation_type": "Functional",
+          "expected_status": 201,
+          "note": "Full payload with all optional fields: all fields echoed back correctly.",
+          "role": "write_token",
+          "firstName": "short",
+          "lastName": "short",
+          "status": "omitted",
+          "orgId": "valid_org",
+          "dateOfBirth": "omitted"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "firstName": "short",
+            "lastName": "short",
+            "status": "inactive",
+            "orgId": "valid_org",
+            "dateOfBirth": "omitted"
+          },
+          "_validation_type": "Functional",
+          "expected_status": 201,
+          "note": "Status=inactive at creation: response.status must equal inactive.",
+          "role": "write_token",
+          "firstName": "short",
+          "lastName": "short",
+          "status": "omitted",
+          "orgId": "valid_org",
+          "dateOfBirth": "omitted"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "firstName": "short",
+            "lastName": "short",
+            "status": "deceased",
+            "orgId": "valid_org",
+            "dateOfBirth": "omitted"
+          },
+          "_validation_type": "Functional",
+          "expected_status": 201,
+          "note": "Status=deceased at creation: response.status must equal deceased.",
+          "role": "write_token",
+          "firstName": "short",
+          "lastName": "short",
+          "status": "omitted",
+          "orgId": "valid_org",
+          "dateOfBirth": "omitted"
+        },
+        {
+          "row": {
+            "role": "no_token",
+            "firstName": "short",
+            "lastName": "short",
+            "status": "omitted",
+            "orgId": "valid_org",
+            "dateOfBirth": "omitted"
+          },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 401,
+          "note": "No token: must return 401.",
+          "role": "write_token",
+          "firstName": "short",
+          "lastName": "short",
+          "status": "omitted",
+          "orgId": "valid_org",
+          "dateOfBirth": "omitted"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "firstName": "short",
+            "lastName": "short",
+            "status": "omitted",
+            "orgId": "valid_org",
+            "dateOfBirth": "omitted"
+          },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "read_token lacks write scope: must return 403.",
+          "role": "write_token",
+          "firstName": "short",
+          "lastName": "short",
+          "status": "omitted",
+          "orgId": "valid_org",
+          "dateOfBirth": "omitted"
+        },
+        {
+          "row": {
+            "role": "insufficient_scope_token",
+            "firstName": "short",
+            "lastName": "short",
+            "status": "omitted",
+            "orgId": "valid_org",
+            "dateOfBirth": "omitted"
+          },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "Insufficient scope: must return 403.",
+          "role": "write_token",
+          "firstName": "short",
+          "lastName": "short",
+          "status": "omitted",
+          "orgId": "valid_org",
+          "dateOfBirth": "omitted"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "firstName": "100_chars",
+            "lastName": "100_chars",
+            "status": "active",
+            "orgId": "valid_org",
+            "dateOfBirth": "omitted"
+          },
+          "_validation_type": "Boundary",
+          "expected_status": 201,
+          "note": "firstName and lastName at exact maxLength (100): must succeed and echo back correctly.",
+          "role": "write_token",
+          "firstName": "short",
+          "lastName": "short",
+          "status": "omitted",
+          "orgId": "valid_org",
+          "dateOfBirth": "omitted"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "firstName": "101_chars",
+            "lastName": "short",
+            "status": "active",
+            "orgId": "valid_org",
+            "dateOfBirth": "omitted"
+          },
+          "_validation_type": "Negative",
+          "expected_status": 422,
+          "note": "firstName over maxLength (101): must return 400 or 422.",
+          "role": "write_token",
+          "firstName": "short",
+          "lastName": "short",
+          "status": "omitted",
+          "orgId": "valid_org",
+          "dateOfBirth": "omitted"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "firstName": "short",
+            "lastName": "101_chars",
+            "status": "active",
+            "orgId": "valid_org",
+            "dateOfBirth": "omitted"
+          },
+          "_validation_type": "Negative",
+          "expected_status": 422,
+          "note": "lastName over maxLength (101): must return 400 or 422.",
+          "role": "write_token",
+          "firstName": "short",
+          "lastName": "short",
+          "status": "omitted",
+          "orgId": "valid_org",
+          "dateOfBirth": "omitted"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "firstName": "short",
+            "lastName": "short",
+            "status": "omitted",
+            "orgId": "omitted",
+            "dateOfBirth": "omitted"
+          },
+          "_validation_type": "Negative",
+          "expected_status": 400,
+          "note": "orgId omitted (required field): must return 400.",
+          "role": "write_token",
+          "firstName": "short",
+          "lastName": "short",
+          "status": "omitted",
+          "orgId": "valid_org",
+          "dateOfBirth": "omitted"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "firstName": "short",
+            "lastName": "short",
+            "status": "active",
+            "orgId": "valid_org",
+            "dateOfBirth": "invalid_format"
+          },
+          "_validation_type": "Negative",
+          "expected_status": 422,
+          "note": "Invalid dateOfBirth format: must return 400 or 422.",
+          "role": "write_token",
+          "firstName": "short",
+          "lastName": "short",
+          "status": "omitted",
+          "orgId": "valid_org",
+          "dateOfBirth": "omitted"
+        },
+        {
+          "role": "write_token",
+          "firstName": "short",
+          "lastName": "99_chars",
+          "status": "active",
+          "orgId": "omitted",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "write_token",
+          "firstName": "99_chars",
+          "lastName": "99_chars",
+          "status": "active",
+          "orgId": "omitted",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "write_token",
+          "firstName": "100_chars",
+          "lastName": "99_chars",
+          "status": "active",
+          "orgId": "omitted",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "write_token",
+          "firstName": "101_chars",
+          "lastName": "99_chars",
+          "status": "active",
+          "orgId": "omitted",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "full_token",
+          "firstName": "short",
+          "lastName": "99_chars",
+          "status": "active",
+          "orgId": "omitted",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "full_token",
+          "firstName": "99_chars",
+          "lastName": "short",
+          "status": "active",
+          "orgId": "omitted",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "full_token",
+          "firstName": "100_chars",
+          "lastName": "short",
+          "status": "active",
+          "orgId": "omitted",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "full_token",
+          "firstName": "101_chars",
+          "lastName": "short",
+          "status": "active",
+          "orgId": "omitted",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "read_token",
+          "firstName": "short",
+          "lastName": "99_chars",
+          "status": "active",
+          "orgId": "omitted",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "read_token",
+          "firstName": "99_chars",
+          "lastName": "short",
+          "status": "active",
+          "orgId": "omitted",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "read_token",
+          "firstName": "100_chars",
+          "lastName": "short",
+          "status": "active",
+          "orgId": "omitted",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "read_token",
+          "firstName": "101_chars",
+          "lastName": "short",
+          "status": "active",
+          "orgId": "omitted",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "no_token",
+          "firstName": "short",
+          "lastName": "99_chars",
+          "status": "active",
+          "orgId": "omitted",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "no_token",
+          "firstName": "99_chars",
+          "lastName": "short",
+          "status": "active",
+          "orgId": "omitted",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "no_token",
+          "firstName": "100_chars",
+          "lastName": "short",
+          "status": "active",
+          "orgId": "omitted",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "no_token",
+          "firstName": "101_chars",
+          "lastName": "short",
+          "status": "active",
+          "orgId": "omitted",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "firstName": "short",
+          "lastName": "99_chars",
+          "status": "active",
+          "orgId": "omitted",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "firstName": "99_chars",
+          "lastName": "short",
+          "status": "active",
+          "orgId": "omitted",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "firstName": "100_chars",
+          "lastName": "short",
+          "status": "active",
+          "orgId": "omitted",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "firstName": "101_chars",
+          "lastName": "short",
+          "status": "active",
+          "orgId": "omitted",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "write_token",
+          "lastName": "100_chars",
+          "firstName": "short",
+          "status": "inactive",
+          "orgId": "valid_org",
+          "dateOfBirth": "invalid_format"
+        },
+        {
+          "role": "write_token",
+          "lastName": "101_chars",
+          "firstName": "short",
+          "status": "deceased",
+          "orgId": "valid_org",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "full_token",
+          "lastName": "100_chars",
+          "firstName": "99_chars",
+          "status": "omitted",
+          "orgId": "valid_org",
+          "dateOfBirth": "omitted"
+        },
+        {
+          "role": "full_token",
+          "lastName": "101_chars",
+          "firstName": "99_chars",
+          "status": "inactive",
+          "orgId": "omitted",
+          "dateOfBirth": "invalid_format"
+        },
+        {
+          "role": "read_token",
+          "lastName": "100_chars",
+          "firstName": "100_chars",
+          "status": "deceased",
+          "orgId": "valid_org",
+          "dateOfBirth": "omitted"
+        },
+        {
+          "role": "read_token",
+          "lastName": "101_chars",
+          "firstName": "100_chars",
+          "status": "omitted",
+          "orgId": "omitted",
+          "dateOfBirth": "invalid_format"
+        },
+        {
+          "role": "no_token",
+          "lastName": "100_chars",
+          "firstName": "101_chars",
+          "status": "omitted",
+          "orgId": "valid_org",
+          "dateOfBirth": "omitted"
+        },
+        {
+          "role": "no_token",
+          "lastName": "101_chars",
+          "firstName": "101_chars",
+          "status": "inactive",
+          "orgId": "valid_org",
+          "dateOfBirth": "omitted"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "lastName": "100_chars",
+          "firstName": "short",
+          "status": "omitted",
+          "orgId": "valid_org",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "lastName": "101_chars",
+          "firstName": "short",
+          "status": "active",
+          "orgId": "valid_org",
+          "dateOfBirth": "omitted"
+        },
+        {
+          "role": "full_token",
+          "status": "deceased",
+          "firstName": "99_chars",
+          "lastName": "short",
+          "orgId": "omitted",
+          "dateOfBirth": "invalid_format"
+        },
+        {
+          "role": "read_token",
+          "status": "inactive",
+          "firstName": "100_chars",
+          "lastName": "short",
+          "orgId": "valid_org",
+          "dateOfBirth": "valid_date"
+        },
+        {
+          "role": "no_token",
+          "status": "deceased",
+          "firstName": "101_chars",
+          "lastName": "99_chars",
+          "orgId": "valid_org",
+          "dateOfBirth": "invalid_format"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "status": "inactive",
+          "firstName": "short",
+          "lastName": "99_chars",
+          "orgId": "valid_org",
+          "dateOfBirth": "omitted"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "status": "deceased",
+          "firstName": "short",
+          "lastName": "short",
+          "orgId": "valid_org",
+          "dateOfBirth": "invalid_format"
+        },
+        {
+          "lastName": "99_chars",
+          "status": "omitted",
+          "role": "write_token",
+          "firstName": "short",
+          "orgId": "valid_org",
+          "dateOfBirth": "omitted"
+        },
+        {
+          "lastName": "100_chars",
+          "status": "active",
+          "role": "write_token",
+          "firstName": "short",
+          "orgId": "omitted",
+          "dateOfBirth": "omitted"
+        },
+        {
+          "status": "active",
+          "dateOfBirth": "invalid_format",
+          "role": "write_token",
+          "firstName": "short",
+          "lastName": "short",
+          "orgId": "valid_org"
+        }
+      ],
+      "total_possible_pairs": 199,
+      "feasible_pairs": 199,
+      "covered_pairs": 199,
+      "pair_coverage_pct": 100,
+      "generated_rows": 50,
+      "must_include_rows": 12
+    },
+    "getPatient": {
+      "strength": 2,
+      "factors": 2,
+      "rows": [
+        {
+          "row": {
+            "role": "read_token",
+            "patientId": "valid_existing"
+          },
+          "_validation_type": "Smoke",
+          "expected_status": 200,
+          "note": "Happy path: authorized read with existing patient UUID.",
+          "role": "read_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "row": {
+            "role": "no_token",
+            "patientId": "valid_existing"
+          },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 401,
+          "note": "No token: must return 401.",
+          "role": "read_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "patientId": "valid_existing"
+          },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "write_token lacks read scope: must return 403.",
+          "role": "read_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "row": {
+            "role": "insufficient_scope_token",
+            "patientId": "valid_existing"
+          },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "Insufficient scope: must return 403.",
+          "role": "read_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "patientId": "valid_nonexistent"
+          },
+          "_validation_type": "Negative",
+          "expected_status": 404,
+          "note": "Non-existent UUID: must return 404.",
+          "role": "read_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "patientId": "invalid_format"
+          },
+          "_validation_type": "Negative",
+          "expected_status": 400,
+          "note": "Invalid UUID format: must return 400 or 404.",
+          "role": "read_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "role": "read_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "role": "read_token",
+          "patientId": "valid_nonexistent"
+        },
+        {
+          "role": "read_token",
+          "patientId": "invalid_format"
+        },
+        {
+          "role": "full_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "role": "full_token",
+          "patientId": "valid_nonexistent"
+        },
+        {
+          "role": "full_token",
+          "patientId": "invalid_format"
+        },
+        {
+          "role": "write_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "role": "write_token",
+          "patientId": "valid_nonexistent"
+        },
+        {
+          "role": "write_token",
+          "patientId": "invalid_format"
+        },
+        {
+          "role": "no_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "role": "no_token",
+          "patientId": "valid_nonexistent"
+        },
+        {
+          "role": "no_token",
+          "patientId": "invalid_format"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "patientId": "valid_nonexistent"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "patientId": "invalid_format"
+        }
+      ],
+      "total_possible_pairs": 15,
+      "feasible_pairs": 15,
+      "covered_pairs": 15,
+      "pair_coverage_pct": 100,
+      "generated_rows": 21,
+      "must_include_rows": 6
+    },
+    "updatePatient": {
+      "strength": 2,
+      "factors": 5,
+      "rows": [
+        {
+          "row": {
+            "role": "write_token",
+            "patientId": "valid_existing",
+            "status_transition": "active_to_inactive",
+            "firstName": "short",
+            "lastName": "short"
+          },
+          "_validation_type": "Smoke",
+          "expected_status": 200,
+          "note": "Happy path: valid update with status transition and field update.",
+          "role": "write_token",
+          "patientId": "valid_existing",
+          "status_transition": "active_to_inactive",
+          "firstName": "omitted",
+          "lastName": "omitted"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "patientId": "valid_existing",
+            "status_transition": "inactive_to_active",
+            "firstName": "omitted",
+            "lastName": "omitted"
+          },
+          "_validation_type": "Functional",
+          "expected_status": 200,
+          "note": "Transition inactive to active: response.status must equal active.",
+          "role": "write_token",
+          "patientId": "valid_existing",
+          "status_transition": "active_to_inactive",
+          "firstName": "omitted",
+          "lastName": "omitted"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "patientId": "valid_existing",
+            "status_transition": "active_to_deceased",
+            "firstName": "short",
+            "lastName": "omitted"
+          },
+          "_validation_type": "Functional",
+          "expected_status": 200,
+          "note": "Transition active to deceased: response.status must equal deceased.",
+          "role": "write_token",
+          "patientId": "valid_existing",
+          "status_transition": "active_to_inactive",
+          "firstName": "omitted",
+          "lastName": "omitted"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "patientId": "valid_existing",
+            "status_transition": "deceased_to_active",
+            "firstName": "short",
+            "lastName": "omitted"
+          },
+          "_validation_type": "Negative",
+          "expected_status": 422,
+          "note": "Disallowed transition deceased to active: must return 422.",
+          "role": "write_token",
+          "patientId": "valid_existing",
+          "status_transition": "active_to_inactive",
+          "firstName": "omitted",
+          "lastName": "omitted"
+        },
+        {
+          "row": {
+            "role": "no_token",
+            "patientId": "valid_existing",
+            "status_transition": "active_to_inactive",
+            "firstName": "short",
+            "lastName": "short"
+          },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 401,
+          "note": "No token: must return 401.",
+          "role": "write_token",
+          "patientId": "valid_existing",
+          "status_transition": "active_to_inactive",
+          "firstName": "omitted",
+          "lastName": "omitted"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "patientId": "valid_existing",
+            "status_transition": "active_to_inactive",
+            "firstName": "short",
+            "lastName": "short"
+          },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "read_token lacks write scope: must return 403.",
+          "role": "write_token",
+          "patientId": "valid_existing",
+          "status_transition": "active_to_inactive",
+          "firstName": "omitted",
+          "lastName": "omitted"
+        },
+        {
+          "row": {
+            "role": "insufficient_scope_token",
+            "patientId": "valid_existing",
+            "status_transition": "active_to_inactive",
+            "firstName": "short",
+            "lastName": "short"
+          },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "Insufficient scope: must return 403.",
+          "role": "write_token",
+          "patientId": "valid_existing",
+          "status_transition": "active_to_inactive",
+          "firstName": "omitted",
+          "lastName": "omitted"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "patientId": "valid_nonexistent",
+            "status_transition": "active_to_inactive",
+            "firstName": "short",
+            "lastName": "short"
+          },
+          "_validation_type": "Negative",
+          "expected_status": 404,
+          "note": "Non-existent patientId: must return 404.",
+          "role": "write_token",
+          "patientId": "valid_existing",
+          "status_transition": "active_to_inactive",
+          "firstName": "omitted",
+          "lastName": "omitted"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "patientId": "valid_existing",
+            "status_transition": "active_to_inactive",
+            "firstName": "100_chars",
+            "lastName": "short"
+          },
+          "_validation_type": "Boundary",
+          "expected_status": 200,
+          "note": "firstName at exact maxLength (100): must succeed and echo back correctly.",
+          "role": "write_token",
+          "patientId": "valid_existing",
+          "status_transition": "active_to_inactive",
+          "firstName": "omitted",
+          "lastName": "omitted"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "patientId": "valid_existing",
+            "status_transition": "active_to_inactive",
+            "firstName": "101_chars",
+            "lastName": "short"
+          },
+          "_validation_type": "Negative",
+          "expected_status": 422,
+          "note": "firstName over maxLength (101): must return 400 or 422.",
+          "role": "write_token",
+          "patientId": "valid_existing",
+          "status_transition": "active_to_inactive",
+          "firstName": "omitted",
+          "lastName": "omitted"
+        },
+        {
+          "role": "write_token",
+          "patientId": "valid_existing",
+          "status_transition": "inactive_to_active",
+          "firstName": "short",
+          "lastName": "short"
+        },
+        {
+          "role": "write_token",
+          "patientId": "valid_nonexistent",
+          "status_transition": "inactive_to_active",
+          "firstName": "short",
+          "lastName": "short"
+        },
+        {
+          "role": "write_token",
+          "patientId": "invalid_format",
+          "status_transition": "inactive_to_active",
+          "firstName": "short",
+          "lastName": "short"
+        },
+        {
+          "role": "full_token",
+          "patientId": "valid_existing",
+          "status_transition": "inactive_to_active",
+          "firstName": "short",
+          "lastName": "short"
+        },
+        {
+          "role": "full_token",
+          "patientId": "valid_nonexistent",
+          "status_transition": "active_to_inactive",
+          "firstName": "short",
+          "lastName": "short"
+        },
+        {
+          "role": "full_token",
+          "patientId": "invalid_format",
+          "status_transition": "active_to_inactive",
+          "firstName": "short",
+          "lastName": "short"
+        },
+        {
+          "role": "read_token",
+          "patientId": "valid_existing",
+          "status_transition": "inactive_to_active",
+          "firstName": "short",
+          "lastName": "short"
+        },
+        {
+          "role": "read_token",
+          "patientId": "valid_nonexistent",
+          "status_transition": "active_to_inactive",
+          "firstName": "short",
+          "lastName": "short"
+        },
+        {
+          "role": "read_token",
+          "patientId": "invalid_format",
+          "status_transition": "active_to_inactive",
+          "firstName": "short",
+          "lastName": "short"
+        },
+        {
+          "role": "no_token",
+          "patientId": "valid_existing",
+          "status_transition": "inactive_to_active",
+          "firstName": "short",
+          "lastName": "short"
+        },
+        {
+          "role": "no_token",
+          "patientId": "valid_nonexistent",
+          "status_transition": "active_to_inactive",
+          "firstName": "short",
+          "lastName": "short"
+        },
+        {
+          "role": "no_token",
+          "patientId": "invalid_format",
+          "status_transition": "active_to_inactive",
+          "firstName": "short",
+          "lastName": "short"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "patientId": "valid_existing",
+          "status_transition": "inactive_to_active",
+          "firstName": "short",
+          "lastName": "short"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "patientId": "valid_nonexistent",
+          "status_transition": "active_to_inactive",
+          "firstName": "short",
+          "lastName": "short"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "patientId": "invalid_format",
+          "status_transition": "active_to_inactive",
+          "firstName": "short",
+          "lastName": "short"
+        },
+        {
+          "role": "write_token",
+          "status_transition": "active_to_deceased",
+          "patientId": "valid_existing",
+          "firstName": "100_chars",
+          "lastName": "100_chars"
+        },
+        {
+          "role": "write_token",
+          "status_transition": "deceased_to_active",
+          "patientId": "valid_existing",
+          "firstName": "101_chars",
+          "lastName": "101_chars"
+        },
+        {
+          "role": "full_token",
+          "status_transition": "active_to_deceased",
+          "patientId": "valid_nonexistent",
+          "firstName": "omitted",
+          "lastName": "101_chars"
+        },
+        {
+          "role": "full_token",
+          "status_transition": "deceased_to_active",
+          "patientId": "valid_nonexistent",
+          "firstName": "100_chars",
+          "lastName": "omitted"
+        },
+        {
+          "role": "read_token",
+          "status_transition": "active_to_deceased",
+          "patientId": "invalid_format",
+          "firstName": "101_chars",
+          "lastName": "omitted"
+        },
+        {
+          "role": "read_token",
+          "status_transition": "deceased_to_active",
+          "patientId": "invalid_format",
+          "firstName": "omitted",
+          "lastName": "100_chars"
+        },
+        {
+          "role": "no_token",
+          "status_transition": "active_to_deceased",
+          "patientId": "valid_existing",
+          "firstName": "omitted",
+          "lastName": "short"
+        },
+        {
+          "role": "no_token",
+          "status_transition": "deceased_to_active",
+          "patientId": "valid_existing",
+          "firstName": "short",
+          "lastName": "omitted"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "status_transition": "active_to_deceased",
+          "patientId": "valid_existing",
+          "firstName": "omitted",
+          "lastName": "omitted"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "status_transition": "deceased_to_active",
+          "patientId": "valid_existing",
+          "firstName": "100_chars",
+          "lastName": "short"
+        },
+        {
+          "role": "full_token",
+          "firstName": "101_chars",
+          "patientId": "valid_nonexistent",
+          "status_transition": "active_to_inactive",
+          "lastName": "100_chars"
+        },
+        {
+          "role": "read_token",
+          "firstName": "100_chars",
+          "patientId": "invalid_format",
+          "status_transition": "active_to_inactive",
+          "lastName": "101_chars"
+        },
+        {
+          "role": "no_token",
+          "firstName": "100_chars",
+          "patientId": "valid_existing",
+          "status_transition": "inactive_to_active",
+          "lastName": "100_chars"
+        },
+        {
+          "role": "no_token",
+          "firstName": "101_chars",
+          "patientId": "valid_existing",
+          "status_transition": "inactive_to_active",
+          "lastName": "101_chars"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "firstName": "101_chars",
+          "patientId": "valid_existing",
+          "status_transition": "active_to_inactive",
+          "lastName": "short"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "lastName": "100_chars",
+          "patientId": "valid_existing",
+          "status_transition": "active_to_inactive",
+          "firstName": "short"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "lastName": "101_chars",
+          "patientId": "valid_existing",
+          "status_transition": "active_to_inactive",
+          "firstName": "short"
+        },
+        {
+          "status_transition": "inactive_to_active",
+          "firstName": "omitted",
+          "role": "write_token",
+          "patientId": "valid_existing",
+          "lastName": "omitted"
+        },
+        {
+          "status_transition": "active_to_deceased",
+          "firstName": "short",
+          "role": "write_token",
+          "patientId": "valid_existing",
+          "lastName": "omitted"
+        }
+      ],
+      "total_possible_pairs": 159,
+      "feasible_pairs": 159,
+      "covered_pairs": 159,
+      "pair_coverage_pct": 100,
+      "generated_rows": 44,
+      "must_include_rows": 10
+    },
+    "deletePatient": {
+      "strength": 2,
+      "factors": 2,
+      "rows": [
+        {
+          "row": {
+            "role": "delete_token",
+            "patientId": "valid_existing"
+          },
+          "_validation_type": "Smoke",
+          "expected_status": 204,
+          "note": "Happy path: authorized delete of existing patient. Must return 204. Subsequent GET must return 404.",
+          "role": "delete_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "row": {
+            "role": "no_token",
+            "patientId": "valid_existing"
+          },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 401,
+          "note": "No token: must return 401.",
+          "role": "delete_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "patientId": "valid_existing"
+          },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "read_token lacks delete scope: must return 403.",
+          "role": "delete_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "patientId": "valid_existing"
+          },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "write_token lacks delete scope: must return 403.",
+          "role": "delete_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "row": {
+            "role": "insufficient_scope_token",
+            "patientId": "valid_existing"
+          },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "Insufficient scope: must return 403.",
+          "role": "delete_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "row": {
+            "role": "delete_token",
+            "patientId": "valid_nonexistent"
+          },
+          "_validation_type": "Negative",
+          "expected_status": 404,
+          "note": "Non-existent patientId: must return 404.",
+          "role": "delete_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "row": {
+            "role": "delete_token",
+            "patientId": "already_deleted"
+          },
+          "_validation_type": "Negative",
+          "expected_status": 404,
+          "note": "Re-delete already-deleted patient: must return 404.",
+          "role": "delete_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "row": {
+            "role": "delete_token",
+            "patientId": "invalid_format"
+          },
+          "_validation_type": "Negative",
+          "expected_status": 400,
+          "note": "Invalid UUID format: must return 400 or 404.",
+          "role": "delete_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "row": {
+            "role": "full_token",
+            "patientId": "valid_existing"
+          },
+          "_validation_type": "RBAC +ve",
+          "expected_status": 204,
+          "note": "full_token has all scopes including delete: must return 204.",
+          "role": "delete_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "role": "delete_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "role": "delete_token",
+          "patientId": "valid_nonexistent"
+        },
+        {
+          "role": "delete_token",
+          "patientId": "already_deleted"
+        },
+        {
+          "role": "delete_token",
+          "patientId": "invalid_format"
+        },
+        {
+          "role": "full_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "role": "full_token",
+          "patientId": "valid_nonexistent"
+        },
+        {
+          "role": "full_token",
+          "patientId": "already_deleted"
+        },
+        {
+          "role": "full_token",
+          "patientId": "invalid_format"
+        },
+        {
+          "role": "read_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "role": "read_token",
+          "patientId": "valid_nonexistent"
+        },
+        {
+          "role": "read_token",
+          "patientId": "already_deleted"
+        },
+        {
+          "role": "read_token",
+          "patientId": "invalid_format"
+        },
+        {
+          "role": "write_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "role": "write_token",
+          "patientId": "valid_nonexistent"
+        },
+        {
+          "role": "write_token",
+          "patientId": "already_deleted"
+        },
+        {
+          "role": "write_token",
+          "patientId": "invalid_format"
+        },
+        {
+          "role": "no_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "role": "no_token",
+          "patientId": "valid_nonexistent"
+        },
+        {
+          "role": "no_token",
+          "patientId": "already_deleted"
+        },
+        {
+          "role": "no_token",
+          "patientId": "invalid_format"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "patientId": "valid_existing"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "patientId": "valid_nonexistent"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "patientId": "already_deleted"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "patientId": "invalid_format"
+        }
+      ],
+      "total_possible_pairs": 24,
+      "feasible_pairs": 24,
+      "covered_pairs": 24,
+      "pair_coverage_pct": 100,
+      "generated_rows": 33,
+      "must_include_rows": 9
+    }
+  },
+  "total_rows": 207,
+  "pair_coverage_pct": 100
+}

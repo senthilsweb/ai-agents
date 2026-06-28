@@ -1,0 +1,17 @@
+# PICT Model — getPatient (GET /<getPatient>)
+# Strength: 2 (pairwise)
+# Generated: 2026-06-28T15:26:18.421Z
+# Tip: The constraint block is the most valuable part — keep it version-controlled.
+
+role: read_token, full_token, write_token, no_token, insufficient_scope_token
+patientId: valid_existing, valid_nonexistent, invalid_format
+
+# Constraints
+
+# Must-include rows (≥1 Smoke + ≥1 RBAC-negative per endpoint)
+# MUST: [row]="[object Object]", [_validation_type]="Smoke", [expected_status]="200", [note]="Happy path: authorized read with existing patient UUID."
+# MUST: [row]="[object Object]", [_validation_type]="RBAC -ve", [expected_status]="401", [note]="No token: must return 401."
+# MUST: [row]="[object Object]", [_validation_type]="RBAC -ve", [expected_status]="403", [note]="write_token lacks read scope: must return 403."
+# MUST: [row]="[object Object]", [_validation_type]="RBAC -ve", [expected_status]="403", [note]="Insufficient scope: must return 403."
+# MUST: [row]="[object Object]", [_validation_type]="Negative", [expected_status]="404", [note]="Non-existent UUID: must return 404."
+# MUST: [row]="[object Object]", [_validation_type]="Negative", [expected_status]="400", [note]="Invalid UUID format: must return 400 or 404."

@@ -1,0 +1,42 @@
+{
+  "runId": "2026-06-28T14-52-18Z",
+  "generatedAt": "2026-06-28T14:57:18.729Z",
+  "models": {
+    "orchestrator": "claude-sonnet-4-6",
+    "pairwise_designer": "claude-opus-4-8",
+    "assertion_writer": "claude-haiku-4-5-20251001"
+  },
+  "totals": {
+    "inputTokens": 850717,
+    "outputTokens": 16810,
+    "cacheReadTokens": 730460,
+    "cacheWriteTokens": 74419,
+    "steps": 18,
+    "sessions": 1
+  },
+  "perSession": [
+    {
+      "sessionId": "wrun_01KW7BET8B90SNAGM0C03NXCMM",
+      "inputTokens": 850717,
+      "outputTokens": 16810,
+      "cacheReadTokens": 730460,
+      "cacheWriteTokens": 74419,
+      "steps": 18,
+      "budgetExceeded": false
+    }
+  ],
+  "cost": {
+    "amount": 0,
+    "rated": false,
+    "byModel": [
+      {
+        "modelId": "claude-sonnet-4-6",
+        "rated": false,
+        "amount": 0
+      }
+    ]
+  },
+  "budget": {
+    "exceeded": false
+  }
+}

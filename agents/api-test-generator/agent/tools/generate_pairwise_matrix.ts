@@ -23,8 +23,12 @@ interface FactorDefinition {
   must_include?: Record<string, string>[];
 }
 
+interface EndpointFactorDefinition extends FactorDefinition {
+  operationId?: string;
+}
+
 interface FactorsModel {
-  endpoints: Record<string, FactorDefinition>;
+  endpoints: Record<string, FactorDefinition> | EndpointFactorDefinition[];
 }
 
 type Row = Record<string, string>;
@@ -288,7 +292,22 @@ export default defineTool({
 
     // ── Read factors model ──────────────────────────────────────────────────
     const raw = await readHostRunArtifact(runId, "factors_model.json");
-    const factorsModel = JSON.parse(raw) as FactorsModel;
+    const factorsModelRaw = JSON.parse(raw) as FactorsModel;
+
+    // Normalise: Pairwise Designer may emit endpoints as an array [{operationId, ...}]
+    // or as a Record<operationId, FactorDefinition>. Unify to Record before processing.
+    let endpointsDict: Record<string, FactorDefinition>;
+    if (Array.isArray(factorsModelRaw.endpoints)) {
+      endpointsDict = {};
+      for (const ep of factorsModelRaw.endpoints) {
+        const id = ep.operationId ?? String(Object.keys(endpointsDict).length);
+        const { operationId: _drop, ...def } = ep as EndpointFactorDefinition;
+        endpointsDict[id] = def as FactorDefinition;
+      }
+    } else {
+      endpointsDict = factorsModelRaw.endpoints as Record<string, FactorDefinition>;
+    }
+    const factorsModel: FactorsModel = { ...factorsModelRaw, endpoints: endpointsDict };
 
     const matrixByEndpoint: Record<
       string,
@@ -340,13 +359,27 @@ export default defineTool({
         strength,
       );
 
+      // Annotate each row with expected_status from constraints (for boundary/auth rows).
+      // assemble_collection uses this to set the correct HTTP status in the data file.
+      const annotatedRows: Row[] = rows.map((row) => {
+        for (const c of constraints) {
+          if (c.expect_status) {
+            const matches = Object.entries(c.if).every(([k, v]) => row[k] === v);
+            if (matches) {
+              return { ...row, expected_status: String(c.expect_status) };
+            }
+          }
+        }
+        return row;
+      });
+
       const coveragePct =
         feasiblePairs === 0 ? 100 : Math.round((coveredPairs / feasiblePairs) * 100);
 
       matrixByEndpoint[opId] = {
         strength,
         factors: factors.length,
-        rows,
+        rows: annotatedRows,
         total_possible_pairs: totalPairs,
         feasible_pairs: feasiblePairs,
         covered_pairs: coveredPairs,

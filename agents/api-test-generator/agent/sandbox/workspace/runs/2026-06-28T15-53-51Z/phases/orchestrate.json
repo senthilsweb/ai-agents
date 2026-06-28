@@ -1,0 +1,32 @@
+{
+  "phase": "orchestrate",
+  "model": "claude-opus-4-5",
+  "session_id": "wrun_01KW7EZCN5A2M97X51CG1VN3KC",
+  "started_at": "2026-06-28T15:53:51.203Z",
+  "updated_at": "2026-06-28T15:59:29.187Z",
+  "run_id": "2026-06-28T15-53-51Z",
+  "tokens": {
+    "inputTokens": 590321,
+    "outputTokens": 20576,
+    "cacheReadTokens": 464688,
+    "cacheWriteTokens": 78735
+  },
+  "all_sessions_totals": {
+    "inputTokens": 3365440,
+    "outputTokens": 64855,
+    "cacheReadTokens": 2955670,
+    "cacheWriteTokens": 253776,
+    "steps": 64,
+    "sessions": 3
+  },
+  "steps": 15,
+  "options": {
+    "spec": "h360_patients_api.yaml",
+    "api_name": "H360Patients",
+    "product": "H360",
+    "domain": "clinical-data",
+    "auth": "bearer",
+    "strength": 2,
+    "run_newman": false
+  }
+}

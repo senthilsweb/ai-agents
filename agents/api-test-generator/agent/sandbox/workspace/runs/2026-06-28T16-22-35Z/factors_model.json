@@ -1,0 +1,384 @@
+{
+  "endpoints": {
+    "listPatients": {
+      "strength": 2,
+      "factors": [
+        {
+          "name": "role",
+          "levels": ["no_token", "insufficient_scope_token", "read_token", "write_token", "admin_token"],
+          "businessConstraint": null
+        },
+        {
+          "name": "status",
+          "levels": ["omit", "active", "inactive", "deceased"],
+          "businessConstraint": "IF status is provided AND response is 200, every item in the response array must have .status === the sent status value; IF status is omitted AND response is 200, items of any status may be returned"
+        },
+        {
+          "name": "orgId",
+          "levels": ["omit", "valid_org", "unknown_org"],
+          "businessConstraint": "IF orgId is provided AND response is 200, response.total must reflect the unfiltered count for that orgId only"
+        },
+        {
+          "name": "limit",
+          "levels": ["omit", "1", "20", "99", "100", "101"],
+          "businessConstraint": "IF limit=N AND response is 200, response array length must be ≤ N; IF limit=101, expect 400"
+        },
+        {
+          "name": "offset",
+          "levels": ["omit", "0", "1"],
+          "businessConstraint": "IF offset=1 AND response is 200, the first returned record must be the second record in the full ordered result set"
+        }
+      ],
+      "constraints": [
+        { "if": { "role": "no_token" }, "expect_status": 401, "note": "No Authorization header — must be rejected with 401" },
+        { "if": { "role": "insufficient_scope_token" }, "expect_status": 403, "note": "Valid JWT but missing read:patients scope — must be rejected with 403" },
+        { "if": { "limit": "101" }, "expect_status": 400, "note": "limit exceeds declared maximum of 100 — must be rejected with 400" }
+      ],
+      "must_include": [
+        {
+          "row": { "role": "read_token", "status": "active", "orgId": "valid_org", "limit": "20", "offset": "0" },
+          "_validation_type": "Smoke",
+          "note": "Happy path: authorized read, status filter active, typical pagination"
+        },
+        {
+          "row": { "role": "no_token", "status": "omit", "orgId": "omit", "limit": "omit", "offset": "omit" },
+          "_validation_type": "RBAC-Negative",
+          "note": "No token — expect 401"
+        },
+        {
+          "row": { "role": "insufficient_scope_token", "status": "omit", "orgId": "valid_org", "limit": "20", "offset": "0" },
+          "_validation_type": "RBAC-Negative",
+          "note": "Wrong scope — expect 403"
+        },
+        {
+          "row": { "role": "read_token", "status": "omit", "orgId": "valid_org", "limit": "100", "offset": "0" },
+          "_validation_type": "Boundary-Max",
+          "note": "limit at maximum boundary — expect 200 with ≤ 100 records"
+        },
+        {
+          "row": { "role": "read_token", "status": "omit", "orgId": "valid_org", "limit": "101", "offset": "0" },
+          "_validation_type": "Boundary-OverMax",
+          "note": "limit one over maximum — expect 400"
+        },
+        {
+          "row": { "role": "read_token", "status": "inactive", "orgId": "valid_org", "limit": "20", "offset": "0" },
+          "_validation_type": "Filter",
+          "note": "status filter = inactive — all returned records must have status=inactive"
+        },
+        {
+          "row": { "role": "read_token", "status": "deceased", "orgId": "valid_org", "limit": "20", "offset": "0" },
+          "_validation_type": "Filter",
+          "note": "status filter = deceased — all returned records must have status=deceased"
+        }
+      ]
+    },
+    "createPatient": {
+      "strength": 2,
+      "factors": [
+        {
+          "name": "role",
+          "levels": ["no_token", "insufficient_scope_token", "read_token", "write_token", "admin_token"],
+          "businessConstraint": null
+        },
+        {
+          "name": "firstName_presence",
+          "levels": ["provided", "omit"],
+          "businessConstraint": "IF firstName is provided AND response is 201, response.firstName must equal the sent firstName value exactly"
+        },
+        {
+          "name": "lastName_presence",
+          "levels": ["provided", "omit"],
+          "businessConstraint": "IF lastName is provided AND response is 201, response.lastName must equal the sent lastName value exactly"
+        },
+        {
+          "name": "orgId_presence",
+          "levels": ["provided", "omit"],
+          "businessConstraint": null
+        },
+        {
+          "name": "status",
+          "levels": ["omit", "active", "inactive", "deceased"],
+          "businessConstraint": "IF status is omitted AND response is 201, response.status must default to active; IF status is provided AND response is 201, response.status must equal the sent status value"
+        },
+        {
+          "name": "dateOfBirth",
+          "levels": ["omit", "valid_past_date", "future_date"],
+          "businessConstraint": "IF dateOfBirth is a future date, expect 422"
+        },
+        {
+          "name": "duplicate",
+          "levels": ["unique", "duplicate"],
+          "businessConstraint": "IF duplicate=duplicate AND response is 409, the patient record must not have been created"
+        }
+      ],
+      "constraints": [
+        { "if": { "role": "no_token" }, "expect_status": 401, "note": "No Authorization header — must be rejected with 401" },
+        { "if": { "role": "insufficient_scope_token" }, "expect_status": 403, "note": "Valid JWT but missing write:patients scope — must be rejected with 403" },
+        { "if": { "role": "read_token" }, "expect_status": 403, "note": "read:patients scope only — cannot create; must be rejected with 403" },
+        { "if": { "firstName_presence": "omit" }, "expect_status": 400, "note": "firstName is required — omitting must produce 400" },
+        { "if": { "lastName_presence": "omit" }, "expect_status": 400, "note": "lastName is required — omitting must produce 400" },
+        { "if": { "orgId_presence": "omit" }, "expect_status": 400, "note": "orgId is required — omitting must produce 400" },
+        { "if": { "dateOfBirth": "future_date" }, "expect_status": 422, "note": "Future date of birth is semantically invalid — expect 422" },
+        { "if": { "duplicate": "duplicate" }, "expect_status": 409, "note": "Duplicate patient record — expect 409" }
+      ],
+      "must_include": [
+        {
+          "row": { "role": "write_token", "firstName_presence": "provided", "lastName_presence": "provided", "orgId_presence": "provided", "status": "omit", "dateOfBirth": "valid_past_date", "duplicate": "unique" },
+          "_validation_type": "Smoke",
+          "note": "Happy path: all required fields, status omitted — expect 201, response.status defaults to active"
+        },
+        {
+          "row": { "role": "write_token", "firstName_presence": "provided", "lastName_presence": "provided", "orgId_presence": "provided", "status": "active", "dateOfBirth": "valid_past_date", "duplicate": "unique" },
+          "_validation_type": "Smoke",
+          "note": "All required fields + explicit status=active — expect 201"
+        },
+        {
+          "row": { "role": "no_token", "firstName_presence": "provided", "lastName_presence": "provided", "orgId_presence": "provided", "status": "omit", "dateOfBirth": "omit", "duplicate": "unique" },
+          "_validation_type": "RBAC-Negative",
+          "note": "No token — expect 401"
+        },
+        {
+          "row": { "role": "read_token", "firstName_presence": "provided", "lastName_presence": "provided", "orgId_presence": "provided", "status": "omit", "dateOfBirth": "omit", "duplicate": "unique" },
+          "_validation_type": "RBAC-Negative",
+          "note": "Read-only scope attempting create — expect 403"
+        },
+        {
+          "row": { "role": "insufficient_scope_token", "firstName_presence": "provided", "lastName_presence": "provided", "orgId_presence": "provided", "status": "omit", "dateOfBirth": "omit", "duplicate": "unique" },
+          "_validation_type": "RBAC-Negative",
+          "note": "Insufficient scope — expect 403"
+        },
+        {
+          "row": { "role": "write_token", "firstName_presence": "omit", "lastName_presence": "provided", "orgId_presence": "provided", "status": "omit", "dateOfBirth": "omit", "duplicate": "unique" },
+          "_validation_type": "Validation-Required",
+          "note": "Missing required firstName — expect 400"
+        },
+        {
+          "row": { "role": "write_token", "firstName_presence": "provided", "lastName_presence": "omit", "orgId_presence": "provided", "status": "omit", "dateOfBirth": "omit", "duplicate": "unique" },
+          "_validation_type": "Validation-Required",
+          "note": "Missing required lastName — expect 400"
+        },
+        {
+          "row": { "role": "write_token", "firstName_presence": "provided", "lastName_presence": "provided", "orgId_presence": "omit", "status": "omit", "dateOfBirth": "omit", "duplicate": "unique" },
+          "_validation_type": "Validation-Required",
+          "note": "Missing required orgId — expect 400"
+        },
+        {
+          "row": { "role": "write_token", "firstName_presence": "provided", "lastName_presence": "provided", "orgId_presence": "provided", "status": "omit", "dateOfBirth": "future_date", "duplicate": "unique" },
+          "_validation_type": "Boundary-Invalid",
+          "note": "Future dateOfBirth — expect 422"
+        },
+        {
+          "row": { "role": "write_token", "firstName_presence": "provided", "lastName_presence": "provided", "orgId_presence": "provided", "status": "omit", "dateOfBirth": "valid_past_date", "duplicate": "duplicate" },
+          "_validation_type": "Conflict",
+          "note": "Duplicate patient — expect 409"
+        },
+        {
+          "row": { "role": "write_token", "firstName_presence": "provided", "lastName_presence": "provided", "orgId_presence": "provided", "status": "deceased", "dateOfBirth": "valid_past_date", "duplicate": "unique" },
+          "_validation_type": "Smoke",
+          "note": "Create with status=deceased — expect 201, response.status=deceased"
+        }
+      ]
+    },
+    "getPatient": {
+      "strength": 2,
+      "factors": [
+        {
+          "name": "role",
+          "levels": ["no_token", "insufficient_scope_token", "read_token", "write_token", "admin_token"],
+          "businessConstraint": null
+        },
+        {
+          "name": "patientId",
+          "levels": ["valid_existing_uuid", "valid_nonexistent_uuid", "malformed_non_uuid"],
+          "businessConstraint": "IF patientId is valid_nonexistent_uuid AND response is 404, response body should indicate resource not found; IF patientId is valid_existing_uuid AND response is 200, response.id must equal the requested patientId"
+        }
+      ],
+      "constraints": [
+        { "if": { "role": "no_token" }, "expect_status": 401, "note": "No Authorization header — must be rejected with 401" },
+        { "if": { "role": "insufficient_scope_token" }, "expect_status": 403, "note": "Valid JWT but missing read:patients scope — must be rejected with 403" },
+        { "if": { "patientId": "valid_nonexistent_uuid" }, "expect_status": 404, "note": "Valid UUID format but no matching record — expect 404" },
+        { "if": { "patientId": "malformed_non_uuid" }, "expect_status": 400, "note": "Non-UUID path parameter fails format validation — expect 400" }
+      ],
+      "must_include": [
+        {
+          "row": { "role": "read_token", "patientId": "valid_existing_uuid" },
+          "_validation_type": "Smoke",
+          "note": "Happy path: valid token, existing patient — expect 200 with full record"
+        },
+        {
+          "row": { "role": "no_token", "patientId": "valid_existing_uuid" },
+          "_validation_type": "RBAC-Negative",
+          "note": "No token — expect 401"
+        },
+        {
+          "row": { "role": "insufficient_scope_token", "patientId": "valid_existing_uuid" },
+          "_validation_type": "RBAC-Negative",
+          "note": "Insufficient scope — expect 403"
+        },
+        {
+          "row": { "role": "read_token", "patientId": "valid_nonexistent_uuid" },
+          "_validation_type": "NotFound",
+          "note": "Valid UUID format, no record — expect 404"
+        },
+        {
+          "row": { "role": "read_token", "patientId": "malformed_non_uuid" },
+          "_validation_type": "Validation-Format",
+          "note": "Malformed patientId — expect 400"
+        }
+      ]
+    },
+    "updatePatient": {
+      "strength": 2,
+      "factors": [
+        {
+          "name": "role",
+          "levels": ["no_token", "insufficient_scope_token", "read_token", "write_token", "admin_token"],
+          "businessConstraint": null
+        },
+        {
+          "name": "patientId",
+          "levels": ["valid_existing_uuid", "valid_nonexistent_uuid", "malformed_non_uuid"],
+          "businessConstraint": null
+        },
+        {
+          "name": "status_transition",
+          "levels": ["omit", "active_to_inactive", "active_to_deceased", "inactive_to_active", "deceased_to_active"],
+          "businessConstraint": "IF status_transition=deceased_to_active AND response is 422, the patient record must remain unchanged; IF status_transition is any valid transition AND response is 200, response.status must equal the target status value"
+        },
+        {
+          "name": "firstName",
+          "levels": ["omit", "valid_short", "max_length_100", "over_max_101"],
+          "businessConstraint": "IF firstName is provided AND response is 200, response.firstName must equal the exact sent value (no server-side transformation)"
+        },
+        {
+          "name": "lastName",
+          "levels": ["omit", "valid_short", "max_length_100", "over_max_101"],
+          "businessConstraint": "IF lastName is provided AND response is 200, response.lastName must equal the exact sent value (no server-side transformation)"
+        }
+      ],
+      "constraints": [
+        { "if": { "role": "no_token" }, "expect_status": 401, "note": "No Authorization header — must be rejected with 401" },
+        { "if": { "role": "insufficient_scope_token" }, "expect_status": 403, "note": "Valid JWT but missing write:patients scope — must be rejected with 403" },
+        { "if": { "role": "read_token" }, "expect_status": 403, "note": "read:patients scope only — cannot update; must be rejected with 403" },
+        { "if": { "patientId": "valid_nonexistent_uuid" }, "expect_status": 404, "note": "Valid UUID format but no matching record — expect 404" },
+        { "if": { "patientId": "malformed_non_uuid" }, "expect_status": 400, "note": "Non-UUID path parameter fails format validation — expect 400" },
+        { "if": { "status_transition": "deceased_to_active" }, "expect_status": 422, "note": "Transitioning from deceased back to active is an invalid lifecycle transition — expect 422" },
+        { "if": { "firstName": "over_max_101" }, "expect_status": 400, "note": "firstName exceeds maxLength of 100 — expect 400" },
+        { "if": { "lastName": "over_max_101" }, "expect_status": 400, "note": "lastName exceeds maxLength of 100 — expect 400" }
+      ],
+      "must_include": [
+        {
+          "row": { "role": "write_token", "patientId": "valid_existing_uuid", "status_transition": "active_to_inactive", "firstName": "valid_short", "lastName": "valid_short" },
+          "_validation_type": "Smoke",
+          "note": "Happy path: valid update, active→inactive transition — expect 200 with echoed fields"
+        },
+        {
+          "row": { "role": "no_token", "patientId": "valid_existing_uuid", "status_transition": "omit", "firstName": "valid_short", "lastName": "omit" },
+          "_validation_type": "RBAC-Negative",
+          "note": "No token — expect 401"
+        },
+        {
+          "row": { "role": "read_token", "patientId": "valid_existing_uuid", "status_transition": "omit", "firstName": "valid_short", "lastName": "omit" },
+          "_validation_type": "RBAC-Negative",
+          "note": "Read-only scope attempting update — expect 403"
+        },
+        {
+          "row": { "role": "write_token", "patientId": "valid_nonexistent_uuid", "status_transition": "omit", "firstName": "valid_short", "lastName": "omit" },
+          "_validation_type": "NotFound",
+          "note": "Valid UUID, no record — expect 404"
+        },
+        {
+          "row": { "role": "write_token", "patientId": "malformed_non_uuid", "status_transition": "omit", "firstName": "valid_short", "lastName": "omit" },
+          "_validation_type": "Validation-Format",
+          "note": "Malformed patientId — expect 400"
+        },
+        {
+          "row": { "role": "write_token", "patientId": "valid_existing_uuid", "status_transition": "deceased_to_active", "firstName": "valid_short", "lastName": "omit" },
+          "_validation_type": "Boundary-Invalid",
+          "note": "Invalid lifecycle transition deceased→active — expect 422"
+        },
+        {
+          "row": { "role": "write_token", "patientId": "valid_existing_uuid", "status_transition": "active_to_deceased", "firstName": "valid_short", "lastName": "omit" },
+          "_validation_type": "Smoke",
+          "note": "Valid transition active→deceased — expect 200, response.status=deceased"
+        },
+        {
+          "row": { "role": "write_token", "patientId": "valid_existing_uuid", "status_transition": "omit", "firstName": "max_length_100", "lastName": "max_length_100" },
+          "_validation_type": "Boundary-Max",
+          "note": "firstName and lastName at maxLength=100 — expect 200 with exact echo"
+        },
+        {
+          "row": { "role": "write_token", "patientId": "valid_existing_uuid", "status_transition": "omit", "firstName": "over_max_101", "lastName": "omit" },
+          "_validation_type": "Boundary-OverMax",
+          "note": "firstName one character over maxLength — expect 400"
+        }
+      ]
+    },
+    "deletePatient": {
+      "strength": 2,
+      "factors": [
+        {
+          "name": "role",
+          "levels": ["no_token", "insufficient_scope_token", "read_token", "write_token", "admin_token"],
+          "businessConstraint": null
+        },
+        {
+          "name": "patientId",
+          "levels": ["valid_existing_uuid", "valid_nonexistent_uuid", "malformed_non_uuid", "already_deleted_uuid"],
+          "businessConstraint": "IF patientId=already_deleted_uuid AND response is 404, confirm that a subsequent GET /patients/{patientId} for the same ID also returns 404 (idempotency/post-delete verification)"
+        }
+      ],
+      "constraints": [
+        { "if": { "role": "no_token" }, "expect_status": 401, "note": "No Authorization header — must be rejected with 401" },
+        { "if": { "role": "insufficient_scope_token" }, "expect_status": 403, "note": "Valid JWT but missing delete:patients scope — must be rejected with 403" },
+        { "if": { "role": "read_token" }, "expect_status": 403, "note": "read:patients scope only — cannot delete; must be rejected with 403" },
+        { "if": { "role": "write_token" }, "expect_status": 403, "note": "write:patients scope only — cannot delete (requires delete:patients); must be rejected with 403" },
+        { "if": { "patientId": "valid_nonexistent_uuid" }, "expect_status": 404, "note": "Valid UUID format but no matching record — expect 404" },
+        { "if": { "patientId": "already_deleted_uuid" }, "expect_status": 404, "note": "Previously deleted patient — idempotency check, expect 404" },
+        { "if": { "patientId": "malformed_non_uuid" }, "expect_status": 400, "note": "Non-UUID path parameter fails format validation — expect 400" }
+      ],
+      "must_include": [
+        {
+          "row": { "role": "admin_token", "patientId": "valid_existing_uuid" },
+          "_validation_type": "Smoke",
+          "note": "Happy path: admin token, existing patient — expect 204; subsequent GET must return 404"
+        },
+        {
+          "row": { "role": "no_token", "patientId": "valid_existing_uuid" },
+          "_validation_type": "RBAC-Negative",
+          "note": "No token — expect 401"
+        },
+        {
+          "row": { "role": "read_token", "patientId": "valid_existing_uuid" },
+          "_validation_type": "RBAC-Negative",
+          "note": "Read-only scope attempting delete — expect 403"
+        },
+        {
+          "row": { "role": "write_token", "patientId": "valid_existing_uuid" },
+          "_validation_type": "RBAC-Negative",
+          "note": "write:patients scope without delete:patients — expect 403"
+        },
+        {
+          "row": { "role": "insufficient_scope_token", "patientId": "valid_existing_uuid" },
+          "_validation_type": "RBAC-Negative",
+          "note": "Insufficient scope — expect 403"
+        },
+        {
+          "row": { "role": "admin_token", "patientId": "valid_nonexistent_uuid" },
+          "_validation_type": "NotFound",
+          "note": "Valid UUID, no record — expect 404"
+        },
+        {
+          "row": { "role": "admin_token", "patientId": "already_deleted_uuid" },
+          "_validation_type": "Idempotency",
+          "note": "Re-delete of already-deleted patient — expect 404 (idempotency)"
+        },
+        {
+          "row": { "role": "admin_token", "patientId": "malformed_non_uuid" },
+          "_validation_type": "Validation-Format",
+          "note": "Malformed patientId — expect 400"
+        }
+      ]
+    }
+  }
+}

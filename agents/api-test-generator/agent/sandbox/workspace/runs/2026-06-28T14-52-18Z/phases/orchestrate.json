@@ -1,0 +1,22 @@
+{
+  "phase": "orchestrate",
+  "model": "claude-opus-4-5",
+  "session_id": "wrun_01KW7BET8B90SNAGM0C03NXCMM",
+  "started_at": "2026-06-28T14:52:18.787Z",
+  "ended_at": "2026-06-28T14:57:10.000Z",
+  "duration_ms": 291213,
+  "tokens": {
+    "inputTokens": 628505,
+    "outputTokens": 15895,
+    "cacheReadTokens": 511071,
+    "cacheWriteTokens": 72581
+  },
+  "steps": 15,
+  "endpoints_parsed": 5,
+  "parse_warnings": [],
+  "pairwise_total_rows": 167,
+  "pair_coverage_pct": 100,
+  "validation_passed": true,
+  "validation_violations": 0,
+  "newman_skipped": true
+}

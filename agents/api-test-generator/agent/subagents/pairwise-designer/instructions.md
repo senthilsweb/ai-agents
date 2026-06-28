@@ -54,10 +54,18 @@ Factor types and their levels:
 | Boolean | `["true", "false"]` |
 | Enum (≤ 8 values) | All declared values |
 | Enum (> 8 values) | Representative subset: first, last, one boundary, one invalid |
-| Integer with min/max | `["null", "<min>", "<typical>", "<max-1>", "<max>", "<max+1>"]` (null = omit; skip if required) |
-| String with maxLength | `["", "short", "<max-1 chars>", "<max chars>", "<max+1 chars>"]` (empty = omit if not required) |
-| String without constraint | `["valid_value", "empty_string", "long_string"]` |
-| Auth role / permission | `["admin", "viewer", "anonymous"]` (adapt to the actual roles in the spec security) |
+| Integer with min/max | `["null", "<min>", "<typical>", "<max-1>", "<max>", "<max+1>"]` (null = omit; add constraint for max+1 → 400; omit null if required) |
+| String with maxLength | `["omit", "short", "<max-1 chars>", "<max chars>", "<max+1 chars>"]` — **always include "omit" even for required fields** to test missing-field → 400 response; add constraint `{ "if": { "<field>": "omit" }, "expect_status": 400 }` for required fields |
+| String without constraint | `["omit", "valid_value", "long_string"]` — add omit for required fields with 400 constraint |
+| Auth role / permission | All actual security scopes in the spec as separate levels (e.g. `write_token`, `read_token`, `no_token`, `insufficient_scope_token`) |
+
+**Critical: Status transition factors**
+
+For endpoints that describe illegal status transitions (e.g. `deceased → active not allowed → 422`):
+- Add a **pseudo-level** for the illegal transition (e.g. `"deceased_to_active"`)
+- The pseudo-level represents "patient is pre-set to deceased; request sets status=active"
+- Add the constraint `{ "if": { "status": "deceased_to_active" }, "expect_status": 422 }`
+- Example for updatePatient: `{ "name": "status", "levels": ["omitted", "active", "inactive", "deceased", "deceased_to_active"] }`
 
 ### 3 — Define constraints
 
@@ -94,13 +102,19 @@ High-risk endpoints (auth, money, lineage) additionally need:
 
 ## Output schema
 
+**IMPORTANT: `endpoints` MUST be a JSON object (dict) keyed by `operationId`, NOT an array.**
+
 ```jsonc
 {
   "endpoints": {
     "<operationId>": {
       "strength": 2,
       "factors": [
-        { "name": "<param_name>", "levels": ["<level1>", "<level2>", ...] }
+        {
+          "name": "<param_name>",
+          "levels": ["<level1>", "<level2>", ...],
+          "businessConstraint": "<natural language assertion: when/if X → response must Y>"
+        }
       ],
       "constraints": [
         { "if": { "<factor>": "<value>" }, "expect_status": 401 }
@@ -112,6 +126,22 @@ High-risk endpoints (auth, money, lineage) additionally need:
   }
 }
 ```
+
+### `businessConstraint` — required for business-logic factors
+
+Add `businessConstraint` to a factor when changing its value produces a **business behavior difference** (not just a different HTTP status code). These constraints are forwarded to the Assertion Writer to generate `pm.test()` blocks.
+
+Examples:
+
+| Factor | businessConstraint |
+|---|---|
+| `status` (enum filter) | `"IF status is set AND response is 200, every item in response array must have .status === the sent status value"` |
+| `limit` (pagination) | `"IF limit=N AND response is 200, response array length must be ≤ N"` |
+| `firstName` (POST echo) | `"IF firstName is sent AND response is 201, response.firstName must equal the sent value"` |
+| `status` (POST default) | `"IF status is omitted AND response is 201, response.status must default to active"` |
+| `status_transition` (PUT) | `"IF deceased_to_active transition, expect 422; IF 200, response.firstName must equal sent firstName"` |
+
+Do NOT add `businessConstraint` to auth/role factors (those are covered by HTTP status constraints).
 
 ## Rules
 

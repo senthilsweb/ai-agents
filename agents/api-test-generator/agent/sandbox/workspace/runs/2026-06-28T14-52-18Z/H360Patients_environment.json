@@ -1,0 +1,27 @@
+{
+  "id": "8c3be62b-f50c-4293-9377-f29573538e29",
+  "name": "H360Patients Local",
+  "values": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "enabled": true
+    },
+    {
+      "key": "bearer_token",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "enabled": true
+    },
+    {
+      "key": "bearer_token",
+      "value": "",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

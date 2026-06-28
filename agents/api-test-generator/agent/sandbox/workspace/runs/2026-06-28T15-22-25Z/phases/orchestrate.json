@@ -1,0 +1,49 @@
+{
+  "phase": "orchestrate",
+  "model": "claude-opus-4-5",
+  "started_at": "2026-06-28T15:22:25.060Z",
+  "updated_at": "2026-06-28T15:29:32.908Z",
+  "run_id": "2026-06-28T15-22-25Z",
+  "tokens": {
+    "sessions": {
+      "wrun_01KW7BET8B90SNAGM0C03NXCMM": {
+        "inputTokens": 1155246,
+        "outputTokens": 18636,
+        "cacheReadTokens": 1030935,
+        "cacheWriteTokens": 76904,
+        "steps": 22
+      },
+      "wrun_01KW7D5XX3N8VW971TS23JKY3B": {
+        "inputTokens": 944995,
+        "outputTokens": 22598,
+        "cacheReadTokens": 792394,
+        "cacheWriteTokens": 93498,
+        "steps": 20
+      }
+    },
+    "totals": {
+      "inputTokens": 2100241,
+      "outputTokens": 41234,
+      "cacheReadTokens": 1823329,
+      "cacheWriteTokens": 170402,
+      "steps": 42,
+      "sessions": 2
+    }
+  },
+  "phases_completed": [
+    "create_run",
+    "parse_openapi",
+    "apply_naming_rules",
+    "pairwise_designer",
+    "generate_pairwise_matrix",
+    "assertion_writer",
+    "assemble_collection",
+    "validate_collection"
+  ],
+  "newman_skipped": true,
+  "spec_warnings": [],
+  "endpoint_count": 5,
+  "total_matrix_rows": 207,
+  "pair_coverage_pct": 100,
+  "validation_passed": true
+}

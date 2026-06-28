@@ -1,4 +1,5 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { createAnthropic } from "@ai-sdk/anthropic";
 
 // ── Per-role model resolution (model-agnostic, env-driven) ─────────────────
 //
@@ -93,6 +94,13 @@ export function resolveModel(role: string, options: ResolveModelOptions = {}) {
       baseURL,
       apiKey,
     })(modelId);
+  }
+  const anthropicKey =
+    process.env[`${envKeyFor(role)}_API_KEY`] ??
+    process.env.MODEL_API_KEY ??
+    process.env.ANTHROPIC_API_KEY;
+  if (anthropicKey && !baseURL) {
+    return createAnthropic({ apiKey: anthropicKey })(modelId);
   }
   return modelId;
 }

@@ -1,0 +1,18 @@
+# PICT Model — 2 (GET /<2>)
+# Strength: 2 (pairwise)
+# Generated: 2026-06-28T14:54:58.739Z
+# Tip: The constraint block is the most valuable part — keep it version-controlled.
+
+role: read_scope, no_scope, anonymous
+patientId: valid_existing_uuid, valid_nonexistent_uuid, invalid_format
+
+# Constraints
+# IF [role] = "anonymous" → expect HTTP 401 (see constraints in factors_model.json)
+# IF [role] = "no_scope" → expect HTTP 403 (see constraints in factors_model.json)
+
+# Must-include rows (≥1 Smoke + ≥1 RBAC-negative per endpoint)
+# MUST: [role]="read_scope", [patientId]="valid_existing_uuid", [_validation_type]="Smoke", [notes]="Happy path — patient found"
+# MUST: [role]="read_scope", [patientId]="valid_nonexistent_uuid", [_validation_type]="Not found", [notes]="Valid UUID but no matching record → 404"
+# MUST: [role]="anonymous", [patientId]="valid_existing_uuid", [_validation_type]="RBAC -ve", [notes]="No token → 401"
+# MUST: [role]="no_scope", [patientId]="valid_existing_uuid", [_validation_type]="RBAC -ve", [notes]="Wrong scope → 403"
+# MUST: [role]="read_scope", [patientId]="invalid_format", [_validation_type]="Invalid input", [notes]="Non-UUID format → 400 or 404"

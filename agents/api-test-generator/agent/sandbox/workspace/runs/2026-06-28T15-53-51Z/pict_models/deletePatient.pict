@@ -1,0 +1,23 @@
+# PICT Model — deletePatient (GET /<deletePatient>)
+# Strength: 2 (pairwise)
+# Generated: 2026-06-28T15:56:33.620Z
+# Tip: The constraint block is the most valuable part — keep it version-controlled.
+
+role: delete_token, read_token, write_token, no_token, insufficient_scope_token
+patientId: valid_existing, valid_nonexistent, invalid_format
+
+# Constraints
+# IF [role] = "no_token" → expect HTTP 401 (see constraints in factors_model.json)
+# IF [role] = "insufficient_scope_token" → expect HTTP 403 (see constraints in factors_model.json)
+# IF [role] = "read_token" → expect HTTP 403 (see constraints in factors_model.json)
+# IF [role] = "write_token" → expect HTTP 403 (see constraints in factors_model.json)
+# IF [patientId] = "valid_nonexistent" → expect HTTP 404 (see constraints in factors_model.json)
+# IF [patientId] = "invalid_format" → expect HTTP 400 (see constraints in factors_model.json)
+
+# Must-include rows (≥1 Smoke + ≥1 RBAC-negative per endpoint)
+# MUST: [_validation_type]="Smoke", [description]="Authorized delete_token, valid existing patient — expects 204, subsequent GET returns 404", [role]="delete_token", [patientId]="valid_existing"
+# MUST: [_validation_type]="RBAC -ve", [description]="Missing token — expects 401", [role]="no_token", [patientId]="valid_existing"
+# MUST: [_validation_type]="RBAC -ve", [description]="Read-only token — expects 403", [role]="read_token", [patientId]="valid_existing"
+# MUST: [_validation_type]="RBAC -ve", [description]="Write token (no delete scope) — expects 403", [role]="write_token", [patientId]="valid_existing"
+# MUST: [_validation_type]="Negative", [description]="Valid UUID but no matching patient — expects 404", [role]="delete_token", [patientId]="valid_nonexistent"
+# MUST: [_validation_type]="Negative", [description]="Invalid UUID format — expects 400", [role]="delete_token", [patientId]="invalid_format"

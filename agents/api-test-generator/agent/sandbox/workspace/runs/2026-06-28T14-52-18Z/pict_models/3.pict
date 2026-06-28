@@ -1,0 +1,31 @@
+# PICT Model — 3 (GET /<3>)
+# Strength: 2 (pairwise)
+# Generated: 2026-06-28T14:54:58.739Z
+# Tip: The constraint block is the most valuable part — keep it version-controlled.
+
+role: write_scope, read_scope, no_scope, anonymous
+patientId: valid_existing_uuid, valid_nonexistent_uuid, invalid_format
+status_transition: active_to_inactive, active_to_deceased, inactive_to_active, inactive_to_deceased, deceased_to_active, omit
+firstName: valid_short, 100_chars, 101_chars, omit
+dateOfBirth: omit, valid_past, future_date
+
+# Constraints
+# IF [role] = "anonymous" → expect HTTP 401 (see constraints in factors_model.json)
+# IF [role] = "read_scope" → expect HTTP 403 (see constraints in factors_model.json)
+# IF [role] = "no_scope" → expect HTTP 403 (see constraints in factors_model.json)
+# IF [status_transition] = "deceased_to_active" → expect HTTP 422 (see constraints in factors_model.json)
+# IF [firstName] = "101_chars" → expect HTTP 400 (see constraints in factors_model.json)
+# IF [dateOfBirth] = "future_date" → expect HTTP 422 (see constraints in factors_model.json)
+# IF [patientId] = "valid_nonexistent_uuid" → expect HTTP 404 (see constraints in factors_model.json)
+# IF [patientId] = "invalid_format" → expect HTTP 400 (see constraints in factors_model.json)
+
+# Must-include rows (≥1 Smoke + ≥1 RBAC-negative per endpoint)
+# MUST: [role]="write_scope", [patientId]="valid_existing_uuid", [status_transition]="active_to_inactive", [firstName]="valid_short", [dateOfBirth]="omit", [_validation_type]="Smoke", [notes]="Happy path status transition"
+# MUST: [role]="anonymous", [patientId]="valid_existing_uuid", [status_transition]="omit", [firstName]="valid_short", [dateOfBirth]="omit", [_validation_type]="RBAC -ve", [notes]="No token → 401"
+# MUST: [role]="read_scope", [patientId]="valid_existing_uuid", [status_transition]="omit", [firstName]="valid_short", [dateOfBirth]="omit", [_validation_type]="RBAC -ve", [notes]="Read scope cannot update → 403"
+# MUST: [role]="no_scope", [patientId]="valid_existing_uuid", [status_transition]="omit", [firstName]="valid_short", [dateOfBirth]="omit", [_validation_type]="RBAC -ve", [notes]="No scope → 403"
+# MUST: [role]="write_scope", [patientId]="valid_existing_uuid", [status_transition]="deceased_to_active", [firstName]="valid_short", [dateOfBirth]="omit", [_validation_type]="Lifecycle error", [notes]="Forbidden transition → 422"
+# MUST: [role]="write_scope", [patientId]="valid_existing_uuid", [status_transition]="inactive_to_active", [firstName]="100_chars", [dateOfBirth]="omit", [_validation_type]="Boundary", [notes]="Max length firstName — must succeed"
+# MUST: [role]="write_scope", [patientId]="valid_existing_uuid", [status_transition]="omit", [firstName]="101_chars", [dateOfBirth]="omit", [_validation_type]="Boundary over", [notes]="Over-max firstName → 400"
+# MUST: [role]="write_scope", [patientId]="valid_existing_uuid", [status_transition]="omit", [firstName]="valid_short", [dateOfBirth]="future_date", [_validation_type]="Semantic error", [notes]="Future DOB → 422"
+# MUST: [role]="write_scope", [patientId]="valid_nonexistent_uuid", [status_transition]="omit", [firstName]="valid_short", [dateOfBirth]="omit", [_validation_type]="Not found", [notes]="Non-existent patient → 404"

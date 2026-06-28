@@ -105,12 +105,19 @@ Load the `assertion_contract` skill first so you understand what to request.
 Call the **`assertion-writer`** subagent. Its message must contain:
 
 - **The full `named_endpoint_model.json` content** (inline).
-- **The first 3 rows per endpoint from the pairwise matrix** (inline JSON).
+- **The full `factors_model.json` content** (inline) — the Assertion Writer reads
+  the `businessConstraint` field on each factor to know which business pm.test()
+  blocks to generate beyond the 3 structural ones.
+- **The first 10 rows per endpoint from the pairwise matrix** (inline JSON) — these are the must_include rows plus key IPOG rows; they contain the specific scenarios that require meaningful TSNames.
 - The auth profile (so it uses the right credential keys).
 - The base URL variable name.
 - The instruction: "Write pm.test() assertion scripts for each request following
-  your assertion_contract skill exactly. Also produce TSName suggestions per row.
-  Return ONLY assertion_scripts.json — no prose."
+  your assertion_contract skill exactly. For each endpoint, also generate business
+  assertion blocks from the businessConstraint fields in the factors_model. Produce
+  TSName suggestions for every row you receive (keyed by operationId.rowIndex, 0-based).
+  Translate role codes to human-readable labels (no_token→anonymous, insufficient_scope_token→viewer,
+  read_token→reader, write_token→editor, admin→admin). Return ONLY valid JSON with
+  keys 'assertion_scripts' and 'tsname_suggestions' — no prose."
 
 The writer returns `assertion_scripts.json` content. Write it to
 `{run_dir}/assertion_scripts.json` via `write_run_file`.

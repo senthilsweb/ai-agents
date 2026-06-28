@@ -85,9 +85,11 @@ pm.test("Response body validation", function () {
    `-ve` iterations.
 5. If the endpoint returns a well-defined JSON schema, add a `jsonSchema` const
    and call `pm.response.to.have.jsonSchema(jsonSchema)` in Branch B.
-6. **Do not** add a `pm.test()` block that is not one of the three mandatory ones
-   unless there is a specific business rule that cannot be expressed through the
-   data file.
+6. **After** the three mandatory blocks, add business `pm.test()` blocks for each
+   `businessConstraint` in the factors_model (filter correctness, pagination bounds,
+   echo checks, required-field presence, UUID assignment). These blocks must guard
+   with null checks and read expected values from `pm.iterationData.get(...)`.
+   See the Assertion Writer instructions for the exact patterns per endpoint type.
 
 ## Data file contract (keys that must exist per request)
 

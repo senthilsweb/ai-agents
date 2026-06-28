@@ -97,6 +97,10 @@ factors extracted
     IF status = available  → all response items must have status="available"
                                          (business rule — filter correctness)
 
+          ↓  generate_pairwise_matrix (IPOG) produces the minimum covering rows
+             — annotates each row with expected_status from constraint rules
+             (boundary row limit=101 → 400, RBAC row role=anonymous → 401)
+
           ↓  Assertion Writer reads schema + constraints
 
 assertions generated per row
@@ -121,9 +125,9 @@ data row (business-validated)
     "responseCodeForListPets": 200,
     "responseTextForListPets": "available",
     "contentTypeForListPets":  "application/json",
-    "expectFilterField":       "status",
-    "expectFilterValue":       "available",
-    "expectMaxItems":          "10"
+    "expectFilterField":       "status",        ← assemble_collection derives these
+    "expectFilterValue":       "available",        from endpoint parameter metadata
+    "expectMaxItems":          "10"                (expectEcho_<field> for POST/PUT echo checks)
   }
 ```
 

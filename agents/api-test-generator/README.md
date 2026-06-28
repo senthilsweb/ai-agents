@@ -37,14 +37,20 @@ Generate tests for spec=your-api.yaml api_name=PetStore auth=basic
 
 ```
 runs/<timestamp>/
-  postman_collection.json   ← drop into Postman or run with Newman
-  postman_environment.json
-  *_data.json               ← Newman iteration data
-  pairwise_matrix.csv       ← human-readable test matrix
-  newman_report.html        ← execution results
-  coverage_report.md        ← coverage metrics
-  gaps_report.md            ← uncovered endpoints / missing assertions
-  report.md                 ← timing + token + cost summary
+  <ApiName>_collection.json    ← drop into Postman or run with Newman
+  <ApiName>_data.json          ← Newman iteration data (pairwise rows + business keys)
+  <ApiName>_environment.json   ← base URL and auth variable placeholders
+  api_config.json              ← machine-readable config for CI/CD runners
+  collection_data.yml          ← manifest registry (category → collection → data)
+  pict_models/<opId>.pict      ← factor model audit trail — commit to VCS
+  test_scripts/<Request>.js    ← extracted assertion scripts for code review
+  pairwise_matrix.csv          ← human-readable test matrix
+  validation_report.md         ← automated quality gates (0 errors = ready)
+  coverage_report.md           ← coverage metrics
+  gaps_report.md               ← uncovered endpoints / missing assertions
+  report.md                    ← timing + token + cost summary
+  structured/test_results.jsonl← per-row results — DuckDB queryable
+  structured/coverage.json     ← run-level metrics
 ```
 
 ## Architecture

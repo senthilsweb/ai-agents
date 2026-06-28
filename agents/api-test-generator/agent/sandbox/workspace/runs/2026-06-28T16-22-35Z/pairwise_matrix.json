@@ -1,0 +1,1634 @@
+{
+  "endpoints": {
+    "listPatients": {
+      "strength": 2,
+      "factors": 5,
+      "rows": [
+        {
+          "row": {
+            "role": "read_token",
+            "status": "active",
+            "orgId": "valid_org",
+            "limit": "20",
+            "offset": "0"
+          },
+          "_validation_type": "Smoke",
+          "note": "Happy path: authorized read, status filter active, typical pagination",
+          "role": "no_token",
+          "status": "omit",
+          "orgId": "omit",
+          "limit": "omit",
+          "offset": "omit"
+        },
+        {
+          "row": {
+            "role": "no_token",
+            "status": "omit",
+            "orgId": "omit",
+            "limit": "omit",
+            "offset": "omit"
+          },
+          "_validation_type": "RBAC-Negative",
+          "note": "No token — expect 401",
+          "role": "no_token",
+          "status": "omit",
+          "orgId": "omit",
+          "limit": "omit",
+          "offset": "omit"
+        },
+        {
+          "row": {
+            "role": "insufficient_scope_token",
+            "status": "omit",
+            "orgId": "valid_org",
+            "limit": "20",
+            "offset": "0"
+          },
+          "_validation_type": "RBAC-Negative",
+          "note": "Wrong scope — expect 403",
+          "role": "no_token",
+          "status": "omit",
+          "orgId": "omit",
+          "limit": "omit",
+          "offset": "omit"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "status": "omit",
+            "orgId": "valid_org",
+            "limit": "100",
+            "offset": "0"
+          },
+          "_validation_type": "Boundary-Max",
+          "note": "limit at maximum boundary — expect 200 with ≤ 100 records",
+          "role": "no_token",
+          "status": "omit",
+          "orgId": "omit",
+          "limit": "omit",
+          "offset": "omit"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "status": "omit",
+            "orgId": "valid_org",
+            "limit": "101",
+            "offset": "0"
+          },
+          "_validation_type": "Boundary-OverMax",
+          "note": "limit one over maximum — expect 400",
+          "role": "no_token",
+          "status": "omit",
+          "orgId": "omit",
+          "limit": "omit",
+          "offset": "omit"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "status": "inactive",
+            "orgId": "valid_org",
+            "limit": "20",
+            "offset": "0"
+          },
+          "_validation_type": "Filter",
+          "note": "status filter = inactive — all returned records must have status=inactive",
+          "role": "no_token",
+          "status": "omit",
+          "orgId": "omit",
+          "limit": "omit",
+          "offset": "omit"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "status": "deceased",
+            "orgId": "valid_org",
+            "limit": "20",
+            "offset": "0"
+          },
+          "_validation_type": "Filter",
+          "note": "status filter = deceased — all returned records must have status=deceased",
+          "role": "no_token",
+          "status": "omit",
+          "orgId": "omit",
+          "limit": "omit",
+          "offset": "omit"
+        },
+        {
+          "role": "no_token",
+          "status": "omit",
+          "orgId": "valid_org",
+          "limit": "1",
+          "offset": "0"
+        },
+        {
+          "role": "no_token",
+          "status": "active",
+          "orgId": "valid_org",
+          "limit": "1",
+          "offset": "0"
+        },
+        {
+          "role": "no_token",
+          "status": "inactive",
+          "orgId": "valid_org",
+          "limit": "1",
+          "offset": "0"
+        },
+        {
+          "role": "no_token",
+          "status": "deceased",
+          "orgId": "valid_org",
+          "limit": "1",
+          "offset": "0"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "status": "omit",
+          "orgId": "valid_org",
+          "limit": "1",
+          "offset": "0"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "status": "active",
+          "orgId": "omit",
+          "limit": "1",
+          "offset": "0"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "status": "inactive",
+          "orgId": "omit",
+          "limit": "1",
+          "offset": "0"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "status": "deceased",
+          "orgId": "omit",
+          "limit": "1",
+          "offset": "0"
+        },
+        {
+          "role": "read_token",
+          "status": "omit",
+          "orgId": "valid_org",
+          "limit": "1",
+          "offset": "0"
+        },
+        {
+          "role": "read_token",
+          "status": "active",
+          "orgId": "omit",
+          "limit": "1",
+          "offset": "0"
+        },
+        {
+          "role": "read_token",
+          "status": "inactive",
+          "orgId": "omit",
+          "limit": "1",
+          "offset": "0"
+        },
+        {
+          "role": "read_token",
+          "status": "deceased",
+          "orgId": "omit",
+          "limit": "1",
+          "offset": "0"
+        },
+        {
+          "role": "write_token",
+          "status": "omit",
+          "orgId": "valid_org",
+          "limit": "1",
+          "offset": "0"
+        },
+        {
+          "role": "write_token",
+          "status": "active",
+          "orgId": "omit",
+          "limit": "1",
+          "offset": "0"
+        },
+        {
+          "role": "write_token",
+          "status": "inactive",
+          "orgId": "omit",
+          "limit": "1",
+          "offset": "0"
+        },
+        {
+          "role": "write_token",
+          "status": "deceased",
+          "orgId": "omit",
+          "limit": "1",
+          "offset": "0"
+        },
+        {
+          "role": "admin_token",
+          "status": "omit",
+          "orgId": "valid_org",
+          "limit": "1",
+          "offset": "0"
+        },
+        {
+          "role": "admin_token",
+          "status": "active",
+          "orgId": "omit",
+          "limit": "1",
+          "offset": "0"
+        },
+        {
+          "role": "admin_token",
+          "status": "inactive",
+          "orgId": "omit",
+          "limit": "1",
+          "offset": "0"
+        },
+        {
+          "role": "admin_token",
+          "status": "deceased",
+          "orgId": "omit",
+          "limit": "1",
+          "offset": "0"
+        },
+        {
+          "role": "no_token",
+          "orgId": "unknown_org",
+          "status": "omit",
+          "limit": "20",
+          "offset": "1"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "orgId": "unknown_org",
+          "status": "active",
+          "limit": "omit",
+          "offset": "omit"
+        },
+        {
+          "role": "read_token",
+          "orgId": "unknown_org",
+          "status": "inactive",
+          "limit": "99",
+          "offset": "omit"
+        },
+        {
+          "role": "write_token",
+          "orgId": "unknown_org",
+          "status": "deceased",
+          "limit": "100",
+          "offset": "omit"
+        },
+        {
+          "role": "admin_token",
+          "orgId": "unknown_org",
+          "status": "omit",
+          "limit": "101",
+          "offset": "omit"
+        },
+        {
+          "role": "no_token",
+          "limit": "99",
+          "status": "omit",
+          "orgId": "omit",
+          "offset": "1"
+        },
+        {
+          "role": "no_token",
+          "limit": "100",
+          "status": "omit",
+          "orgId": "omit",
+          "offset": "0"
+        },
+        {
+          "role": "no_token",
+          "limit": "101",
+          "status": "active",
+          "orgId": "omit",
+          "offset": "1"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "limit": "20",
+          "status": "active",
+          "orgId": "omit",
+          "offset": "omit"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "limit": "99",
+          "status": "active",
+          "orgId": "valid_org",
+          "offset": "1"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "limit": "100",
+          "status": "active",
+          "orgId": "valid_org",
+          "offset": "omit"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "limit": "101",
+          "status": "inactive",
+          "orgId": "valid_org",
+          "offset": "0"
+        },
+        {
+          "role": "read_token",
+          "limit": "omit",
+          "status": "inactive",
+          "orgId": "valid_org",
+          "offset": "1"
+        },
+        {
+          "role": "read_token",
+          "limit": "20",
+          "status": "inactive",
+          "orgId": "valid_org",
+          "offset": "0"
+        },
+        {
+          "role": "read_token",
+          "limit": "100",
+          "status": "inactive",
+          "orgId": "omit",
+          "offset": "1"
+        },
+        {
+          "role": "read_token",
+          "limit": "101",
+          "status": "deceased",
+          "orgId": "omit",
+          "offset": "1"
+        },
+        {
+          "role": "write_token",
+          "limit": "omit",
+          "status": "deceased",
+          "orgId": "omit",
+          "offset": "0"
+        },
+        {
+          "role": "write_token",
+          "limit": "20",
+          "status": "deceased",
+          "orgId": "omit",
+          "offset": "1"
+        },
+        {
+          "role": "write_token",
+          "limit": "99",
+          "status": "deceased",
+          "orgId": "omit",
+          "offset": "0"
+        },
+        {
+          "role": "write_token",
+          "limit": "101",
+          "status": "omit",
+          "orgId": "omit",
+          "offset": "omit"
+        },
+        {
+          "role": "admin_token",
+          "limit": "omit",
+          "status": "omit",
+          "orgId": "omit",
+          "offset": "1"
+        },
+        {
+          "role": "admin_token",
+          "limit": "20",
+          "status": "omit",
+          "orgId": "omit",
+          "offset": "omit"
+        },
+        {
+          "role": "admin_token",
+          "limit": "99",
+          "status": "omit",
+          "orgId": "omit",
+          "offset": "omit"
+        },
+        {
+          "role": "admin_token",
+          "limit": "100",
+          "status": "omit",
+          "orgId": "omit",
+          "offset": "omit"
+        },
+        {
+          "orgId": "unknown_org",
+          "limit": "1",
+          "role": "no_token",
+          "status": "omit",
+          "offset": "omit"
+        },
+        {
+          "orgId": "unknown_org",
+          "offset": "0",
+          "role": "no_token",
+          "status": "omit",
+          "limit": "omit"
+        },
+        {
+          "limit": "1",
+          "offset": "1",
+          "role": "no_token",
+          "status": "omit",
+          "orgId": "omit"
+        }
+      ],
+      "total_possible_pairs": 173,
+      "feasible_pairs": 173,
+      "covered_pairs": 173,
+      "pair_coverage_pct": 100,
+      "generated_rows": 54,
+      "must_include_rows": 7
+    },
+    "createPatient": {
+      "strength": 2,
+      "factors": 7,
+      "rows": [
+        {
+          "row": {
+            "role": "write_token",
+            "firstName_presence": "provided",
+            "lastName_presence": "provided",
+            "orgId_presence": "provided",
+            "status": "omit",
+            "dateOfBirth": "valid_past_date",
+            "duplicate": "unique"
+          },
+          "_validation_type": "Smoke",
+          "note": "Happy path: all required fields, status omitted — expect 201, response.status defaults to active",
+          "role": "no_token",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "orgId_presence": "provided",
+          "status": "omit",
+          "dateOfBirth": "omit",
+          "duplicate": "unique"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "firstName_presence": "provided",
+            "lastName_presence": "provided",
+            "orgId_presence": "provided",
+            "status": "active",
+            "dateOfBirth": "valid_past_date",
+            "duplicate": "unique"
+          },
+          "_validation_type": "Smoke",
+          "note": "All required fields + explicit status=active — expect 201",
+          "role": "no_token",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "orgId_presence": "provided",
+          "status": "omit",
+          "dateOfBirth": "omit",
+          "duplicate": "unique"
+        },
+        {
+          "row": {
+            "role": "no_token",
+            "firstName_presence": "provided",
+            "lastName_presence": "provided",
+            "orgId_presence": "provided",
+            "status": "omit",
+            "dateOfBirth": "omit",
+            "duplicate": "unique"
+          },
+          "_validation_type": "RBAC-Negative",
+          "note": "No token — expect 401",
+          "role": "no_token",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "orgId_presence": "provided",
+          "status": "omit",
+          "dateOfBirth": "omit",
+          "duplicate": "unique"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "firstName_presence": "provided",
+            "lastName_presence": "provided",
+            "orgId_presence": "provided",
+            "status": "omit",
+            "dateOfBirth": "omit",
+            "duplicate": "unique"
+          },
+          "_validation_type": "RBAC-Negative",
+          "note": "Read-only scope attempting create — expect 403",
+          "role": "no_token",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "orgId_presence": "provided",
+          "status": "omit",
+          "dateOfBirth": "omit",
+          "duplicate": "unique"
+        },
+        {
+          "row": {
+            "role": "insufficient_scope_token",
+            "firstName_presence": "provided",
+            "lastName_presence": "provided",
+            "orgId_presence": "provided",
+            "status": "omit",
+            "dateOfBirth": "omit",
+            "duplicate": "unique"
+          },
+          "_validation_type": "RBAC-Negative",
+          "note": "Insufficient scope — expect 403",
+          "role": "no_token",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "orgId_presence": "provided",
+          "status": "omit",
+          "dateOfBirth": "omit",
+          "duplicate": "unique"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "firstName_presence": "omit",
+            "lastName_presence": "provided",
+            "orgId_presence": "provided",
+            "status": "omit",
+            "dateOfBirth": "omit",
+            "duplicate": "unique"
+          },
+          "_validation_type": "Validation-Required",
+          "note": "Missing required firstName — expect 400",
+          "role": "no_token",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "orgId_presence": "provided",
+          "status": "omit",
+          "dateOfBirth": "omit",
+          "duplicate": "unique"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "firstName_presence": "provided",
+            "lastName_presence": "omit",
+            "orgId_presence": "provided",
+            "status": "omit",
+            "dateOfBirth": "omit",
+            "duplicate": "unique"
+          },
+          "_validation_type": "Validation-Required",
+          "note": "Missing required lastName — expect 400",
+          "role": "no_token",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "orgId_presence": "provided",
+          "status": "omit",
+          "dateOfBirth": "omit",
+          "duplicate": "unique"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "firstName_presence": "provided",
+            "lastName_presence": "provided",
+            "orgId_presence": "omit",
+            "status": "omit",
+            "dateOfBirth": "omit",
+            "duplicate": "unique"
+          },
+          "_validation_type": "Validation-Required",
+          "note": "Missing required orgId — expect 400",
+          "role": "no_token",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "orgId_presence": "provided",
+          "status": "omit",
+          "dateOfBirth": "omit",
+          "duplicate": "unique"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "firstName_presence": "provided",
+            "lastName_presence": "provided",
+            "orgId_presence": "provided",
+            "status": "omit",
+            "dateOfBirth": "future_date",
+            "duplicate": "unique"
+          },
+          "_validation_type": "Boundary-Invalid",
+          "note": "Future dateOfBirth — expect 422",
+          "role": "no_token",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "orgId_presence": "provided",
+          "status": "omit",
+          "dateOfBirth": "omit",
+          "duplicate": "unique"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "firstName_presence": "provided",
+            "lastName_presence": "provided",
+            "orgId_presence": "provided",
+            "status": "omit",
+            "dateOfBirth": "valid_past_date",
+            "duplicate": "duplicate"
+          },
+          "_validation_type": "Conflict",
+          "note": "Duplicate patient — expect 409",
+          "role": "no_token",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "orgId_presence": "provided",
+          "status": "omit",
+          "dateOfBirth": "omit",
+          "duplicate": "unique"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "firstName_presence": "provided",
+            "lastName_presence": "provided",
+            "orgId_presence": "provided",
+            "status": "deceased",
+            "dateOfBirth": "valid_past_date",
+            "duplicate": "unique"
+          },
+          "_validation_type": "Smoke",
+          "note": "Create with status=deceased — expect 201, response.status=deceased",
+          "role": "no_token",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "orgId_presence": "provided",
+          "status": "omit",
+          "dateOfBirth": "omit",
+          "duplicate": "unique"
+        },
+        {
+          "role": "no_token",
+          "firstName_presence": "provided",
+          "lastName_presence": "omit",
+          "orgId_presence": "omit",
+          "status": "active",
+          "dateOfBirth": "valid_past_date",
+          "duplicate": "duplicate"
+        },
+        {
+          "role": "no_token",
+          "firstName_presence": "omit",
+          "lastName_presence": "omit",
+          "orgId_presence": "omit",
+          "status": "active",
+          "dateOfBirth": "valid_past_date",
+          "duplicate": "duplicate"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "firstName_presence": "provided",
+          "lastName_presence": "omit",
+          "orgId_presence": "omit",
+          "status": "active",
+          "dateOfBirth": "valid_past_date",
+          "duplicate": "duplicate"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "firstName_presence": "omit",
+          "lastName_presence": "provided",
+          "orgId_presence": "omit",
+          "status": "active",
+          "dateOfBirth": "valid_past_date",
+          "duplicate": "duplicate"
+        },
+        {
+          "role": "read_token",
+          "firstName_presence": "provided",
+          "lastName_presence": "omit",
+          "orgId_presence": "omit",
+          "status": "active",
+          "dateOfBirth": "valid_past_date",
+          "duplicate": "duplicate"
+        },
+        {
+          "role": "read_token",
+          "firstName_presence": "omit",
+          "lastName_presence": "provided",
+          "orgId_presence": "omit",
+          "status": "active",
+          "dateOfBirth": "valid_past_date",
+          "duplicate": "duplicate"
+        },
+        {
+          "role": "write_token",
+          "firstName_presence": "provided",
+          "lastName_presence": "omit",
+          "orgId_presence": "omit",
+          "status": "active",
+          "dateOfBirth": "valid_past_date",
+          "duplicate": "duplicate"
+        },
+        {
+          "role": "write_token",
+          "firstName_presence": "omit",
+          "lastName_presence": "provided",
+          "orgId_presence": "omit",
+          "status": "active",
+          "dateOfBirth": "valid_past_date",
+          "duplicate": "duplicate"
+        },
+        {
+          "role": "admin_token",
+          "firstName_presence": "provided",
+          "lastName_presence": "omit",
+          "orgId_presence": "omit",
+          "status": "active",
+          "dateOfBirth": "valid_past_date",
+          "duplicate": "duplicate"
+        },
+        {
+          "role": "admin_token",
+          "firstName_presence": "omit",
+          "lastName_presence": "provided",
+          "orgId_presence": "omit",
+          "status": "active",
+          "dateOfBirth": "valid_past_date",
+          "duplicate": "duplicate"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "orgId_presence": "provided",
+          "firstName_presence": "omit",
+          "lastName_presence": "omit",
+          "status": "inactive",
+          "dateOfBirth": "future_date",
+          "duplicate": "unique"
+        },
+        {
+          "role": "read_token",
+          "orgId_presence": "provided",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "status": "deceased",
+          "dateOfBirth": "future_date",
+          "duplicate": "duplicate"
+        },
+        {
+          "role": "write_token",
+          "orgId_presence": "provided",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "status": "inactive",
+          "dateOfBirth": "omit",
+          "duplicate": "duplicate"
+        },
+        {
+          "role": "admin_token",
+          "orgId_presence": "provided",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "status": "omit",
+          "dateOfBirth": "valid_past_date",
+          "duplicate": "unique"
+        },
+        {
+          "role": "no_token",
+          "status": "inactive",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "orgId_presence": "omit",
+          "dateOfBirth": "future_date",
+          "duplicate": "unique"
+        },
+        {
+          "role": "no_token",
+          "status": "deceased",
+          "firstName_presence": "omit",
+          "lastName_presence": "omit",
+          "orgId_presence": "omit",
+          "dateOfBirth": "omit",
+          "duplicate": "unique"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "status": "omit",
+          "firstName_presence": "omit",
+          "lastName_presence": "omit",
+          "orgId_presence": "omit",
+          "dateOfBirth": "omit",
+          "duplicate": "duplicate"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "status": "deceased",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "orgId_presence": "provided",
+          "dateOfBirth": "valid_past_date",
+          "duplicate": "unique"
+        },
+        {
+          "role": "read_token",
+          "status": "omit",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "orgId_presence": "provided",
+          "dateOfBirth": "omit",
+          "duplicate": "unique"
+        },
+        {
+          "role": "read_token",
+          "status": "inactive",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "orgId_presence": "provided",
+          "dateOfBirth": "valid_past_date",
+          "duplicate": "unique"
+        },
+        {
+          "role": "write_token",
+          "status": "omit",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "orgId_presence": "provided",
+          "dateOfBirth": "future_date",
+          "duplicate": "unique"
+        },
+        {
+          "role": "write_token",
+          "status": "deceased",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "orgId_presence": "provided",
+          "dateOfBirth": "omit",
+          "duplicate": "unique"
+        },
+        {
+          "role": "admin_token",
+          "status": "inactive",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "orgId_presence": "provided",
+          "dateOfBirth": "omit",
+          "duplicate": "unique"
+        },
+        {
+          "role": "admin_token",
+          "status": "deceased",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "orgId_presence": "provided",
+          "dateOfBirth": "future_date",
+          "duplicate": "unique"
+        },
+        {
+          "orgId_presence": "provided",
+          "status": "active",
+          "role": "no_token",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "dateOfBirth": "omit",
+          "duplicate": "unique"
+        },
+        {
+          "status": "active",
+          "dateOfBirth": "future_date",
+          "role": "no_token",
+          "firstName_presence": "provided",
+          "lastName_presence": "provided",
+          "orgId_presence": "provided",
+          "duplicate": "unique"
+        }
+      ],
+      "total_possible_pairs": 167,
+      "feasible_pairs": 167,
+      "covered_pairs": 167,
+      "pair_coverage_pct": 100,
+      "generated_rows": 37,
+      "must_include_rows": 11
+    },
+    "getPatient": {
+      "strength": 2,
+      "factors": 2,
+      "rows": [
+        {
+          "row": {
+            "role": "read_token",
+            "patientId": "valid_existing_uuid"
+          },
+          "_validation_type": "Smoke",
+          "note": "Happy path: valid token, existing patient — expect 200 with full record",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "row": {
+            "role": "no_token",
+            "patientId": "valid_existing_uuid"
+          },
+          "_validation_type": "RBAC-Negative",
+          "note": "No token — expect 401",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "row": {
+            "role": "insufficient_scope_token",
+            "patientId": "valid_existing_uuid"
+          },
+          "_validation_type": "RBAC-Negative",
+          "note": "Insufficient scope — expect 403",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "patientId": "valid_nonexistent_uuid"
+          },
+          "_validation_type": "NotFound",
+          "note": "Valid UUID format, no record — expect 404",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "patientId": "malformed_non_uuid"
+          },
+          "_validation_type": "Validation-Format",
+          "note": "Malformed patientId — expect 400",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "role": "no_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "role": "no_token",
+          "patientId": "valid_nonexistent_uuid"
+        },
+        {
+          "role": "no_token",
+          "patientId": "malformed_non_uuid"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "patientId": "valid_nonexistent_uuid"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "patientId": "malformed_non_uuid"
+        },
+        {
+          "role": "read_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "role": "read_token",
+          "patientId": "valid_nonexistent_uuid"
+        },
+        {
+          "role": "read_token",
+          "patientId": "malformed_non_uuid"
+        },
+        {
+          "role": "write_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "role": "write_token",
+          "patientId": "valid_nonexistent_uuid"
+        },
+        {
+          "role": "write_token",
+          "patientId": "malformed_non_uuid"
+        },
+        {
+          "role": "admin_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "role": "admin_token",
+          "patientId": "valid_nonexistent_uuid"
+        },
+        {
+          "role": "admin_token",
+          "patientId": "malformed_non_uuid"
+        }
+      ],
+      "total_possible_pairs": 15,
+      "feasible_pairs": 15,
+      "covered_pairs": 15,
+      "pair_coverage_pct": 100,
+      "generated_rows": 20,
+      "must_include_rows": 5
+    },
+    "updatePatient": {
+      "strength": 2,
+      "factors": 5,
+      "rows": [
+        {
+          "row": {
+            "role": "write_token",
+            "patientId": "valid_existing_uuid",
+            "status_transition": "active_to_inactive",
+            "firstName": "valid_short",
+            "lastName": "valid_short"
+          },
+          "_validation_type": "Smoke",
+          "note": "Happy path: valid update, active→inactive transition — expect 200 with echoed fields",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid",
+          "status_transition": "omit",
+          "firstName": "omit",
+          "lastName": "omit"
+        },
+        {
+          "row": {
+            "role": "no_token",
+            "patientId": "valid_existing_uuid",
+            "status_transition": "omit",
+            "firstName": "valid_short",
+            "lastName": "omit"
+          },
+          "_validation_type": "RBAC-Negative",
+          "note": "No token — expect 401",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid",
+          "status_transition": "omit",
+          "firstName": "omit",
+          "lastName": "omit"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "patientId": "valid_existing_uuid",
+            "status_transition": "omit",
+            "firstName": "valid_short",
+            "lastName": "omit"
+          },
+          "_validation_type": "RBAC-Negative",
+          "note": "Read-only scope attempting update — expect 403",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid",
+          "status_transition": "omit",
+          "firstName": "omit",
+          "lastName": "omit"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "patientId": "valid_nonexistent_uuid",
+            "status_transition": "omit",
+            "firstName": "valid_short",
+            "lastName": "omit"
+          },
+          "_validation_type": "NotFound",
+          "note": "Valid UUID, no record — expect 404",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid",
+          "status_transition": "omit",
+          "firstName": "omit",
+          "lastName": "omit"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "patientId": "malformed_non_uuid",
+            "status_transition": "omit",
+            "firstName": "valid_short",
+            "lastName": "omit"
+          },
+          "_validation_type": "Validation-Format",
+          "note": "Malformed patientId — expect 400",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid",
+          "status_transition": "omit",
+          "firstName": "omit",
+          "lastName": "omit"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "patientId": "valid_existing_uuid",
+            "status_transition": "deceased_to_active",
+            "firstName": "valid_short",
+            "lastName": "omit"
+          },
+          "_validation_type": "Boundary-Invalid",
+          "note": "Invalid lifecycle transition deceased→active — expect 422",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid",
+          "status_transition": "omit",
+          "firstName": "omit",
+          "lastName": "omit"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "patientId": "valid_existing_uuid",
+            "status_transition": "active_to_deceased",
+            "firstName": "valid_short",
+            "lastName": "omit"
+          },
+          "_validation_type": "Smoke",
+          "note": "Valid transition active→deceased — expect 200, response.status=deceased",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid",
+          "status_transition": "omit",
+          "firstName": "omit",
+          "lastName": "omit"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "patientId": "valid_existing_uuid",
+            "status_transition": "omit",
+            "firstName": "max_length_100",
+            "lastName": "max_length_100"
+          },
+          "_validation_type": "Boundary-Max",
+          "note": "firstName and lastName at maxLength=100 — expect 200 with exact echo",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid",
+          "status_transition": "omit",
+          "firstName": "omit",
+          "lastName": "omit"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "patientId": "valid_existing_uuid",
+            "status_transition": "omit",
+            "firstName": "over_max_101",
+            "lastName": "omit"
+          },
+          "_validation_type": "Boundary-OverMax",
+          "note": "firstName one character over maxLength — expect 400",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid",
+          "status_transition": "omit",
+          "firstName": "omit",
+          "lastName": "omit"
+        },
+        {
+          "role": "no_token",
+          "patientId": "valid_existing_uuid",
+          "status_transition": "active_to_inactive",
+          "firstName": "valid_short",
+          "lastName": "valid_short"
+        },
+        {
+          "role": "no_token",
+          "patientId": "valid_nonexistent_uuid",
+          "status_transition": "active_to_inactive",
+          "firstName": "valid_short",
+          "lastName": "valid_short"
+        },
+        {
+          "role": "no_token",
+          "patientId": "malformed_non_uuid",
+          "status_transition": "active_to_inactive",
+          "firstName": "valid_short",
+          "lastName": "valid_short"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "patientId": "valid_existing_uuid",
+          "status_transition": "active_to_inactive",
+          "firstName": "valid_short",
+          "lastName": "valid_short"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "patientId": "valid_nonexistent_uuid",
+          "status_transition": "omit",
+          "firstName": "valid_short",
+          "lastName": "valid_short"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "patientId": "malformed_non_uuid",
+          "status_transition": "omit",
+          "firstName": "valid_short",
+          "lastName": "valid_short"
+        },
+        {
+          "role": "read_token",
+          "patientId": "valid_existing_uuid",
+          "status_transition": "active_to_inactive",
+          "firstName": "valid_short",
+          "lastName": "valid_short"
+        },
+        {
+          "role": "read_token",
+          "patientId": "valid_nonexistent_uuid",
+          "status_transition": "omit",
+          "firstName": "valid_short",
+          "lastName": "valid_short"
+        },
+        {
+          "role": "read_token",
+          "patientId": "malformed_non_uuid",
+          "status_transition": "omit",
+          "firstName": "valid_short",
+          "lastName": "valid_short"
+        },
+        {
+          "role": "write_token",
+          "patientId": "valid_existing_uuid",
+          "status_transition": "active_to_inactive",
+          "firstName": "valid_short",
+          "lastName": "valid_short"
+        },
+        {
+          "role": "write_token",
+          "patientId": "valid_nonexistent_uuid",
+          "status_transition": "omit",
+          "firstName": "valid_short",
+          "lastName": "valid_short"
+        },
+        {
+          "role": "write_token",
+          "patientId": "malformed_non_uuid",
+          "status_transition": "omit",
+          "firstName": "valid_short",
+          "lastName": "valid_short"
+        },
+        {
+          "role": "admin_token",
+          "patientId": "valid_existing_uuid",
+          "status_transition": "active_to_inactive",
+          "firstName": "valid_short",
+          "lastName": "valid_short"
+        },
+        {
+          "role": "admin_token",
+          "patientId": "valid_nonexistent_uuid",
+          "status_transition": "omit",
+          "firstName": "valid_short",
+          "lastName": "valid_short"
+        },
+        {
+          "role": "admin_token",
+          "patientId": "malformed_non_uuid",
+          "status_transition": "omit",
+          "firstName": "valid_short",
+          "lastName": "valid_short"
+        },
+        {
+          "role": "no_token",
+          "status_transition": "active_to_deceased",
+          "patientId": "valid_existing_uuid",
+          "firstName": "max_length_100",
+          "lastName": "max_length_100"
+        },
+        {
+          "role": "no_token",
+          "status_transition": "inactive_to_active",
+          "patientId": "valid_existing_uuid",
+          "firstName": "over_max_101",
+          "lastName": "over_max_101"
+        },
+        {
+          "role": "no_token",
+          "status_transition": "deceased_to_active",
+          "patientId": "valid_existing_uuid",
+          "firstName": "omit",
+          "lastName": "valid_short"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "status_transition": "active_to_deceased",
+          "patientId": "valid_nonexistent_uuid",
+          "firstName": "omit",
+          "lastName": "over_max_101"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "status_transition": "inactive_to_active",
+          "patientId": "valid_nonexistent_uuid",
+          "firstName": "max_length_100",
+          "lastName": "omit"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "status_transition": "deceased_to_active",
+          "patientId": "valid_nonexistent_uuid",
+          "firstName": "over_max_101",
+          "lastName": "max_length_100"
+        },
+        {
+          "role": "read_token",
+          "status_transition": "active_to_deceased",
+          "patientId": "malformed_non_uuid",
+          "firstName": "over_max_101",
+          "lastName": "omit"
+        },
+        {
+          "role": "read_token",
+          "status_transition": "inactive_to_active",
+          "patientId": "malformed_non_uuid",
+          "firstName": "omit",
+          "lastName": "max_length_100"
+        },
+        {
+          "role": "read_token",
+          "status_transition": "deceased_to_active",
+          "patientId": "malformed_non_uuid",
+          "firstName": "max_length_100",
+          "lastName": "over_max_101"
+        },
+        {
+          "role": "write_token",
+          "status_transition": "active_to_deceased",
+          "patientId": "valid_existing_uuid",
+          "firstName": "omit",
+          "lastName": "omit"
+        },
+        {
+          "role": "write_token",
+          "status_transition": "inactive_to_active",
+          "patientId": "valid_existing_uuid",
+          "firstName": "valid_short",
+          "lastName": "max_length_100"
+        },
+        {
+          "role": "write_token",
+          "status_transition": "deceased_to_active",
+          "patientId": "valid_existing_uuid",
+          "firstName": "valid_short",
+          "lastName": "omit"
+        },
+        {
+          "role": "admin_token",
+          "status_transition": "active_to_deceased",
+          "patientId": "valid_existing_uuid",
+          "firstName": "omit",
+          "lastName": "omit"
+        },
+        {
+          "role": "admin_token",
+          "status_transition": "inactive_to_active",
+          "patientId": "valid_existing_uuid",
+          "firstName": "max_length_100",
+          "lastName": "valid_short"
+        },
+        {
+          "role": "admin_token",
+          "status_transition": "deceased_to_active",
+          "patientId": "valid_existing_uuid",
+          "firstName": "over_max_101",
+          "lastName": "valid_short"
+        },
+        {
+          "role": "write_token",
+          "firstName": "max_length_100",
+          "patientId": "valid_existing_uuid",
+          "status_transition": "omit",
+          "lastName": "over_max_101"
+        },
+        {
+          "role": "write_token",
+          "firstName": "over_max_101",
+          "patientId": "valid_existing_uuid",
+          "status_transition": "omit",
+          "lastName": "max_length_100"
+        },
+        {
+          "role": "admin_token",
+          "lastName": "max_length_100",
+          "patientId": "valid_existing_uuid",
+          "status_transition": "active_to_inactive",
+          "firstName": "omit"
+        },
+        {
+          "role": "admin_token",
+          "lastName": "over_max_101",
+          "patientId": "valid_existing_uuid",
+          "status_transition": "active_to_inactive",
+          "firstName": "valid_short"
+        },
+        {
+          "status_transition": "active_to_inactive",
+          "firstName": "max_length_100",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid",
+          "lastName": "omit"
+        },
+        {
+          "status_transition": "active_to_inactive",
+          "firstName": "over_max_101",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid",
+          "lastName": "omit"
+        },
+        {
+          "status_transition": "active_to_deceased",
+          "firstName": "valid_short",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid",
+          "lastName": "valid_short"
+        }
+      ],
+      "total_possible_pairs": 175,
+      "feasible_pairs": 175,
+      "covered_pairs": 175,
+      "pair_coverage_pct": 100,
+      "generated_rows": 46,
+      "must_include_rows": 9
+    },
+    "deletePatient": {
+      "strength": 2,
+      "factors": 2,
+      "rows": [
+        {
+          "row": {
+            "role": "admin_token",
+            "patientId": "valid_existing_uuid"
+          },
+          "_validation_type": "Smoke",
+          "note": "Happy path: admin token, existing patient — expect 204; subsequent GET must return 404",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "row": {
+            "role": "no_token",
+            "patientId": "valid_existing_uuid"
+          },
+          "_validation_type": "RBAC-Negative",
+          "note": "No token — expect 401",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "row": {
+            "role": "read_token",
+            "patientId": "valid_existing_uuid"
+          },
+          "_validation_type": "RBAC-Negative",
+          "note": "Read-only scope attempting delete — expect 403",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "row": {
+            "role": "write_token",
+            "patientId": "valid_existing_uuid"
+          },
+          "_validation_type": "RBAC-Negative",
+          "note": "write:patients scope without delete:patients — expect 403",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "row": {
+            "role": "insufficient_scope_token",
+            "patientId": "valid_existing_uuid"
+          },
+          "_validation_type": "RBAC-Negative",
+          "note": "Insufficient scope — expect 403",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "row": {
+            "role": "admin_token",
+            "patientId": "valid_nonexistent_uuid"
+          },
+          "_validation_type": "NotFound",
+          "note": "Valid UUID, no record — expect 404",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "row": {
+            "role": "admin_token",
+            "patientId": "already_deleted_uuid"
+          },
+          "_validation_type": "Idempotency",
+          "note": "Re-delete of already-deleted patient — expect 404 (idempotency)",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "row": {
+            "role": "admin_token",
+            "patientId": "malformed_non_uuid"
+          },
+          "_validation_type": "Validation-Format",
+          "note": "Malformed patientId — expect 400",
+          "role": "no_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "role": "no_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "role": "no_token",
+          "patientId": "valid_nonexistent_uuid"
+        },
+        {
+          "role": "no_token",
+          "patientId": "malformed_non_uuid"
+        },
+        {
+          "role": "no_token",
+          "patientId": "already_deleted_uuid"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "patientId": "valid_nonexistent_uuid"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "patientId": "malformed_non_uuid"
+        },
+        {
+          "role": "insufficient_scope_token",
+          "patientId": "already_deleted_uuid"
+        },
+        {
+          "role": "read_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "role": "read_token",
+          "patientId": "valid_nonexistent_uuid"
+        },
+        {
+          "role": "read_token",
+          "patientId": "malformed_non_uuid"
+        },
+        {
+          "role": "read_token",
+          "patientId": "already_deleted_uuid"
+        },
+        {
+          "role": "write_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "role": "write_token",
+          "patientId": "valid_nonexistent_uuid"
+        },
+        {
+          "role": "write_token",
+          "patientId": "malformed_non_uuid"
+        },
+        {
+          "role": "write_token",
+          "patientId": "already_deleted_uuid"
+        },
+        {
+          "role": "admin_token",
+          "patientId": "valid_existing_uuid"
+        },
+        {
+          "role": "admin_token",
+          "patientId": "valid_nonexistent_uuid"
+        },
+        {
+          "role": "admin_token",
+          "patientId": "malformed_non_uuid"
+        },
+        {
+          "role": "admin_token",
+          "patientId": "already_deleted_uuid"
+        }
+      ],
+      "total_possible_pairs": 20,
+      "feasible_pairs": 20,
+      "covered_pairs": 20,
+      "pair_coverage_pct": 100,
+      "generated_rows": 28,
+      "must_include_rows": 8
+    }
+  },
+  "total_rows": 185,
+  "pair_coverage_pct": 100
+}

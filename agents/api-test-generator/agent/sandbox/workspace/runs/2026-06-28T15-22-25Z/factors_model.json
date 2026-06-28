@@ -1,0 +1,605 @@
+{
+  "version": "1.0",
+  "strength": 2,
+  "endpoints": [
+    {
+      "operationId": "listPatients",
+      "factors": [
+        {
+          "name": "role",
+          "levels": ["read_token", "write_token", "full_token", "no_token", "insufficient_scope_token"],
+          "businessConstraint": "IF role is no_token, response must be 401. IF role is insufficient_scope_token, response must be 403. IF role is read_token or full_token, response must be 200."
+        },
+        {
+          "name": "status",
+          "levels": ["omitted", "active", "inactive", "deceased"],
+          "businessConstraint": "IF status filter is provided AND response is 200, every item in the response array must have .status equal to the sent status value. IF status is omitted AND response is 200, all patients regardless of status may appear."
+        },
+        {
+          "name": "limit",
+          "levels": ["null", "1", "20", "99", "100", "101"],
+          "businessConstraint": "IF limit=N AND response is 200, response array length must be <= N. IF limit > 100 or limit < 1, response must be 400. IF limit is omitted, default of 20 applies and response array length must be <= 20."
+        },
+        {
+          "name": "offset",
+          "levels": ["null", "0", "1", "beyond_end"],
+          "businessConstraint": "IF offset >= total patient count AND response is 200, response data array must be empty. IF offset=0 or omitted, first page is returned. IF offset < 0, response must be 400."
+        },
+        {
+          "name": "orgId",
+          "levels": ["omitted", "valid_org", "unknown_org"],
+          "businessConstraint": "IF orgId is provided AND response is 200, all returned patients must belong to that orgId. IF orgId is unknown AND response is 200, response data array must be empty. The total field always reflects the unfiltered count for the given orgId."
+        }
+      ],
+      "constraints": [
+        {
+          "if": { "role": "no_token" },
+          "then_expect_status": 401,
+          "note": "Missing or invalid bearer token always returns 401 regardless of other parameters."
+        },
+        {
+          "if": { "role": "insufficient_scope_token" },
+          "then_expect_status": 403,
+          "note": "Token with wrong scope (e.g. write-only) accessing GET endpoint returns 403."
+        },
+        {
+          "if": { "role": "write_token" },
+          "then_expect_status": 403,
+          "note": "write_token lacks read:patients scope, must return 403 on GET."
+        },
+        {
+          "if": { "limit": "101" },
+          "then_expect_status": 400,
+          "note": "limit exceeding maximum of 100 must return 400."
+        },
+        {
+          "if": { "offset": "beyond_end" },
+          "then_expect_status": 200,
+          "note": "offset beyond total count is valid but returns empty data array with 200."
+        }
+      ],
+      "must_include": [
+        {
+          "row": { "role": "read_token", "status": "omitted", "limit": "20", "offset": "0", "orgId": "valid_org" },
+          "_validation_type": "Smoke",
+          "expected_status": 200,
+          "note": "Happy path: authorized read with typical parameters."
+        },
+        {
+          "row": { "role": "read_token", "status": "active", "limit": "20", "offset": "0", "orgId": "valid_org" },
+          "_validation_type": "Functional",
+          "expected_status": 200,
+          "note": "Status filter active: all returned records must have status=active."
+        },
+        {
+          "row": { "role": "read_token", "status": "inactive", "limit": "20", "offset": "0", "orgId": "valid_org" },
+          "_validation_type": "Functional",
+          "expected_status": 200,
+          "note": "Status filter inactive: all returned records must have status=inactive."
+        },
+        {
+          "row": { "role": "read_token", "status": "deceased", "limit": "20", "offset": "0", "orgId": "valid_org" },
+          "_validation_type": "Functional",
+          "expected_status": 200,
+          "note": "Status filter deceased: all returned records must have status=deceased."
+        },
+        {
+          "row": { "role": "no_token", "status": "omitted", "limit": "20", "offset": "0", "orgId": "valid_org" },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 401,
+          "note": "No token: must return 401."
+        },
+        {
+          "row": { "role": "write_token", "status": "omitted", "limit": "20", "offset": "0", "orgId": "valid_org" },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "write_token lacks read scope: must return 403."
+        },
+        {
+          "row": { "role": "insufficient_scope_token", "status": "omitted", "limit": "20", "offset": "0", "orgId": "valid_org" },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "Insufficient scope token: must return 403."
+        },
+        {
+          "row": { "role": "read_token", "status": "omitted", "limit": "100", "offset": "0", "orgId": "valid_org" },
+          "_validation_type": "Boundary",
+          "expected_status": 200,
+          "note": "limit at maximum boundary (100): must return 200 with at most 100 records."
+        },
+        {
+          "row": { "role": "read_token", "status": "omitted", "limit": "101", "offset": "0", "orgId": "valid_org" },
+          "_validation_type": "Negative",
+          "expected_status": 400,
+          "note": "limit over maximum (101): must return 400."
+        },
+        {
+          "row": { "role": "read_token", "status": "omitted", "limit": "1", "offset": "0", "orgId": "valid_org" },
+          "_validation_type": "Boundary",
+          "expected_status": 200,
+          "note": "limit at minimum boundary (1): must return at most 1 record."
+        },
+        {
+          "row": { "role": "read_token", "status": "omitted", "limit": "20", "offset": "beyond_end", "orgId": "valid_org" },
+          "_validation_type": "Boundary",
+          "expected_status": 200,
+          "note": "offset beyond total count: data array must be empty."
+        },
+        {
+          "row": { "role": "read_token", "status": "omitted", "limit": "20", "offset": "0", "orgId": "unknown_org" },
+          "_validation_type": "Functional",
+          "expected_status": 200,
+          "note": "Unknown orgId: data array must be empty, total must be 0."
+        }
+      ]
+    },
+    {
+      "operationId": "createPatient",
+      "factors": [
+        {
+          "name": "role",
+          "levels": ["write_token", "full_token", "read_token", "no_token", "insufficient_scope_token"],
+          "businessConstraint": "IF role is no_token, response must be 401. IF role is read_token or insufficient_scope_token, response must be 403. IF role is write_token or full_token, creation should succeed (201) for valid payload."
+        },
+        {
+          "name": "firstName",
+          "levels": ["short", "99_chars", "100_chars", "101_chars"],
+          "businessConstraint": "IF firstName length > 100, response must be 400 or 422. IF firstName is sent AND response is 201, response.firstName must equal the sent firstName value exactly."
+        },
+        {
+          "name": "lastName",
+          "levels": ["short", "99_chars", "100_chars", "101_chars"],
+          "businessConstraint": "IF lastName length > 100, response must be 400 or 422. IF lastName is sent AND response is 201, response.lastName must equal the sent lastName value exactly."
+        },
+        {
+          "name": "status",
+          "levels": ["omitted", "active", "inactive", "deceased"],
+          "businessConstraint": "IF status is omitted AND response is 201, response.status must default to active. IF status is provided AND response is 201, response.status must equal the sent status value."
+        },
+        {
+          "name": "orgId",
+          "levels": ["valid_org", "omitted"],
+          "businessConstraint": "IF orgId is omitted, response must be 400 (required field). IF orgId is provided AND response is 201, response.orgId must equal the sent orgId."
+        },
+        {
+          "name": "dateOfBirth",
+          "levels": ["omitted", "valid_date", "invalid_format"],
+          "businessConstraint": "IF dateOfBirth is provided in invalid format AND response is not 201, response must be 400 or 422. IF dateOfBirth is omitted, patient creation should still succeed. IF dateOfBirth is valid AND response is 201, response.dateOfBirth must equal the sent value."
+        }
+      ],
+      "constraints": [
+        {
+          "if": { "role": "no_token" },
+          "then_expect_status": 401,
+          "note": "Missing or invalid bearer token always returns 401."
+        },
+        {
+          "if": { "role": "read_token" },
+          "then_expect_status": 403,
+          "note": "read_token lacks write:patients scope, must return 403 on POST."
+        },
+        {
+          "if": { "role": "insufficient_scope_token" },
+          "then_expect_status": 403,
+          "note": "Insufficient scope token: must return 403."
+        },
+        {
+          "if": { "orgId": "omitted" },
+          "then_expect_status": 400,
+          "note": "orgId is required; omitting it must return 400."
+        },
+        {
+          "if": { "firstName": "101_chars" },
+          "then_expect_status": 422,
+          "note": "firstName exceeding maxLength of 100 must return 400 or 422."
+        },
+        {
+          "if": { "lastName": "101_chars" },
+          "then_expect_status": 422,
+          "note": "lastName exceeding maxLength of 100 must return 400 or 422."
+        },
+        {
+          "if": { "dateOfBirth": "invalid_format" },
+          "then_expect_status": 422,
+          "note": "dateOfBirth in invalid format must return 400 or 422."
+        }
+      ],
+      "must_include": [
+        {
+          "row": { "role": "write_token", "firstName": "short", "lastName": "short", "status": "omitted", "orgId": "valid_org", "dateOfBirth": "omitted" },
+          "_validation_type": "Smoke",
+          "expected_status": 201,
+          "note": "Happy path: minimal valid payload, status defaults to active."
+        },
+        {
+          "row": { "role": "write_token", "firstName": "short", "lastName": "short", "status": "active", "orgId": "valid_org", "dateOfBirth": "valid_date" },
+          "_validation_type": "Functional",
+          "expected_status": 201,
+          "note": "Full payload with all optional fields: all fields echoed back correctly."
+        },
+        {
+          "row": { "role": "write_token", "firstName": "short", "lastName": "short", "status": "inactive", "orgId": "valid_org", "dateOfBirth": "omitted" },
+          "_validation_type": "Functional",
+          "expected_status": 201,
+          "note": "Status=inactive at creation: response.status must equal inactive."
+        },
+        {
+          "row": { "role": "write_token", "firstName": "short", "lastName": "short", "status": "deceased", "orgId": "valid_org", "dateOfBirth": "omitted" },
+          "_validation_type": "Functional",
+          "expected_status": 201,
+          "note": "Status=deceased at creation: response.status must equal deceased."
+        },
+        {
+          "row": { "role": "no_token", "firstName": "short", "lastName": "short", "status": "omitted", "orgId": "valid_org", "dateOfBirth": "omitted" },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 401,
+          "note": "No token: must return 401."
+        },
+        {
+          "row": { "role": "read_token", "firstName": "short", "lastName": "short", "status": "omitted", "orgId": "valid_org", "dateOfBirth": "omitted" },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "read_token lacks write scope: must return 403."
+        },
+        {
+          "row": { "role": "insufficient_scope_token", "firstName": "short", "lastName": "short", "status": "omitted", "orgId": "valid_org", "dateOfBirth": "omitted" },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "Insufficient scope: must return 403."
+        },
+        {
+          "row": { "role": "write_token", "firstName": "100_chars", "lastName": "100_chars", "status": "active", "orgId": "valid_org", "dateOfBirth": "omitted" },
+          "_validation_type": "Boundary",
+          "expected_status": 201,
+          "note": "firstName and lastName at exact maxLength (100): must succeed and echo back correctly."
+        },
+        {
+          "row": { "role": "write_token", "firstName": "101_chars", "lastName": "short", "status": "active", "orgId": "valid_org", "dateOfBirth": "omitted" },
+          "_validation_type": "Negative",
+          "expected_status": 422,
+          "note": "firstName over maxLength (101): must return 400 or 422."
+        },
+        {
+          "row": { "role": "write_token", "firstName": "short", "lastName": "101_chars", "status": "active", "orgId": "valid_org", "dateOfBirth": "omitted" },
+          "_validation_type": "Negative",
+          "expected_status": 422,
+          "note": "lastName over maxLength (101): must return 400 or 422."
+        },
+        {
+          "row": { "role": "write_token", "firstName": "short", "lastName": "short", "status": "omitted", "orgId": "omitted", "dateOfBirth": "omitted" },
+          "_validation_type": "Negative",
+          "expected_status": 400,
+          "note": "orgId omitted (required field): must return 400."
+        },
+        {
+          "row": { "role": "write_token", "firstName": "short", "lastName": "short", "status": "active", "orgId": "valid_org", "dateOfBirth": "invalid_format" },
+          "_validation_type": "Negative",
+          "expected_status": 422,
+          "note": "Invalid dateOfBirth format: must return 400 or 422."
+        }
+      ]
+    },
+    {
+      "operationId": "getPatient",
+      "factors": [
+        {
+          "name": "role",
+          "levels": ["read_token", "full_token", "write_token", "no_token", "insufficient_scope_token"],
+          "businessConstraint": "IF role is no_token, response must be 401. IF role is write_token or insufficient_scope_token, response must be 403. IF role is read_token or full_token and patientId is valid_existing, response must be 200 with full patient record."
+        },
+        {
+          "name": "patientId",
+          "levels": ["valid_existing", "valid_nonexistent", "invalid_format"],
+          "businessConstraint": "IF patientId is valid_existing AND response is 200, response body must contain the full patient record with matching id. IF patientId is valid_nonexistent, response must be 404. IF patientId is invalid_format (not a UUID), response must be 400 or 404."
+        }
+      ],
+      "constraints": [
+        {
+          "if": { "role": "no_token" },
+          "then_expect_status": 401,
+          "note": "Missing or invalid bearer token always returns 401."
+        },
+        {
+          "if": { "role": "write_token" },
+          "then_expect_status": 403,
+          "note": "write_token lacks read:patients scope, must return 403 on GET."
+        },
+        {
+          "if": { "role": "insufficient_scope_token" },
+          "then_expect_status": 403,
+          "note": "Insufficient scope token: must return 403."
+        },
+        {
+          "if": { "patientId": "valid_nonexistent" },
+          "then_expect_status": 404,
+          "note": "Non-existent patientId must return 404 regardless of other factors."
+        },
+        {
+          "if": { "patientId": "invalid_format" },
+          "then_expect_status": 400,
+          "note": "Non-UUID patientId must return 400 or 404."
+        }
+      ],
+      "must_include": [
+        {
+          "row": { "role": "read_token", "patientId": "valid_existing" },
+          "_validation_type": "Smoke",
+          "expected_status": 200,
+          "note": "Happy path: authorized read with existing patient UUID."
+        },
+        {
+          "row": { "role": "no_token", "patientId": "valid_existing" },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 401,
+          "note": "No token: must return 401."
+        },
+        {
+          "row": { "role": "write_token", "patientId": "valid_existing" },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "write_token lacks read scope: must return 403."
+        },
+        {
+          "row": { "role": "insufficient_scope_token", "patientId": "valid_existing" },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "Insufficient scope: must return 403."
+        },
+        {
+          "row": { "role": "read_token", "patientId": "valid_nonexistent" },
+          "_validation_type": "Negative",
+          "expected_status": 404,
+          "note": "Non-existent UUID: must return 404."
+        },
+        {
+          "row": { "role": "read_token", "patientId": "invalid_format" },
+          "_validation_type": "Negative",
+          "expected_status": 400,
+          "note": "Invalid UUID format: must return 400 or 404."
+        }
+      ]
+    },
+    {
+      "operationId": "updatePatient",
+      "factors": [
+        {
+          "name": "role",
+          "levels": ["write_token", "full_token", "read_token", "no_token", "insufficient_scope_token"],
+          "businessConstraint": "IF role is no_token, response must be 401. IF role is read_token or insufficient_scope_token, response must be 403. IF role is write_token or full_token and patientId is valid_existing and payload is valid, response must be 200."
+        },
+        {
+          "name": "patientId",
+          "levels": ["valid_existing", "valid_nonexistent", "invalid_format"],
+          "businessConstraint": "IF patientId is valid_nonexistent, response must be 404. IF patientId is invalid_format, response must be 400 or 404. IF patientId is valid_existing AND response is 200, response body must reflect the updated fields."
+        },
+        {
+          "name": "status_transition",
+          "levels": ["active_to_inactive", "inactive_to_active", "active_to_deceased", "deceased_to_active"],
+          "businessConstraint": "IF status transition is deceased_to_active, response must be 422 (disallowed lifecycle transition). IF status transition is active_to_inactive or inactive_to_active or active_to_deceased AND response is 200, response.status must equal the sent target status."
+        },
+        {
+          "name": "firstName",
+          "levels": ["omitted", "short", "100_chars", "101_chars"],
+          "businessConstraint": "IF firstName length > 100, response must be 400 or 422. IF firstName is provided AND response is 200, response.firstName must equal the sent firstName value exactly."
+        },
+        {
+          "name": "lastName",
+          "levels": ["omitted", "short", "100_chars", "101_chars"],
+          "businessConstraint": "IF lastName length > 100, response must be 400 or 422. IF lastName is provided AND response is 200, response.lastName must equal the sent lastName value exactly."
+        }
+      ],
+      "constraints": [
+        {
+          "if": { "role": "no_token" },
+          "then_expect_status": 401,
+          "note": "Missing or invalid bearer token always returns 401."
+        },
+        {
+          "if": { "role": "read_token" },
+          "then_expect_status": 403,
+          "note": "read_token lacks write:patients scope, must return 403 on PUT."
+        },
+        {
+          "if": { "role": "insufficient_scope_token" },
+          "then_expect_status": 403,
+          "note": "Insufficient scope token: must return 403."
+        },
+        {
+          "if": { "patientId": "valid_nonexistent" },
+          "then_expect_status": 404,
+          "note": "Non-existent patientId must return 404."
+        },
+        {
+          "if": { "patientId": "invalid_format" },
+          "then_expect_status": 400,
+          "note": "Non-UUID patientId must return 400 or 404."
+        },
+        {
+          "if": { "status_transition": "deceased_to_active" },
+          "then_expect_status": 422,
+          "note": "Disallowed lifecycle transition: deceased to active must return 422."
+        },
+        {
+          "if": { "firstName": "101_chars" },
+          "then_expect_status": 422,
+          "note": "firstName exceeding maxLength of 100 must return 400 or 422."
+        },
+        {
+          "if": { "lastName": "101_chars" },
+          "then_expect_status": 422,
+          "note": "lastName exceeding maxLength of 100 must return 400 or 422."
+        }
+      ],
+      "must_include": [
+        {
+          "row": { "role": "write_token", "patientId": "valid_existing", "status_transition": "active_to_inactive", "firstName": "short", "lastName": "short" },
+          "_validation_type": "Smoke",
+          "expected_status": 200,
+          "note": "Happy path: valid update with status transition and field update."
+        },
+        {
+          "row": { "role": "write_token", "patientId": "valid_existing", "status_transition": "inactive_to_active", "firstName": "omitted", "lastName": "omitted" },
+          "_validation_type": "Functional",
+          "expected_status": 200,
+          "note": "Transition inactive to active: response.status must equal active."
+        },
+        {
+          "row": { "role": "write_token", "patientId": "valid_existing", "status_transition": "active_to_deceased", "firstName": "short", "lastName": "omitted" },
+          "_validation_type": "Functional",
+          "expected_status": 200,
+          "note": "Transition active to deceased: response.status must equal deceased."
+        },
+        {
+          "row": { "role": "write_token", "patientId": "valid_existing", "status_transition": "deceased_to_active", "firstName": "short", "lastName": "omitted" },
+          "_validation_type": "Negative",
+          "expected_status": 422,
+          "note": "Disallowed transition deceased to active: must return 422."
+        },
+        {
+          "row": { "role": "no_token", "patientId": "valid_existing", "status_transition": "active_to_inactive", "firstName": "short", "lastName": "short" },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 401,
+          "note": "No token: must return 401."
+        },
+        {
+          "row": { "role": "read_token", "patientId": "valid_existing", "status_transition": "active_to_inactive", "firstName": "short", "lastName": "short" },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "read_token lacks write scope: must return 403."
+        },
+        {
+          "row": { "role": "insufficient_scope_token", "patientId": "valid_existing", "status_transition": "active_to_inactive", "firstName": "short", "lastName": "short" },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "Insufficient scope: must return 403."
+        },
+        {
+          "row": { "role": "write_token", "patientId": "valid_nonexistent", "status_transition": "active_to_inactive", "firstName": "short", "lastName": "short" },
+          "_validation_type": "Negative",
+          "expected_status": 404,
+          "note": "Non-existent patientId: must return 404."
+        },
+        {
+          "row": { "role": "write_token", "patientId": "valid_existing", "status_transition": "active_to_inactive", "firstName": "100_chars", "lastName": "short" },
+          "_validation_type": "Boundary",
+          "expected_status": 200,
+          "note": "firstName at exact maxLength (100): must succeed and echo back correctly."
+        },
+        {
+          "row": { "role": "write_token", "patientId": "valid_existing", "status_transition": "active_to_inactive", "firstName": "101_chars", "lastName": "short" },
+          "_validation_type": "Negative",
+          "expected_status": 422,
+          "note": "firstName over maxLength (101): must return 400 or 422."
+        }
+      ]
+    },
+    {
+      "operationId": "deletePatient",
+      "factors": [
+        {
+          "name": "role",
+          "levels": ["delete_token", "full_token", "read_token", "write_token", "no_token", "insufficient_scope_token"],
+          "businessConstraint": "IF role is no_token, response must be 401. IF role is read_token, write_token, or insufficient_scope_token, response must be 403. IF role is delete_token or full_token and patientId is valid_existing, response must be 204. After successful delete, GET /patients/{patientId} must return 404."
+        },
+        {
+          "name": "patientId",
+          "levels": ["valid_existing", "valid_nonexistent", "already_deleted", "invalid_format"],
+          "businessConstraint": "IF patientId is valid_nonexistent or already_deleted, response must be 404. IF patientId is invalid_format, response must be 400 or 404. IF delete returns 204, subsequent GET of same patientId must return 404 (post-delete state verification)."
+        }
+      ],
+      "constraints": [
+        {
+          "if": { "role": "no_token" },
+          "then_expect_status": 401,
+          "note": "Missing or invalid bearer token always returns 401."
+        },
+        {
+          "if": { "role": "read_token" },
+          "then_expect_status": 403,
+          "note": "read_token lacks delete:patients scope, must return 403 on DELETE."
+        },
+        {
+          "if": { "role": "write_token" },
+          "then_expect_status": 403,
+          "note": "write_token lacks delete:patients scope, must return 403 on DELETE."
+        },
+        {
+          "if": { "role": "insufficient_scope_token" },
+          "then_expect_status": 403,
+          "note": "Insufficient scope token: must return 403."
+        },
+        {
+          "if": { "patientId": "valid_nonexistent" },
+          "then_expect_status": 404,
+          "note": "Non-existent patientId must return 404."
+        },
+        {
+          "if": { "patientId": "already_deleted" },
+          "then_expect_status": 404,
+          "note": "Already-deleted patientId must return 404 (idempotent delete)."
+        },
+        {
+          "if": { "patientId": "invalid_format" },
+          "then_expect_status": 400,
+          "note": "Non-UUID patientId must return 400 or 404."
+        }
+      ],
+      "must_include": [
+        {
+          "row": { "role": "delete_token", "patientId": "valid_existing" },
+          "_validation_type": "Smoke",
+          "expected_status": 204,
+          "note": "Happy path: authorized delete of existing patient. Must return 204. Subsequent GET must return 404."
+        },
+        {
+          "row": { "role": "no_token", "patientId": "valid_existing" },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 401,
+          "note": "No token: must return 401."
+        },
+        {
+          "row": { "role": "read_token", "patientId": "valid_existing" },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "read_token lacks delete scope: must return 403."
+        },
+        {
+          "row": { "role": "write_token", "patientId": "valid_existing" },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "write_token lacks delete scope: must return 403."
+        },
+        {
+          "row": { "role": "insufficient_scope_token", "patientId": "valid_existing" },
+          "_validation_type": "RBAC -ve",
+          "expected_status": 403,
+          "note": "Insufficient scope: must return 403."
+        },
+        {
+          "row": { "role": "delete_token", "patientId": "valid_nonexistent" },
+          "_validation_type": "Negative",
+          "expected_status": 404,
+          "note": "Non-existent patientId: must return 404."
+        },
+        {
+          "row": { "role": "delete_token", "patientId": "already_deleted" },
+          "_validation_type": "Negative",
+          "expected_status": 404,
+          "note": "Re-delete already-deleted patient: must return 404."
+        },
+        {
+          "row": { "role": "delete_token", "patientId": "invalid_format" },
+          "_validation_type": "Negative",
+          "expected_status": 400,
+          "note": "Invalid UUID format: must return 400 or 404."
+        },
+        {
+          "row": { "role": "full_token", "patientId": "valid_existing" },
+          "_validation_type": "RBAC +ve",
+          "expected_status": 204,
+          "note": "full_token has all scopes including delete: must return 204."
+        }
+      ]
+    }
+  ]
+}
