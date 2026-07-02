@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI SDET Workbench</title>
+
+  <!-- read theme synchronously, no flash -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('sdet-deck-theme');
+        if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css">
+
+  <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+
+  <style>
+    :root {
+      --color-navy: #0a0f24;
+      --color-panel: #121937;
+      --color-panel-2: #0f1530;
+      --color-panel-3: #0c1430;
+      --color-cyan: #3ec9d6;
+      --color-cyan-2: #6ee7ff;
+      --color-purple: #8b5cf6;
+      --color-green: #10b981;
+      --color-amber: #f59e0b;
+      --color-red: #ef4444;
+      --color-white: #e7ecff;
+      --color-light-gray: #cdd5ee;
+      --color-mid-gray: #94a3c7;
+      --color-dark-gray: #6b7aa3;
+      --color-border: #1f2a55;
+      --color-border-2: #2a3a72;
+      --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    [data-theme="light"] {
+      --color-navy: #ffffff;
+      --color-panel: #f1f5f9;
+      --color-panel-2: #f8fafc;
+      --color-panel-3: #eef2fb;
+      --color-cyan: #0891b2;
+      --color-cyan-2: #0e7490;
+      --color-purple: #7c3aed;
+      --color-green: #059669;
+      --color-amber: #b45309;
+      --color-red: #b91c1c;
+      --color-white: #0f172a;
+      --color-light-gray: #334155;
+      --color-mid-gray: #64748b;
+      --color-dark-gray: #94a3b8;
+      --color-border: #d8e0f0;
+      --color-border-2: #c2cde8;
+    }
+
+    .theme-toggle {
+      position: fixed; top: 16px; left: 16px; z-index: 1000;
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--color-panel); border: 1px solid var(--color-border-2);
+      color: var(--color-white); display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: transform 0.15s ease;
+    }
+    .theme-toggle:hover { transform: scale(1.08); }
+    .theme-toggle iconify-icon { font-size: 17px; }
+
+    body, html { background: var(--color-navy) !important; }
+    .reveal-viewport { background: var(--color-navy); }
+    .reveal { font-family: var(--font-primary); font-size: 22px; color: var(--color-white); letter-spacing: -0.01em; }
+    .reveal .slides { text-align: left; }
+    .reveal .slides section { padding: 28px 44px; box-sizing: border-box; height: 100%; }
+    .reveal .slides section.slide-brand { background: var(--color-navy); }
+
+    .reveal h1, .reveal h2, .reveal h3, .reveal h4 { font-family: var(--font-primary); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 0.5rem 0; color: var(--color-white); }
+    .reveal h1 { font-size: 1.6em; margin-bottom: 0.4rem; }
+    .reveal h2 { font-size: 1.05em; }
+    .reveal h3 { font-size: 0.85em; font-weight: 600; color: var(--color-cyan); }
+    .reveal p { margin: 0 0 0.5rem 0; line-height: 1.5; color: var(--color-light-gray); font-size: 0.62em; }
+    .reveal section > p.lede + * { margin-top: 14px; }
+    .reveal section > p + table, .reveal section > p + .panel, .reveal section > p + .twocol, .reveal section > p + .loop-grid, .reveal section > p + .toolkit-table, .reveal section > p + .mcp-table, .reveal section > p + .codepanel, .reveal section > p + .roadmap-grid, .reveal section > p + .skills-grid { margin-top: 14px; }
+
+    .kicker { font-size: 0.48em; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--color-cyan); margin-bottom: 0.2rem; display: block; }
+    .lede { font-size: 0.6em; color: var(--color-mid-gray); margin: 0; line-height: 1.4; }
+
+    .wb-frame {
+      background: transparent;
+      padding: 0;
+      position: relative;
+      margin: 4px auto 0;
+      max-width: 1180px;
+    }
+    .wb-frame-title { display: none; }
+    .wb-grid { display: grid; grid-template-columns: 220px 1fr; gap: 12px; margin-top: 4px; }
+    .wb-col {
+      background: var(--color-panel-3);
+      border: 1.5px solid var(--color-cyan);
+      padding: 10px;
+    }
+    .wb-col h4 { margin: 0 0 2px; font-size: 0.58em; color: #fff; text-align: center; letter-spacing: 0.06em; text-transform: uppercase; }
+    .wb-col .wb-note { font-size: 0.42em; color: var(--color-mid-gray); text-align: center; margin: 0 0 8px; line-height: 1.35; }
+    .wb-sub {
+      background: #121b40;
+      border: 1px solid var(--color-border-2);
+      padding: 4px 8px;
+      margin-bottom: 4px;
+    }
+    .wb-sub h5 { margin: 0 0 1px; font-size: 0.42em; color: var(--color-cyan); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
+    .wb-sub ul { margin: 0; padding-left: 14px; font-size: 0.46em; color: var(--color-light-gray); line-height: 1.35; }
+    .wb-sub li { margin: 0; }
+    .wb-sub code { background: rgba(62, 201, 214, 0.10); padding: 0 4px; font-size: 0.95em; color: var(--color-cyan-2); font-family: var(--font-mono); }
+    .wb-sub li.dim { color: var(--color-dark-gray); }
+    .wb-pill-row { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin: 0 0 8px; }
+    .wb-pill {
+      background: var(--color-cyan); color: #062b30;
+      font-size: 0.46em; padding: 3px 10px; font-weight: 700;
+      letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .wb-twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .wb-twocol h3 { text-align: center; margin: 2px 0 5px; font-size: 0.58em; color: var(--color-cyan); letter-spacing: 0.04em; }
+    .wb-domains-label { font-size: 0.42em; color: var(--color-mid-gray); text-align: center; margin: 8px 0 4px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .wb-domains-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+    .wb-domain {
+      background: var(--color-cyan);
+      color: #062b30; padding: 5px 5px;
+      font-size: 0.46em; text-align: center; font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+    .wb-domain small { display: block; color: #063a40; font-size: 0.82em; margin-top: 2px; line-height: 1.2; font-weight: 500; text-transform: none; letter-spacing: 0; }
+    .wb-roadmap-note { text-align: right; color: var(--color-dark-gray); font-size: 0.42em; margin: 4px 4px 0; }
+
+    .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .panel { background: var(--color-panel-2); border: 1px solid var(--color-border); padding: 14px 16px; }
+    .panel h3 { margin: 0 0 8px; font-size: 0.72em; }
+    .panel h3.warm { color: var(--color-amber); }
+    .panel table { width: 100%; border-collapse: collapse; font-size: 0.52em; }
+    .panel th, .panel td { text-align: left; padding: 5px 7px; border-bottom: 1px solid var(--color-border); vertical-align: top; color: var(--color-light-gray); line-height: 1.4; }
+    .panel tr:last-child td { border-bottom: 0; }
+    .panel td b { color: var(--color-white); }
+    .panel code { background: rgba(62, 201, 214, 0.10); padding: 0 4px; font-size: 0.95em; color: var(--color-cyan-2); font-family: var(--font-mono); }
+
+    .loop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .loop-card { background: var(--color-panel-2); border: 1px solid var(--color-border); padding: 16px 18px; }
+    .loop-card h3 { margin: 0 0 8px; font-size: 0.82em; color: var(--color-cyan); }
+    .loop-card ul { margin: 0; padding-left: 18px; font-size: 0.6em; color: var(--color-light-gray); line-height: 1.55; }
+    .loop-card li b { color: var(--color-white); }
+
+    .toolkit-table { width: 100%; border-collapse: collapse; font-size: 0.55em; background: var(--color-panel-2); border: 1px solid var(--color-border); }
+    .toolkit-table th, .toolkit-table td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--color-border); vertical-align: top; }
+    .toolkit-table th { background: #101839; color: var(--color-mid-gray); font-weight: 600; font-size: 0.85em; letter-spacing: 0.04em; text-transform: uppercase; }
+    .toolkit-table tr:last-child td { border-bottom: 0; }
+    .toolkit-table td b { color: var(--color-white); }
+    .toolkit-table code { background: rgba(62, 201, 214, 0.10); padding: 1px 5px; font-size: 0.95em; color: var(--color-cyan-2); font-family: var(--font-mono); }
+    .pill-tag { display: inline-block; font-size: 0.85em; padding: 1px 7px; background: rgba(62, 201, 214, 0.14); color: var(--color-cyan-2); border: 1px solid rgba(62, 201, 214, 0.4); letter-spacing: 0.04em; font-weight: 600; }
+    .pill-tag.planned { background: rgba(255, 184, 107, 0.12); color: #ffd0a0; border-color: rgba(255, 184, 107, 0.4); }
+
+    .codepanel { background: #060a18; border: 1px solid var(--color-border); padding: 16px 20px; font-family: var(--font-mono); font-size: 0.56em; line-height: 1.6; color: #dbe2ff; white-space: pre; overflow-x: auto; }
+    .codepanel .cmt { color: var(--color-mid-gray); }
+    .codepanel .cmd { color: var(--color-cyan-2); }
+    .codepanel .acc { color: var(--color-amber); }
+
+    .roadmap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 6px; }
+    .roadmap-card { background: var(--color-panel-2); border: 1px solid var(--color-border); border-top: 3px solid var(--color-cyan); padding: 14px 16px; }
+    .roadmap-card.next { border-top-color: var(--color-purple); }
+    .roadmap-card.later { border-top-color: var(--color-amber); }
+    .roadmap-card h3 { margin: 0 0 6px; font-size: 0.7em; }
+    .roadmap-card ul { margin: 0; padding-left: 18px; font-size: 0.55em; color: var(--color-light-gray); line-height: 1.55; }
+    .cta-card { margin-top: 14px; background: linear-gradient(135deg, rgba(62, 201, 214, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%); border: 1px solid rgba(62, 201, 214, 0.4); padding: 14px 18px; text-align: center; }
+    .cta-card h2 { margin: 0 0 4px; font-size: 0.95em; color: #fff; }
+    .cta-card p { margin: 0; font-size: 0.6em; color: var(--color-light-gray); }
+
+    .skills-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 12px; margin-top: 6px; }
+    .skills-card { background: var(--color-panel-2); border: 1px solid var(--color-border); border-top: 3px solid var(--color-cyan); padding: 12px 14px; }
+    .skills-card.rules { border-top-color: var(--color-amber); }
+    .skills-card.commands { border-top-color: var(--color-purple); }
+    .skills-card.agents { border-top-color: var(--color-green); }
+    .skills-card h3 { margin: 0 0 6px; font-size: 0.62em; display: flex; justify-content: space-between; align-items: baseline; }
+    .skills-card h3 .count { font-size: 0.7em; color: var(--color-mid-gray); font-weight: 500; letter-spacing: 0; text-transform: none; }
+    .skills-card ul { margin: 0; padding-left: 0; list-style: none; }
+    .skills-card li { font-family: var(--font-mono); font-size: 0.5em; color: var(--color-cyan-2); padding: 2px 0; border-bottom: 1px dashed rgba(31, 42, 85, 0.6); line-height: 1.5; }
+    .skills-card li:last-child { border-bottom: 0; }
+
+    .slide-footer { position: absolute; bottom: 18px; left: 44px; right: 44px; display: flex; justify-content: space-between; font-size: 0.5em; color: var(--color-dark-gray); }
+
+    .highlight-cyan { color: var(--color-cyan); }
+    .highlight-purple { color: var(--color-purple); }
+
+    .aidlc-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 6px; }
+    .aidlc-phase { background: var(--color-panel-2); border: 1px solid var(--color-border); border-top: 3px solid var(--color-cyan); padding: 12px 14px; }
+    .aidlc-phase.construction { border-top-color: var(--color-green); }
+    .aidlc-phase.operations { border-top-color: var(--color-amber); }
+    .aidlc-phase h3 { margin: 0 0 1px; font-size: 0.7em; color: var(--color-white); display: flex; align-items: center; gap: 8px; }
+    .aidlc-phase .ph-num { flex: 0 0 auto; width: 1.55em; height: 1.55em; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: 700; color: #0a1222; background: var(--color-cyan); }
+    .aidlc-phase.construction .ph-num { background: var(--color-green); }
+    .aidlc-phase.operations .ph-num { background: var(--color-amber); }
+    .aidlc-phase .ph-sub { font-size: 0.5em; color: var(--color-mid-gray); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 8px; }
+    .aidlc-step { background: var(--color-panel-3); border: 1px solid var(--color-border-2); padding: 6px 9px; margin-bottom: 6px; }
+    .aidlc-step:last-child { margin-bottom: 0; }
+    .aidlc-step b { font-size: 0.56em; color: var(--color-cyan-2); display: block; }
+    .aidlc-step span { font-size: 0.5em; color: var(--color-light-gray); }
+    .aidlc-caption { text-align: center; font-size: 0.5em; color: var(--color-mid-gray); margin: 12px 0 0; letter-spacing: 0.02em; }
+
+    .cover-wrap { display: flex; flex-direction: column; justify-content: center; height: 100%; max-width: 1040px; }
+    .cover-wrap h1 { font-size: 1.85em; line-height: 1.06; margin: 0 0 0.35rem; letter-spacing: -0.02em; }
+    .cover-sub { font-size: 0.74em; font-weight: 500; color: var(--color-mid-gray); margin: 0 0 22px; line-height: 1.35; }
+    .cover-cards { display: flex; gap: 16px; margin-bottom: 22px; }
+    .cover-card { flex: 1; display: flex; align-items: center; gap: 13px; background: var(--color-panel-2); border: 1px solid var(--color-border); border-left: 3px solid var(--color-cyan); padding: 14px 17px; }
+    .cover-card.purple { border-left-color: var(--color-purple); }
+    .cover-card.purple iconify-icon { color: var(--color-purple); }
+    .cover-card iconify-icon { font-size: 1.8em; color: var(--color-cyan); flex: 0 0 auto; }
+    .cover-card h4 { margin: 0; font-size: 0.62em; color: var(--color-white); }
+    .cover-card p { margin: 2px 0 0; font-size: 0.5em; color: var(--color-mid-gray); }
+    .cover-badges { display: flex; flex-wrap: wrap; gap: 9px; }
+    .cover-badges .pill-tag { font-size: 0.5em; padding: 4px 11px; }
+    .credit-box { border: 1px solid var(--color-cyan); background: rgba(62, 201, 214, 0.07); padding: 9px 14px; margin-top: 12px; display: flex; align-items: center; gap: 10px; }
+    .credit-box iconify-icon { font-size: 1.2em; color: var(--color-cyan); flex-shrink: 0; }
+    .credit-box .ck { font-size: 0.46em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--color-cyan); display: block; }
+    .credit-box p { margin: 1px 0 0; font-size: 0.5em; color: var(--color-light-gray); line-height: 1.4; }
+
+    .asset-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 6px; }
+    .asset-card { background: var(--color-panel-2); border: 1px solid var(--color-border); border-top: 3px solid var(--color-cyan); padding: 11px 12px; }
+    .asset-card iconify-icon { font-size: 1.4em; }
+    .asset-card h4 { margin: 4px 0 3px; font-size: 0.58em; }
+    .asset-card p { margin: 0; font-size: 0.46em; color: var(--color-light-gray); line-height: 1.4; }
+
+    .note-band { background: var(--color-panel-2); border: 1px solid var(--color-border); padding: 9px 14px; margin-top: 12px; font-size: 0.52em; color: var(--color-light-gray); line-height: 1.45; }
+    .note-band iconify-icon { color: var(--color-cyan); }
+
+    .gloss-note { font-size: 0.5em; color: var(--color-light-gray); margin-top: 10px; line-height: 1.45; border-left: 3px solid var(--color-cyan); padding: 6px 12px; background: rgba(62,201,214,0.06); }
+    .gloss-src { font-size: 0.44em; color: var(--color-dark-gray); margin-top: 6px; }
+    .refs { font-size: 0.4em; color: var(--color-mid-gray); margin-top: 12px; line-height: 1.7; }
+    .refs b { color: var(--color-light-gray); font-weight: 600; }
+    .refs a { color: var(--color-cyan); text-decoration: none; }
+    .refs a:hover { text-decoration: underline; }
+    .refs .sep { color: var(--color-border); margin: 0 8px; }
+
+    /* Two-phase architecture */
+    .phase-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px; }
+    .phase-card { background: var(--color-panel-2); border: 1px solid var(--color-border); border-top: 3px solid var(--color-cyan); padding: 14px 16px; }
+    .phase-card.execution { border-top-color: var(--color-green); }
+    .phase-card h3 { margin: 0 0 4px; font-size: 0.72em; display: flex; align-items: center; gap: 8px; }
+    .phase-card h3 iconify-icon { font-size: 1.2em; }
+    .phase-card .ph-desc { font-size: 0.5em; color: var(--color-mid-gray); margin: 0 0 10px; }
+    .phase-card ul { margin: 0; padding-left: 16px; font-size: 0.52em; color: var(--color-light-gray); line-height: 1.5; }
+    .phase-card li { margin-bottom: 3px; }
+    .phase-card code { background: rgba(62, 201, 214, 0.10); padding: 0 4px; font-size: 0.95em; color: var(--color-cyan-2); font-family: var(--font-mono); }
+
+    /* Model strategy table */
+    .model-table { width: 100%; border-collapse: collapse; font-size: 0.52em; background: var(--color-panel-2); border: 1px solid var(--color-border); margin-top: 10px; }
+    .model-table th, .model-table td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--color-border); }
+    .model-table th { background: #101839; color: var(--color-mid-gray); font-weight: 600; }
+    .model-table tr:last-child td { border-bottom: 0; }
+    .model-table td:first-child { color: var(--color-cyan); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle light / dark">
+    <iconify-icon icon="mdi:weather-night"></iconify-icon>
+  </button>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- ==========================================
+           SLIDE 1: Cover / title
+           ========================================== -->
+      <section class="slide-brand">
+        <div class="cover-wrap">
+          <span class="kicker">AI-Native SDET Toolkit &middot; Open Source</span>
+          <h1>AI SDET Workbench</h1>
+          <p class="cover-sub">A composable bundle of Skills &middot; Agents &middot; Tools &middot; Rules &mdash; grounded in domain data and the AI-DLC lifecycle for modern test automation.</p>
+
+          <div class="cover-cards">
+            <div class="cover-card">
+              <iconify-icon icon="mdi:robot-outline"></iconify-icon>
+              <div>
+                <h4>AI-DLC Lifecycle</h4>
+                <p>Intent &rarr; Construction &rarr; Operations</p>
+              </div>
+            </div>
+            <div class="cover-card purple">
+              <iconify-icon icon="mdi:cogs"></iconify-icon>
+              <div>
+                <h4>Two-Phase Architecture</h4>
+                <p>Authoring (LLM) &rarr; Execution (Deterministic)</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="cover-badges">
+            <span class="pill-tag">Skills</span>
+            <span class="pill-tag">Agents</span>
+            <span class="pill-tag">Tools</span>
+            <span class="pill-tag">Rules</span>
+            <span class="pill-tag">Subagents</span>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>AI SDET Workbench &middot; Open Source</span>
+          <span></span>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 2: Workbench Architecture
+           ========================================== -->
+      <section class="slide-brand">
+        <h1 style="font-size:1.2em;margin:0 0 0.2rem;letter-spacing:-0.02em;">AI SDET Workbench Architecture</h1>
+        <p class="lede" style="max-width:1100px;margin:0 0 12px;">
+          A composable bundle of <strong>Skills &middot; Agents &middot; Tools &middot; Rules &middot; Subagents</strong> for automated test generation and execution.
+        </p>
+
+        <div class="wb-frame">
+          <div class="wb-grid">
+            <!-- LEFT: Context -->
+            <div class="wb-col">
+              <h4>Context</h4>
+              <div class="wb-note">Grounding data the agent reads &mdash;<br>no copy-paste</div>
+
+              <div class="wb-sub">
+                <h5>Inputs</h5>
+                <ul>
+                  <li>OpenAPI / Swagger specs</li>
+                  <li>GitHub PRs &middot; commits</li>
+                  <li>Screenshots &middot; Figma</li>
+                </ul>
+              </div>
+
+              <div class="wb-sub">
+                <h5>Domain Index</h5>
+                <ul>
+                  <li>Test results (JSONL)</li>
+                  <li>Coverage reports</li>
+                  <li>PICT models</li>
+                </ul>
+              </div>
+
+              <div class="wb-sub">
+                <h5>Standards</h5>
+                <ul>
+                  <li>Naming conventions</li>
+                  <li>Assertion contracts</li>
+                  <li>Validation gates</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- RIGHT: Toolkits -->
+            <div class="wb-col">
+              <h4>Toolkits</h4>
+              <div class="wb-note">Each Toolkit = composable, installable bundle. Ordered execution &amp; quality gates.</div>
+
+              <div class="wb-pill-row">
+                <span class="wb-pill">Skills</span>
+                <span class="wb-pill">Agents</span>
+                <span class="wb-pill">Tools</span>
+                <span class="wb-pill">Rules</span>
+                <span class="wb-pill">Subagents</span>
+              </div>
+
+              <div class="wb-twocol">
+                <div>
+                  <h3>Authoring Phase</h3>
+                  <div class="wb-sub">
+                    <h5>Spec parsing</h5>
+                    <ul>
+                      <li><code>parse-openapi</code></li>
+                      <li><code>apply-naming-rules</code></li>
+                      <li><code>extract-endpoints</code></li>
+                    </ul>
+                  </div>
+                  <div class="wb-sub">
+                    <h5>Test design</h5>
+                    <ul>
+                      <li><code>pairwise-designer</code></li>
+                      <li><code>assertion-writer</code></li>
+                      <li><code>generate-pairwise-matrix</code></li>
+                    </ul>
+                  </div>
+                  <div class="wb-sub">
+                    <h5>Collection assembly</h5>
+                    <ul>
+                      <li><code>assemble-collection</code></li>
+                      <li><code>validate-collection</code></li>
+                      <li><code>assemble-report</code></li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div>
+                  <h3>Execution Phase</h3>
+                  <div class="wb-sub">
+                    <h5>Test runners</h5>
+                    <ul>
+                      <li><code>run-newman</code></li>
+                      <li class="dim">run-playwright</li>
+                      <li class="dim">run-pytest</li>
+                    </ul>
+                  </div>
+                  <div class="wb-sub">
+                    <h5>Results &amp; analytics</h5>
+                    <ul>
+                      <li><code>publish-results</code></li>
+                      <li><code>structured/test_results.jsonl</code></li>
+                      <li class="dim">metrics-dashboard</li>
+                    </ul>
+                  </div>
+                  <div class="wb-sub">
+                    <h5>CI/CD integration</h5>
+                    <ul>
+                      <li><code>github-actions</code></li>
+                      <li class="dim">jenkins-pipeline</li>
+                      <li class="dim">gitlab-ci</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <p class="wb-roadmap-note">grey = roadmap</p>
+            </div>
+          </div>
+
+          <div class="wb-domains-label">Workbench powers all SDET domains</div>
+          <div class="wb-domains-row">
+            <div class="wb-domain">API Testing<small>OpenAPI &rarr; Postman</small></div>
+            <div class="wb-domain">UI Testing<small>Playwright &middot; Cypress</small></div>
+            <div class="wb-domain">Test Design<small>Pairwise &middot; PICT</small></div>
+            <div class="wb-domain">Test Data<small>Synthetic &middot; Masked</small></div>
+            <div class="wb-domain">Analytics<small>Structured JSONL</small></div>
+            <div class="wb-domain">Reporting<small>Coverage &middot; Gaps</small></div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>AI SDET Workbench</span>
+          <span>2 / 8</span>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 3: Why this workbench
+           ========================================== -->
+      <section class="slide-brand">
+        <span class="kicker">Why this workbench</span>
+        <h1 style="font-size:1.1em;margin:0 0 0.1rem;">Method is inconsistent &mdash; make it <span class="highlight-cyan">opinionated &amp; composable</span></h1>
+        <p class="lede">Every engineer reinvents prompts, fixtures and test scripts. The workbench turns that tribal knowledge into reusable Skills, Tools, Rules and Agents.</p>
+
+        <div class="panel" style="margin-top:6px;">
+          <table class="painmap">
+            <tr>
+              <th style="width:11%;"></th>
+              <th style="width:44.5%;color:var(--color-amber);font-size:0.95em;">Current pain &mdash; "method is inconsistent"</th>
+              <th style="width:44.5%;color:var(--color-cyan);font-size:0.95em;">Workbench response &mdash; "opinionated &amp; composable"</th>
+            </tr>
+            <tr><td><b>AI usage</b></td><td>LLMs used <b>mechanically &mdash; prompt-by-prompt</b>. No shared library of skills, rules or agents.</td><td><b>Skills &middot; Tools &middot; Rules</b> &mdash; reusable, version-controlled prompts in <code>skills/*.md</code>, invoked uniformly by any engineer or agent.</td></tr>
+            <tr><td><b>Test design</b></td><td>Blank page every sprint. No structured approach; coverage is opinion-based.</td><td><b>Pairwise combinatorics</b> &mdash; PICT-based test design reduces 1,400 scenarios to 35-45 tests with 97% coverage.</td></tr>
+            <tr><td><b>Test scripts</b></td><td>Hand-written assertions, inconsistent patterns, no validation.</td><td><b>Assertion contracts</b> &mdash; mandatory 3-block pattern (status, content-type, body) enforced by validation gates.</td></tr>
+            <tr><td><b>Test data</b></td><td>Hand-crafted, rarely reused. No synthetic data catalogue.</td><td><b>Test data strategy</b> &mdash; Type A (inline), Type B (external), Type C (runtime) with JDBC/S3 injection.</td></tr>
+            <tr><td><b>Execution</b></td><td>Manual runs, inconsistent CI/CD setup, no structured results.</td><td><b>Deterministic execution</b> &mdash; No LLM in CI; Newman runs with structured JSONL output.</td></tr>
+            <tr><td><b>Analytics</b></td><td>Test results in scattered logs. No queryable metrics.</td><td><b>Structured JSONL</b> &mdash; <code>test_results.jsonl</code> with consistent schema for analytics.</td></tr>
+            <tr><td><b>Quality gates</b></td><td>No automated validation. Broken tests ship to CI.</td><td><b>8 validation gates</b> &mdash; automated checks before any collection reaches CI/CD.</td></tr>
+          </table>
+        </div>
+
+        <div class="slide-footer">
+          <span>AI SDET Workbench</span>
+          <span>3 / 8</span>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 4: Two-Phase Architecture
+           ========================================== -->
+      <section class="slide-brand">
+        <span class="kicker">Core architecture</span>
+        <h1 style="font-size:1.1em;margin:0 0 0.1rem;">Two-Phase Separation &mdash; <span class="highlight-cyan">Authoring vs Execution</span></h1>
+        <p class="lede">LLM involvement is confined to authoring. Execution is fully deterministic &mdash; no AI in CI/CD, no hallucination in production.</p>
+
+        <div class="phase-grid">
+          <div class="phase-card">
+            <h3><iconify-icon icon="mdi:pencil-outline" style="color:var(--color-cyan);"></iconify-icon> Phase 1: Test Authoring</h3>
+            <p class="ph-desc">LLM-involved, run once when spec changes</p>
+            <ul>
+              <li><b>Input:</b> OpenAPI spec + configuration options</li>
+              <li><b>Process:</b> Parse spec &rarr; Extract factors &rarr; Generate assertions</li>
+              <li><b>Output:</b> <code>*_collection.json</code>, <code>*_data.json</code>, <code>*_environment.json</code></li>
+              <li><b>Artifacts:</b> <code>pict_models/</code>, <code>test_scripts/</code>, coverage reports</li>
+              <li><b>When:</b> Spec changes, endpoint added, assertion updated</li>
+            </ul>
+          </div>
+          <div class="phase-card execution">
+            <h3><iconify-icon icon="mdi:play-circle-outline" style="color:var(--color-green);"></iconify-icon> Phase 2: Test Execution</h3>
+            <p class="ph-desc">No LLM, CI/CD or on-demand</p>
+            <ul>
+              <li><b>Input:</b> Authoring artifacts + <code>test_data_config.json</code></li>
+              <li><b>Process:</b> Newman runner with data injection</li>
+              <li><b>Output:</b> <code>test_results.jsonl</code> (structured analytics)</li>
+              <li><b>Analytics:</b> Hive-partitioned S3 paths, structured metrics</li>
+              <li><b>When:</b> Push to VCS, scheduled CI, on-demand</li>
+            </ul>
+          </div>
+        </div>
+
+        <table class="model-table">
+          <thead>
+            <tr><th>Role</th><th>Model</th><th>Reason</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Orchestrator</td><td>Claude Sonnet</td><td>Coordination only, sequencing tools &mdash; no heavy reasoning</td></tr>
+            <tr><td>Pairwise Designer</td><td>Claude Opus</td><td>Complex factor analysis, constraint definition &mdash; one-shot accuracy</td></tr>
+            <tr><td>Assertion Writer</td><td>Claude Haiku</td><td>Bulk template-following generation &mdash; cost-efficient</td></tr>
+          </tbody>
+        </table>
+
+        <div class="slide-footer">
+          <span>AI SDET Workbench</span>
+          <span>4 / 8</span>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 5: Five toolkit assets
+           ========================================== -->
+      <section class="slide-brand">
+        <span class="kicker">The vision</span>
+        <h1 style="font-size:1.15em;margin:0 0 0.15rem;">Five toolkit assets, one grounding layer</h1>
+        <p class="lede">Every reusable piece of AI work is one of five things &mdash; versioned, diffable, peer-reviewed.</p>
+
+        <div class="asset-grid">
+          <div class="asset-card">
+            <iconify-icon icon="mdi:book-open-variant" style="color:var(--color-cyan);"></iconify-icon>
+            <h4 style="color:var(--color-cyan);">Skills</h4>
+            <p>Reusable AI procedures. Markdown. Load-on-demand.</p>
+          </div>
+          <div class="asset-card" style="border-top-color:var(--color-purple);">
+            <iconify-icon icon="mdi:robot" style="color:var(--color-purple);"></iconify-icon>
+            <h4 style="color:var(--color-purple);">Agents</h4>
+            <p>Orchestrators with tools &mdash; e.g., <code style="font-family:var(--font-mono);">api-test-generator</code>.</p>
+          </div>
+          <div class="asset-card" style="border-top-color:var(--color-amber);">
+            <iconify-icon icon="mdi:wrench" style="color:var(--color-amber);"></iconify-icon>
+            <h4 style="color:var(--color-amber);">Tools</h4>
+            <p>Deterministic TypeScript functions. No LLM.</p>
+          </div>
+          <div class="asset-card" style="border-top-color:var(--color-green);">
+            <iconify-icon icon="mdi:shield-check" style="color:var(--color-green);"></iconify-icon>
+            <h4 style="color:var(--color-green);">Rules</h4>
+            <p>Hard constraints applied to every generation.</p>
+          </div>
+          <div class="asset-card">
+            <iconify-icon icon="mdi:account-group" style="color:var(--color-light-gray);"></iconify-icon>
+            <h4>Subagents</h4>
+            <p>Specialized workers &mdash; pairwise-designer, assertion-writer.</p>
+          </div>
+        </div>
+
+        <div class="note-band">
+          <iconify-icon icon="mdi:database-cog"></iconify-icon>
+          <strong style="color:var(--color-cyan);">Grounding layer:</strong> Deterministic tools + structured data &mdash; every LLM call reads real systems through validated tools. No copy-paste. No hallucination. Audit trail built-in.
+        </div>
+
+        <div class="slide-footer">
+          <span>AI SDET Workbench</span>
+          <span>5 / 8</span>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 6: Toolkit components (api-test-generator)
+           ========================================== -->
+      <section class="slide-brand">
+        <span class="kicker">Toolkit components</span>
+        <h1 style="font-size:1.15em;margin:0 0 0.15rem;">Skills &middot; Tools &middot; Subagents <span style="font-size:0.62em;color:var(--color-mid-gray);font-weight:400;">&mdash; api-test-generator agent</span></h1>
+        <p class="lede">Real components from the <code style="color:var(--color-cyan-2);font-family:var(--font-mono);">api-test-generator</code> agent. Skills are markdown, tools are TypeScript, subagents are specialized workers.</p>
+
+        <div class="skills-grid">
+          <div class="skills-card">
+            <h3>Skills <span class="count">agent/skills/ &middot; 6 files</span></h3>
+            <ul>
+              <li>openapi_parse.md</li>
+              <li>pairwise_strategy.md</li>
+              <li>assertion_contract.md</li>
+              <li>collection_assembly.md</li>
+              <li>naming_rules.md</li>
+              <li>report_template.md</li>
+            </ul>
+          </div>
+          <div class="skills-card rules">
+            <h3>Tools <span class="count">agent/tools/ &middot; 12 files</span></h3>
+            <ul>
+              <li>parse_openapi.ts</li>
+              <li>apply_naming_rules.ts</li>
+              <li>generate_pairwise_matrix.ts</li>
+              <li>assemble_collection.ts</li>
+              <li>validate_collection.ts</li>
+              <li>run_newman.ts</li>
+              <li>assemble_report.ts</li>
+              <li>publish_results.ts</li>
+            </ul>
+          </div>
+          <div class="skills-card commands">
+            <h3>Subagents <span class="count">2 specialized</span></h3>
+            <ul>
+              <li>pairwise-designer/</li>
+              <li>&nbsp;&nbsp;instructions.md</li>
+              <li>&nbsp;&nbsp;skills/factor_analysis.md</li>
+              <li>&nbsp;&nbsp;skills/pairwise_strategy.md</li>
+              <li>assertion-writer/</li>
+              <li>&nbsp;&nbsp;instructions.md</li>
+              <li>&nbsp;&nbsp;skills/assertion_contract.md</li>
+              <li>&nbsp;&nbsp;skills/naming_rules.md</li>
+            </ul>
+          </div>
+          <div class="skills-card agents">
+            <h3>Validation Gates <span class="count">8 rules</span></h3>
+            <ul>
+              <li>Collection filename pattern</li>
+              <li>info.name matches filename</li>
+              <li>3 structural pm.test() blocks</li>
+              <li>All responseCodeFor* keys used</li>
+              <li>No hard-coded URLs</li>
+              <li>Endpoint coverage vs spec</li>
+              <li>Classification fields present</li>
+              <li>No credentials in JSON</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>AI SDET Workbench</span>
+          <span>6 / 8</span>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 7: Repo map
+           ========================================== -->
+      <section class="slide-brand">
+        <span class="kicker">Repo map</span>
+        <h1 style="font-size:1.15em;margin:0 0 0.15rem;">Where everything lives</h1>
+        <p class="lede">Monorepo structure &mdash; agents, shared runtime, documentation, and OpenSpec change logs.</p>
+
+<div class="codepanel" style="margin-top:10px;">ai-agents/
+├── <span class="cmd">agents/</span>                           <span class="acc">&larr; specialized AI agents</span>
+│   ├── api-test-generator/            OpenAPI &rarr; Postman tests
+│   │   ├── agent/
+│   │   │   ├── agent.ts               <span class="cmt">Eve agent entry point</span>
+│   │   │   ├── instructions.md        <span class="cmt">orchestrator prompt</span>
+│   │   │   ├── <span class="cmd">skills/</span>              <span class="cmt">6 load-on-demand skills</span>
+│   │   │   ├── <span class="cmd">tools/</span>               <span class="cmt">12 deterministic tools</span>
+│   │   │   ├── <span class="cmd">subagents/</span>           <span class="cmt">pairwise-designer, assertion-writer</span>
+│   │   │   └── sandbox/workspace/     <span class="cmt">inputs/, runs/</span>
+│   │   ├── ARCHITECTURE.md
+│   │   └── DEVELOPER_GUIDE.md
+│   ├── diagram-generator/             Description &rarr; HTML diagrams
+│   ├── github-pr-digest/              PR activity &rarr; dataset + markdown
+│   └── linkedin-cover-generator/      Description &rarr; cover design
+├── <span class="cmd">shared/</span>                           <span class="acc">&larr; workspace package</span>
+│   ├── lib/                           model.ts, run.ts, cost.ts
+│   ├── hooks/                         usage tracking
+│   └── tools/                         sync, cleanup utilities
+├── <span class="cmd">openspec/</span>                         <span class="acc">&larr; architecture decisions</span>
+├── docs/ARCHITECTURE.md
+└── README.md &middot; AGENTS.md</div>
+
+        <div class="slide-footer">
+          <span>AI SDET Workbench</span>
+          <span>7 / 8</span>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 8: AI-DLC Glossary
+           ========================================== -->
+      <section class="slide-brand">
+        <span class="kicker">Reference</span>
+        <h1 style="font-size:1.15em;margin:0 0 0.15rem;">AI-DLC glossary &mdash; the new vocabulary</h1>
+        <p class="lede">AI-DLC renames the Agile ceremonies. Same intent, rebuilt for AI-speed execution.</p>
+
+        <div class="panel" style="padding:0;overflow:hidden;">
+          <table class="toolkit-table" style="margin:0;">
+            <thead>
+              <tr><th style="width:20%;">Term</th><th style="width:46%;">What it means</th><th style="width:34%;">Example</th></tr>
+            </thead>
+            <tbody>
+              <tr><td style="color:var(--color-cyan);font-weight:600;">Intent</td><td>High-level business goal in plain language &mdash; the single seed.</td><td><em>"Generate API tests for the Patient Management API with pairwise coverage."</em></td></tr>
+              <tr><td style="color:var(--color-cyan);font-weight:600;">Mob elaboration</td><td>Inception ritual: AI drafts questions, plans, and requirements; the team validates.</td><td>AI asks: auth method? coverage strength (1-3)? which endpoints to include?</td></tr>
+              <tr><td style="color:var(--color-purple);font-weight:600;">Unit of work</td><td>Independently buildable slice. Replaces the Agile <em>epic</em>.</td><td>Parse spec &middot; Design pairwise &middot; Generate assertions &middot; Validate &middot; Execute.</td></tr>
+              <tr><td style="color:var(--color-purple);font-weight:600;">Mob construction</td><td>Construction ritual: AI proposes design, code &amp; tests while humans pair and approve.</td><td>AI drafts pairwise factors; engineer reviews constraint definitions.</td></tr>
+              <tr><td style="color:var(--color-amber);font-weight:600;">Bolt</td><td>Lightning iteration in hours or days. Replaces the Agile <em>sprint</em>.</td><td>Ship API test collection for 5 endpoints in a day, not a two-week sprint.</td></tr>
+              <tr><td style="color:var(--color-green);font-weight:600;">Deployment unit</td><td>Construction's finished output: validated, tested, packaged for CI.</td><td>A Postman collection that passes all 8 validation gates.</td></tr>
+              <tr><td style="color:var(--color-green);font-weight:600;">Production</td><td>Operations phase: units run in CI; results feed the next Intent cycle.</td><td>Newman runs in GitHub Actions; structured JSONL results for analysis.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="gloss-note">
+          <iconify-icon icon="mdi:lightbulb-on"></iconify-icon>
+          AI-DLC doesn't bolt AI onto Agile &mdash; it rebuilds the SDLC from first principles: <em>"we need automobiles, not faster horse chariots."</em> AI does the execution; humans stay accountable for every decision.
+        </div>
+        <div class="gloss-src">Source: AWS AI-DLC Method Definition Paper &mdash; Raja SP, AWS</div>
+
+        <div class="refs">
+          <b>References &mdash; concepts &amp; inspirations:</b>
+          <a href="https://prod.d13rzhkk8cj2z0.amplifyapp.com/" target="_blank" rel="noopener">AI-DLC</a><span class="sep">&middot;</span><a href="https://specs.md/" target="_blank" rel="noopener">specs.md</a><span class="sep">&middot;</span><a href="https://fabriqa.ai/" target="_blank" rel="noopener">fabriqa.ai</a><span class="sep">&middot;</span><a href="https://github.com/dlt-hub/dlthub-ai-workbench" target="_blank" rel="noopener">dltHub AI Workbench</a><span class="sep">&middot;</span><a href="https://github.com/senthilsweb/ai-agents" target="_blank" rel="noopener">ai-agents repo</a>
+        </div>
+
+        <div class="slide-footer">
+          <span>AI SDET Workbench</span>
+          <span>8 / 8</span>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      width: 1280,
+      height: 720,
+      margin: 0,
+      controls: true,
+      progress: true,
+      center: false,
+      hash: true,
+      transition: 'fade',
+    });
+
+    // Theme toggle
+    (function () {
+      var root = document.documentElement;
+      var btn = document.getElementById('themeToggle');
+      var icon = btn.querySelector('iconify-icon');
+      function sync() {
+        var light = root.getAttribute('data-theme') === 'light';
+        icon.setAttribute('icon', light ? 'mdi:white-balance-sunny' : 'mdi:weather-night');
+      }
+      btn.addEventListener('click', function () {
+        var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+        root.setAttribute('data-theme', next);
+        try { localStorage.setItem('sdet-deck-theme', next); } catch (e) {}
+        sync();
+      });
+      sync();
+    })();
+  </script>
+</body>
+</html>
