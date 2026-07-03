@@ -1,0 +1,21 @@
+# Python virtual environment
+.venv/
+
+# DuckDB live database (schema is in openspec; data is local)
+*.duckdb
+*.duckdb.wal
+
+# Run logs (timestamped, machine-local)
+logs/
+
+# Generated exports (re-created on each run)
+exports/
+
+# Marimo session state
+__marimo__/
+
+# Secrets
+.env
+
+# macOS
+.DS_Store
