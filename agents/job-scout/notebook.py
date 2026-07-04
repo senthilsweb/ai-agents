@@ -179,6 +179,40 @@ def _(con, cfg, ranked, Path, mo, logger):
 
 
 @app.cell
+def _(mo):
+    # ── Tier 1 discovery trigger ────────────────────────────────────
+    fetch_btn = mo.ui.run_button(label="Fetch postings via ATS APIs (Tier 1, deterministic)")
+    fetch_btn
+    return fetch_btn,
+
+
+@app.cell
+def _(fetch_btn, con, cfg, mo, logger, Path):
+    # ── Tier 1: deterministic ATS APIs (Greenhouse/Lever/Ashby/Workday) ─
+    # No scraping, no LLM. fetch_all() first SEEDS a company row for every
+    # slug in config search.ats_org_slugs_by_company (inferring ats_platform),
+    # then fetches + filters (forgiving title match) + dedups on company+req_id,
+    # persisting comp bands when present. verify_before_insert gates a live
+    # open/closed check per skills/posting-verification.
+    # Tier 2 = search plan below; Tier 3 = agentic fallback for JS-only sites.
+    if fetch_btn.value:
+        import sys as _sys
+        _sys.path.insert(0, str(Path(".").resolve()))
+        from tools.ats_fetch import fetch_all
+        _n = fetch_all(con, cfg["targets"]["title_keywords"],
+                       cfg["search"].get("ats_org_slugs_by_company", {}),
+                       verify=cfg["search"].get("verify_before_insert", False))
+        logger.info("tier1 ats fetch | new_rows=%d", _n)
+        _msg = mo.md(f"**Tier 1 fetch:** {_n} new postings inserted "
+                     "(seeded companies from config, dedup on company+req_id)")
+    else:
+        _msg = mo.md("_Tier 1: click to seed companies from config and pull postings "
+                     "deterministically from public ATS APIs (no LLM)._")
+    _msg
+    return
+
+
+@app.cell
 def _(cfg, con, mo, logger):
     # ── Deterministic search-plan generator ──────────────────────────
     # Emits the exact queries a human (or agent) should run next,

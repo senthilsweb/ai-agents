@@ -15,17 +15,20 @@ Usage:
 Wire-in: company.ats_org_slug drives fetch_all(con) to pull every company
 with pipeline_status in ('not_started','alert_target') and a known slug.
 """
+import hashlib
 import json
 import logging
+import re
 import ssl
 import sys
+import urllib.error
 import urllib.request
 
 try:
     import certifi
     _SSL_CTX = ssl.create_default_context(cafile=certifi.where())
 except ImportError:
-    _SSL_CTX = None  # fall back to system certs
+    _SSL_CTX = None  # fall back to system certs (may fail on macOS Python.org builds)
 
 log = logging.getLogger("ats_fetch")
 UA = {"User-Agent": "job-scout/1.0 (personal job search; contact in repo)"}
@@ -108,47 +111,200 @@ FETCHERS = {"greenhouse": fetch_greenhouse, "lever": fetch_lever,
             "ashby": fetch_ashby, "workday": fetch_workday}
 
 
-def fetch_all(con, keywords: list[str] | None = None,
-              slug_overrides: dict[str, str] | None = None) -> int:
-    """Pull postings for every company with a known ATS + org slug.
+# ── Config-driven company seeding ────────────────────────────────────
+# Turns config search.ats_org_slugs_by_company into company rows so Tier 1
+# can run from config alone (no manual company seeding). config.yaml stays
+# the single source of truth — nothing is hardcoded here.
+def _infer_platform(slug: str) -> str:
+    """Workday slugs are 'tenant/site' (contain '/'); single tokens default
+    to Ashby. Greenhouse/Lever slugs are also single tokens, so those MUST
+    use the explicit dict form {slug: <org>, platform: greenhouse|lever}."""
+    return "workday" if "/" in slug else "ashby"
 
-    Filters titles against keywords (config targets.title_keywords),
-    dedups on (company_id, req_id), inserts with visa_sponsorship='verify'
-    and status='open'. Returns number of new rows.
+
+def _resolve_slugs(slug_overrides: dict | None) -> dict[str, tuple[str, str]]:
+    """Normalize config values into name -> (platform, slug). A value is either
+    a bare slug string (platform inferred) or a dict {slug/org, platform}."""
+    resolved: dict[str, tuple[str, str]] = {}
+    for name, val in (slug_overrides or {}).items():
+        if isinstance(val, dict):
+            slug = str(val.get("slug") or val.get("org") or "")
+            platform = str(val.get("platform") or _infer_platform(slug)).lower()
+        else:
+            slug = str(val)
+            platform = _infer_platform(slug)
+        if slug:
+            resolved[name] = (platform, slug)
+    return resolved
+
+
+def seed_companies(con, resolved: dict[str, tuple[str, str]]) -> int:
+    """Idempotently upsert a company row (name + ats_platform) for every
+    configured ATS slug. Other company fields are left for later enrichment.
+    Returns the number of newly inserted companies."""
+    seeded = 0
+    for name, (platform, _slug) in resolved.items():
+        row = con.execute("SELECT company_id, ats_platform FROM company WHERE name=?",
+                          [name]).fetchone()
+        if row:
+            if row[1] != platform:  # keep platform in sync with config
+                con.execute("UPDATE company SET ats_platform=? WHERE company_id=?",
+                            [platform, row[0]])
+            continue
+        cid = con.execute("SELECT COALESCE(MAX(company_id),0)+1 FROM company").fetchone()[0]
+        con.execute("INSERT INTO company (company_id, name, ats_platform, pipeline_status) "
+                    "VALUES (?,?,?,'not_started')", [cid, name, platform])
+        seeded += 1
+    if seeded:
+        log.info("seeded %d companies from config ats_org_slugs_by_company", seeded)
+    return seeded
+
+
+# ── Forgiving title matching ─────────────────────────────────────────
+_SENIORITY = {"senior", "sr", "jr", "junior", "principal", "staff", "lead",
+              "of", "and", "the", "a", "ii", "iii"}
+_WORD = re.compile(r"[a-z0-9]+")
+
+
+def _title_matches(title: str, keywords: list[str] | None) -> bool:
+    """Token-overlap match replacing strict full-phrase substring. A keyword
+    matches when its significant tokens (seniority/stop words dropped) appear
+    in the title: all of them for 1-2 word keywords, all-but-one for longer.
+    So 'Sr. Engineering Manager, Data Platform' matches 'senior engineering
+    manager'."""
+    if not keywords:
+        return True
+    tset = set(_WORD.findall((title or "").lower()))
+    for kw in keywords:
+        sig = [t for t in _WORD.findall(kw.lower()) if t not in _SENIORITY]
+        if not sig:
+            continue
+        hits = sum(1 for t in sig if t in tset)
+        need = len(sig) if len(sig) <= 2 else len(sig) - 1
+        if hits >= need:
+            return True
+    return False
+
+
+# ── Compensation parsing (Ashby-style summary strings) ───────────────
+_NUM = re.compile(r"([\d][\d,]*\.?\d*)\s*([KkMm])?")
+
+
+def _parse_comp_range(text: str) -> tuple[int | None, int | None, str]:
+    """Extract (base_min, base_max, currency) from an Ashby comp summary such
+    as '$165,000 – $216,562' or '$264K – $379.5K'. Returns (None, None, cur)
+    when unparseable (e.g. hourly or single value). Currency is detected but
+    bands are only trusted for USD by the caller (scoring divisor is USD)."""
+    s = text or ""
+    currency = "USD"
+    if re.search(r"CA\$|C\$|CAD", s):
+        currency = "CAD"
+    elif "€" in s or "EUR" in s:
+        currency = "EUR"
+    elif "£" in s or "GBP" in s:
+        currency = "GBP"
+    nums = []
+    for raw, suf in _NUM.findall(s):
+        try:
+            v = float(raw.replace(",", ""))
+        except ValueError:
+            continue
+        if suf and suf.lower() == "k":
+            v *= 1_000
+        elif suf and suf.lower() == "m":
+            v *= 1_000_000
+        if v >= 1000:  # drop stray small numbers (hourly rates, footnotes)
+            nums.append(int(v))
+    if len(nums) >= 2:
+        return min(nums[0], nums[1]), max(nums[0], nums[1]), currency
+    return None, None, currency
+
+
+# ── Open/closed verification (skills/posting-verification) ───────────
+_CLOSED_SIGNALS = ("job has been closed", "no longer accepting", "position has been filled",
+                   "this position is closed", "posting is no longer", "not currently accepting")
+
+
+def verify_open(url: str | None) -> bool | None:
+    """Per skills/posting-verification: fetch the posting and classify it.
+    Returns True=open, False=closed, None=unknown (network/parse failure)."""
+    if not url:
+        return None
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, headers=UA),
+                                    timeout=15, context=_SSL_CTX) as r:
+            body = r.read(60000).decode("utf-8", "ignore").lower()
+    except urllib.error.HTTPError as e:
+        return False if e.code in (404, 410) else None
+    except Exception:
+        return None
+    return not any(sig in body for sig in _CLOSED_SIGNALS)
+
+
+def fetch_all(con, keywords: list[str] | None = None,
+              slug_overrides: dict | None = None, verify: bool = False) -> int:
+    """Seed companies from config, then pull postings for every company with a
+    known ATS + org slug.
+
+    Seeds company rows from slug_overrides first so Tier 1 works from config
+    alone. Filters titles against keywords (forgiving token match), dedups on
+    (company_id, req_id), inserts with visa_sponsorship='verify'. When
+    verify=True each posting's apply_url is checked (status='open'|'closed');
+    otherwise status='open'. Persists a compensation row when the payload
+    carries comp data. Returns number of new rows.
     """
-    slug_overrides = slug_overrides or {}
+    resolved = _resolve_slugs(slug_overrides)
+    seed_companies(con, resolved)
     rows = con.execute("""
         SELECT company_id, name, ats_platform FROM company
         WHERE pipeline_status IN ('not_started','alert_target','jobs_found')""").fetchall()
     inserted = 0
     for cid, name, ats in rows:
-        slug = slug_overrides.get(name)
-        if not slug:
+        if name not in resolved:
             continue
+        platform, slug = resolved[name]
+        ats = ats or platform
         fetcher = FETCHERS.get(ats)
         if not fetcher:
             log.warning("no fetcher for ats=%s (%s)", ats, name)
             continue
         try:
-            jobs = fetcher(slug) if ats != "workday" else fetch_workday(*slug.split("/"))
+            jobs = fetch_workday(*slug.split("/")) if ats == "workday" else fetcher(slug)
         except Exception as e:
             log.error("fetch failed %s/%s: %s", name, ats, e)
             continue
         for j in jobs:
-            if keywords and not any(k.lower() in j["title"].lower() for k in keywords):
+            if not _title_matches(j["title"], keywords):
                 continue
             dup = con.execute("SELECT 1 FROM job_posting WHERE company_id=? AND req_id=?",
                               [cid, j.get("req_id")]).fetchone()
             if dup:
                 continue
+            status = "open"
+            if verify:
+                ok = verify_open(j.get("apply_url"))
+                if ok is False:
+                    status = "closed"          # keep row as alert target, never skip
+                qh = hashlib.sha256(
+                    (j.get("apply_url") or j.get("req_id") or name).encode()).hexdigest()[:16]
+                con.execute("INSERT OR REPLACE INTO crawl_log VALUES (?,?,?,now(),?)",
+                            [qh, name, j.get("apply_url") or "",
+                             f"verify status={status} ok={ok}"])
             nid = con.execute("SELECT COALESCE(MAX(job_id),0)+1 FROM job_posting").fetchone()[0]
             con.execute("""INSERT INTO job_posting (job_id, company_id, title, location,
                 work_mode, req_id, req_id_type, apply_url, posted_recency, status,
                 visa_sponsorship, first_seen, last_verified)
-                VALUES (?,?,?,?,?,?,?,?,?, 'open', 'verify', current_date, current_date)""",
+                VALUES (?,?,?,?,?,?,?,?,?, ?, 'verify', current_date, current_date)""",
                 [nid, cid, j["title"], j.get("location"), j.get("work_mode"),
                  j.get("req_id"), j.get("req_id_type"), j.get("apply_url"),
-                 j.get("posted_recency") or j.get("posted_date")])
+                 j.get("posted_recency") or j.get("posted_date"), status])
+            comp = j.get("comp_notes")
+            if comp:                            # persist comp so comp_score isn't always 0
+                bmin, bmax, cur = _parse_comp_range(comp)
+                con.execute("""INSERT OR REPLACE INTO compensation
+                    (job_id, currency, base_min, base_max, comp_notes) VALUES (?,?,?,?,?)""",
+                    [nid, cur, bmin if cur == "USD" else None,
+                     bmax if cur == "USD" else None, comp])
             inserted += 1
         log.info("%s: %d postings fetched via %s API", name, len(jobs), ats)
     return inserted
@@ -157,6 +313,20 @@ def fetch_all(con, keywords: list[str] | None = None,
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s %(name)s %(levelname)s %(message)s")
+    if len(sys.argv) >= 2 and sys.argv[1] == "selftest":
+        # Before/after for the forgiving title match on realistic ATS titles.
+        kws = ["senior engineering manager", "data governance", "data platform architect",
+               "principal solutions architect", "ai governance"]
+        samples = ["Sr. Engineering Manager, Data Platform",
+                   "Principal Solutions Architect - Healthcare",
+                   "Staff Data Governance Program Lead",
+                   "Head of AI Governance",
+                   "Software Engineer II, Frontend"]
+        print(f"{'title':<48} {'old(substr)':>12} {'new(token)':>12}")
+        for t in samples:
+            old = any(k.lower() in t.lower() for k in kws)
+            print(f"{t:<48} {str(old):>12} {str(_title_matches(t, kws)):>12}")
+        sys.exit(0)
     ats, org = sys.argv[1], sys.argv[2]
     extra = dict(a.split("=") for a in sys.argv[3:] if "=" in a)
     if ats == "workday":

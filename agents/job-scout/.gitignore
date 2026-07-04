@@ -1,5 +1,7 @@
 # Python virtual environment
 .venv/
+__pycache__/
+*.pyc
 
 # DuckDB live database (schema is in openspec; data is local)
 *.duckdb
