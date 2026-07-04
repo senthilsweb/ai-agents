@@ -60,10 +60,29 @@ one point (step 9) — running one does **not** automatically trigger the other.
     pip install marimo duckdb pyyaml pandas python-dotenv anthropic certifi
     marimo edit notebook.py
 
-The notebook creates the schema idempotently. Click **Fetch postings via ATS
-APIs (Tier 1)** to seed the configured companies and pull real postings — no
-data needs to be pre-loaded. Tune everything in `config.yaml`. For agentic
-mode: copy `.env.example` to `.env`, add `ANTHROPIC_API_KEY`, set `agentic.enabled: true`.
+Tune everything in `config.yaml`. For agentic mode: copy `.env.example` to
+`.env`, add `ANTHROPIC_API_KEY`, set `agentic.enabled: true`.
+
+### Quickstart — empty DB to a shortlisted, ranked board
+1. Launch the notebook (`marimo edit notebook.py`). The schema is created
+   idempotently; every table starts empty.
+2. Scroll to the **"Fetch postings via ATS APIs (Tier 1)"** button and click
+   it — seeds companies from `config.yaml` and pulls real postings (see
+   "How the database gets populated" above). No data needs to be pre-loaded.
+3. *(Optional)* Load conference sponsors too — see "Conference sponsors" below.
+4. Scroll back up to the **"Ranked board"** cell and re-run it (click the
+   cell, then ▶ / Cmd+Enter — or use marimo's "Run all cells").
+   > **Gotcha:** marimo re-runs a cell only when a variable it depends on is
+   > *reassigned* upstream. The Tier 1 button mutates the DuckDB connection's
+   > data in place — it never reassigns the `con` variable — so the Ranked
+   > board **will not auto-refresh** after a fetch. Always manually re-run it
+   > (or "Run all cells") after any fetch/load step, including the sponsor loader.
+5. Adjust the scoring sliders (domain fit / compensation / HLS bonus /
+   location penalty / visa gate) above the board — this part *is* reactive
+   and recomputes instantly, no re-fetch needed.
+6. The board is your shortlist: ranked by `match_score`, open postings
+   first. CSV/Parquet copies (all + per-company) are written to `exports/`
+   each time the exports cell runs.
 
 ## Conference sponsors
 Populate `company`/`conference`/`sponsorship` from a RainFocus-hosted
@@ -80,6 +99,24 @@ When a sponsor matches a company already seeded by Tier 1, its empty
 from the sponsor row without overwriting existing values. See
 [ADR 0001](openspec/adr/0001-deterministic-first-three-tier-discovery.md) for
 the discovery architecture.
+
+### Getting a RainFocus profile id
+`rfapiprofileid` is a per-event identifier RainFocus-hosted conference sites
+send as a request header — it is not published anywhere in the page HTML, so
+pull it from your browser's network traffic:
+
+1. Open the conference's exhibitor/sponsor directory page (e.g. the
+   Databricks Data + AI Summit site) in Chrome/Firefox.
+2. Open DevTools → **Network** tab, filter to **Fetch/XHR**.
+3. Reload the page and find the request to
+   `events.rainfocus.com/api/exhibitors` (or similarly named endpoint).
+4. Open that request's **Request Headers** and copy the `rfapiprofileid` value.
+5. If the directory is session-gated (uncommon for a public sponsor list),
+   also copy the `Cookie` header value.
+6. Paste both into your **local `.env`** as `RAINFOCUS_PROFILE_ID` /
+   `RAINFOCUS_COOKIE` — never into `.env.example` or any committed file. The
+   id is specific to that event's microsite build and typically rotates
+   between events/years, so re-extract it per conference.
 
 ## Resume context
 Convert your resume once, deterministically (no LLM):
