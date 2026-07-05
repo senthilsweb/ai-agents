@@ -32,6 +32,31 @@ Linking writes `.vercel/project.json` and pulls a `.env.local` (both
 gitignored). `vercel deploy --dry --format=json` confirms `shared/**` is in
 the upload before deploying for real.
 
+### Redeploying
+
+Redeploy any time with the same command, always from the **repo root**:
+
+```bash
+vercel deploy --prod
+```
+
+A redeploy is **required** (not optional) after:
+
+- **any `vercel env add` / `vercel env rm`** — env changes never apply to
+  the running deployment; they only take effect on the next build
+  (this is how the empty-`ROUTE_AUTH_BASIC_PASSWORD` fix and the
+  `OBJECT_STORE_*` additions were activated);
+- **adding or changing channels** (e.g. `agent/channels/teams.ts`) — new
+  routes like `/eve/v1/teams` don't exist on the old deployment;
+- any code, instructions, tool, or skill change you want live.
+
+The deploy uploads your **local working tree** (not the git remote), so
+commit first if you want the deployed code to match `main`. Each deploy
+gets an immutable URL and the production alias
+(`linkedin-cover-generator.vercel.app`) flips to it on success — a bad
+deploy can be rolled back by promoting the previous deployment
+(`vercel rollback` or the dashboard).
+
 ## 3. Env & secrets matrix
 
 Set per environment with `vercel env add <NAME> production` (repeat for
