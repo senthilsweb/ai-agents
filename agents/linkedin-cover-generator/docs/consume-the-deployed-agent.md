@@ -32,6 +32,12 @@ size=linkedin-article, palette=auto, density=minimal, approval=false.
 > Deployed runs read bundled inputs (e.g. `inputs/article.md`) — for your
 > own content, pass a **remote URL** or paste the article text directly
 > into the message.
+>
+> **URL caveat:** some platforms hard-block server-side fetches with bot
+> protection — **Medium and LinkedIn return 403 to any non-browser
+> client**, regardless of user-agent. For articles hosted there, paste the
+> text into the message instead; the agent treats inline text as a
+> first-class input.
 
 ## 1. curl
 
