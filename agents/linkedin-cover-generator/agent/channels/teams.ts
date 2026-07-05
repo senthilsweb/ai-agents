@@ -4,8 +4,20 @@
 // publicly. Requires MICROSOFT_APP_ID / MICROSOFT_APP_PASSWORD (and
 // MICROSOFT_TENANT_ID for single-tenant bots) — see docs/consume-from-teams.md.
 //
-// Defaults: personal chats always dispatch; channel/group messages only when
-// the bot is @mentioned. Human-in-the-loop prompts render as Adaptive Cards.
-import { teamsChannel } from "eve/channels/teams";
+// Dispatch: personal chats always; channel/group messages only when the bot
+// is @mentioned; PLUS `unknown` scope, which is what Azure's "Test in Web
+// Chat" sends (its activities carry no conversationType, so eve cannot
+// classify them as personal) — without it, Web Chat messages are silently
+// dropped with a 200 and the bot appears dead during testing.
+import { defaultTeamsAuth, teamsChannel } from "eve/channels/teams";
 
-export default teamsChannel();
+export default teamsChannel({
+  onMessage(_ctx, message) {
+    const dispatch =
+      message.scope === "personal" ||
+      message.scope === "unknown" || // Azure "Test in Web Chat"
+      message.isBotMentioned;
+    if (!dispatch) return null;
+    return { auth: defaultTeamsAuth(message) };
+  },
+});
