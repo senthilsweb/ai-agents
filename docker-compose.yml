@@ -1,0 +1,23 @@
+# Common local observability infra for all agents in this monorepo.
+#
+#   docker compose up -d          # start Phoenix
+#   open http://localhost:6006    # traces UI
+#
+# Agents export OTel traces here when their .env sets:
+#   PHOENIX_COLLECTOR_ENDPOINT=http://localhost:6006
+# (see shared/lib/instrumentation.ts — telemetry is off when unset).
+
+services:
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    container_name: ai-agents-phoenix
+    platform: linux/amd64
+    ports:
+      - "6006:6006" # UI + OTLP/HTTP collector (POST /v1/traces)
+      - "4317:4317" # OTLP/gRPC collector (optional)
+    volumes:
+      - phoenix-data:/mnt/data # persist traces across restarts
+    restart: unless-stopped
+
+volumes:
+  phoenix-data:

@@ -5,8 +5,10 @@
   "type": "module",
   "description": "Shared Agent Runtime Kit for the ai-agents monorepo (see openspec/adr/0001 and 0002).",
   "exports": {
+    "./lib/instrumentation.js": "./lib/instrumentation.ts",
     "./lib/model.js": "./lib/model.ts",
     "./lib/run.js": "./lib/run.ts",
+    "./lib/telemetry.js": "./lib/telemetry.ts",
     "./lib/usage.js": "./lib/usage.ts",
     "./lib/cost.js": "./lib/cost.ts",
     "./lib/summary.js": "./lib/summary.ts",
@@ -14,6 +16,7 @@
     "./hooks/usage.js": "./hooks/usage.ts",
     "./tools/read_usage.js": "./tools/read_usage.ts",
     "./tools/sync_run_to_host.js": "./tools/sync_run_to_host.ts",
+    "./tools/upload_run_to_object_store.js": "./tools/upload_run_to_object_store.ts",
     "./tools/cleanup_sandbox.js": "./tools/cleanup_sandbox.ts",
     "./sandbox/base-sandbox.js": "./sandbox/base-sandbox.ts",
     "./cost/rates.yaml": "./cost/rates.yaml"
@@ -24,6 +27,11 @@
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.1",
     "@ai-sdk/openai-compatible": "3.0.0-beta.57",
+    "@arizeai/openinference-vercel": "^3.1.0",
+    "@aws-sdk/client-s3": "^3.1079.0",
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.220.0",
+    "@vercel/otel": "^2.1.3",
     "ai": "7.0.0-beta.178",
     "eve": "^0.11.7",
     "yaml": "^2.6.1",

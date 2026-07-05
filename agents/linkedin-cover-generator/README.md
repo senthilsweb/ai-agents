@@ -313,6 +313,104 @@ runs/
 
 ---
 
+## Object storage for run artifacts (deployed environments)
+
+On a Vercel deployment the host run mirror lives in the Function's ephemeral
+`/tmp`, so a remote caller can never retrieve `cover.png`. The shared-kit
+tool `upload_run_to_object_store` (re-exported at
+`agent/tools/upload_run_to_object_store.ts`) fixes that: after
+`sync_run_to_host`, it uploads the **entire** `runs/<run-id>/` folder to any
+S3-compatible bucket, preserving the folder layout under a `runs/<run-id>/`
+key prefix, and patches `summary.json` with an `artifacts.objectStore` block
+(bucket, prefix, uploaded file list) before uploading it last.
+
+**It is a no-op unless `OBJECT_STORE_BUCKET` is set** — local dev needs
+nothing and keeps working off the host mirror.
+
+```dotenv
+# AWS S3
+OBJECT_STORE_BUCKET=my-agent-runs
+OBJECT_STORE_REGION=us-east-1
+OBJECT_STORE_ACCESS_KEY_ID=...
+OBJECT_STORE_SECRET_ACCESS_KEY=...
+
+# MinIO (same code path — only endpoint/path-style differ)
+OBJECT_STORE_BUCKET=agent-runs
+OBJECT_STORE_REGION=us-east-1
+OBJECT_STORE_ACCESS_KEY_ID=...
+OBJECT_STORE_SECRET_ACCESS_KEY=...
+OBJECT_STORE_ENDPOINT=https://minio.internal:9000
+OBJECT_STORE_FORCE_PATH_STYLE=true
+
+# Optional: public bucket/CDN → publicUrl per uploaded file
+OBJECT_STORE_PUBLIC_BASE_URL=https://cdn.example.com
+```
+
+Where a remote caller finds the run: the final assistant message includes
+the bucket + prefix (and public URLs when configured), and `summary.json`
+carries the same under `artifacts.objectStore` — no free-text parsing
+needed. Per-file upload failures are reported in the tool result and the
+final message; they never fail the run.
+
+---
+
+## Observability (OpenTelemetry + Arize Phoenix)
+
+Three layers observe a run:
+
+1. **Per-run rollup** (always on) — the shared usage hook + deterministic
+   report: `report.md` / `summary.json` with tokens, steps, soft budgets,
+   cost.
+2. **`$eve.*` workflow run tags** (automatic on Vercel) — power the Agent
+   Runs dashboard tab; not configurable from this repo.
+3. **OTel traces** (this section; off by default) — a full span tree per
+   turn: every model call and tool call with prompts, completions, tokens,
+   and timing, plus a custom `cover.image_generation` span around the
+   image-API call (which the automatic spans can't see).
+
+The pipeline is shared-kit code (`shared/lib/instrumentation.ts`);
+`agent/instrumentation.ts` here only adds cover-specific span attributes
+(`cover.orchestrator_model`, `cover.image_model`). Traces export only when
+an endpoint is configured:
+
+```bash
+# Local Phoenix in one container
+docker run -d --name phoenix -p 6006:6006 arizephoenix/phoenix:latest
+echo 'PHOENIX_COLLECTOR_ENDPOINT=http://localhost:6006' >> .env
+npx eve dev --port 3535
+# run a cover, then open http://localhost:6006 → traces
+```
+
+Any OTLP backend works instead of Phoenix — set
+`OTEL_EXPORTER_OTLP_ENDPOINT` (+ `OTEL_EXPORTER_OTLP_HEADERS` for API keys).
+Both endpoint vars unset ⇒ telemetry fully off; an unreachable backend drops
+spans and never affects a run.
+
+**Correlating a run with its trace:** `summary.json` →
+`perSession[].sessionId` → filter traces on `eve.session.id`.
+
+**Privacy:** spans record full prompts/completions by default. Set
+`TELEMETRY_RECORD_IO=false` (recommended for deployed environments) to keep
+timing/token spans while omitting message and payload content.
+
+**Custom signals from code (need basis):** import from
+`shared/lib/telemetry.js` — `withSpan(name, attrs, fn)`, `logEvent(name,
+attrs)`, `counter(name)`, `histogram(name)`. All calls are guaranteed no-ops
+when telemetry is off, so no feature flags are needed at call sites. See
+`agent/tools/generate_image.ts` for the exemplar.
+
+**Adopting in another agent** is one file:
+
+```ts
+// agents/<name>/agent/instrumentation.ts
+import { createAgentInstrumentation } from "shared/lib/instrumentation.js";
+export default createAgentInstrumentation({
+  attributes: () => ({ "myagent.model": process.env.MODEL_ORCHESTRATOR ?? "" }),
+});
+```
+
+---
+
 ## Build
 
 ```bash

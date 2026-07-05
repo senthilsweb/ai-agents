@@ -16,6 +16,10 @@ when object-store credentials are configured.
 
 - The system SHALL use a deterministic tool (`upload_run_to_object_store`) —
   no LLM call — to perform the upload.
+- The tool SHALL be implemented once in the shared Agent Runtime Kit
+  (`shared/tools/upload_run_to_object_store.ts`) and consumed by each agent
+  via a one-line re-export under `agent/tools/`, so all agents share a single
+  implementation and env-var contract; per-agent forks are not permitted.
 - The tool SHALL read artifacts from the existing host run mirror (the same
   location `sync_run_to_host` writes to), not from the sandbox directly.
 - The tool SHALL upload every file found under the run's folder recursively,

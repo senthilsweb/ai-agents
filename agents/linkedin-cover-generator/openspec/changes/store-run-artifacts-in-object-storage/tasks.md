@@ -3,10 +3,12 @@
 > Implementation starts in a new session. Order is incremental and verifiable;
 > each phase ends in a typecheck + `eve build`.
 
-## Phase 1 — Add the object-store upload tool
+## Phase 1 — Add the object-store upload tool (shared kit)
 
-- [ ] Add `@aws-sdk/client-s3` to `agents/linkedin-cover-generator/package.json`.
-- [ ] Add `agent/tools/upload_run_to_object_store.ts`:
+- [x] Add `@aws-sdk/client-s3` to `shared/package.json`.
+- [x] Add `shared/tools/upload_run_to_object_store.ts` (single shared
+      implementation) and export it from the `shared` package (`exports` map
+      entry `./tools/upload_run_to_object_store.js`):
       - Input: `{ run_dir: string }`.
       - Resolves the host run folder via `hostRunDir(runId)`
         (`shared/lib/run.ts`).
@@ -22,16 +24,24 @@
       - Returns `{ bucket, prefix, uploaded: [{ path, size, publicUrl? }],
         skipped: [] }`; `publicUrl` only when `OBJECT_STORE_PUBLIC_BASE_URL` is
         configured.
-- [ ] `npm -w linkedin-cover-generator run typecheck` clean.
+      - Resolves the design's two open questions (design.md §8): patch +
+        re-upload `summary.json` last with `artifacts.objectStore`, and fall
+        back to reading from the sandbox when the host mirror is missing.
+- [x] Add the one-line per-agent re-export
+      `agent/tools/upload_run_to_object_store.ts`
+      (`export { default } from "shared/tools/upload_run_to_object_store.js";`)
+      in `agents/linkedin-cover-generator` (first adopter).
+- [x] `npm -w shared run typecheck` and
+      `npm -w linkedin-cover-generator run typecheck` clean.
 
 ## Phase 2 — Wire into the orchestrator procedure
 
-- [ ] Update `agent/instructions.md`: add step 11 calling
+- [x] Update `agent/instructions.md`: add step 11 calling
       `upload_run_to_object_store` after `sync_run_to_host`, with guidance to
       surface the bucket/prefix (and any `publicUrl`s) in the final message
       when present, and to say nothing extra when the tool reports everything
       skipped.
-- [ ] Extend `shared/lib/summary.ts` (`buildRunSummary`) with an optional
+- [x] Extend `shared/lib/summary.ts` (`buildRunSummary`) with an optional
       `artifacts.objectStore` object (`bucket`, `prefix`, uploaded file
       list) so `summary.json` carries the location without requiring the
       caller to parse the assistant's free-text message.
@@ -54,7 +64,7 @@
 
 ## Phase 4 — Documentation
 
-- [ ] Update `README.md`: document the `@aws-sdk/client-s3` dependency, the
+- [x] Update `README.md`: document the `@aws-sdk/client-s3` dependency, the
       `OBJECT_STORE_*` env-var contract (with one example configuration for
       AWS S3 and one for MinIO), that it's a no-op without
       `OBJECT_STORE_BUCKET`, and how to find an uploaded run's files from a

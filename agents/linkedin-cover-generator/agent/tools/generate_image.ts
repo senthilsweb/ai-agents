@@ -1,6 +1,8 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 
+import { withSpan } from "shared/lib/telemetry.js";
+
 export default defineTool({
   description: "Generate one image with the configured image model and save it in the run folder. Also writes a phase trace to <run_dir>/phases/generate.json automatically.",
   inputSchema: z.object({ prompt: z.string(), width: z.number().int(), height: z.number().int(), output_path: z.string(), run_dir: z.string().describe("The run directory, e.g. runs/2026-06-21T17-09-53Z"), reference_path: z.string().optional() }),
@@ -15,7 +17,14 @@ export default defineTool({
     const h = snap(height);
     const body: any = { model, prompt, size: `${w}x${h}`, quality: process.env.IMAGE_QUALITY ?? "high", output_format: "png" };
     if (reference_path) throw new Error("Reference-image editing requires provider-specific multipart support; use the documented adapter extension point.");
-    const res = await fetch(`${base.replace(/\/$/,"")}/images/generations`, { method: "POST", headers: { "content-type":"application/json", authorization:`Bearer ${apiKey}` }, body: JSON.stringify(body) });
+    // Custom span: this plain-HTTP call is invisible to the automatic AI SDK
+    // spans, yet it is usually the slowest step of a run. No-op when
+    // telemetry is off (see shared/lib/telemetry.ts).
+    const res = await withSpan(
+      "cover.image_generation",
+      { "cover.image_model": model, "cover.width": w, "cover.height": h },
+      () => fetch(`${base.replace(/\/$/,"")}/images/generations`, { method: "POST", headers: { "content-type":"application/json", authorization:`Bearer ${apiKey}` }, body: JSON.stringify(body) }),
+    );
     const json: any = await res.json();
     if (!res.ok) throw new Error(`Image generation failed: ${res.status} ${JSON.stringify(json)}`);
     const b64 = json.data?.[0]?.b64_json;

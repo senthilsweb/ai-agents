@@ -53,13 +53,23 @@ Every timestamped run folder (`run-meta.json`, `cover-spec.json`, `cover.png`,
 the cover image — the whole point is that the bucket becomes the durable,
 remotely-reachable copy of what `sync_run_to_host` already assembles locally.
 
-## 3. New tool: `upload_run_to_object_store`
+## 3. New shared tool: `upload_run_to_object_store`
+
+The tool is **shared-kit code**, not agent code — run folders,
+`hostRunDir`, and `sync_run_to_host` are all shared concepts, so their
+durable-upload counterpart lives beside them and is adopted per agent by
+re-export (the established `sync_run_to_host` / `read_usage` pattern):
 
 ```ts
-// agent/tools/upload_run_to_object_store.ts
+// shared/tools/upload_run_to_object_store.ts   (single implementation)
 inputSchema: z.object({
   run_dir: z.string().describe("The run directory, e.g. runs/2026-07-05T14-26-27Z"),
 })
+```
+
+```ts
+// agent/tools/upload_run_to_object_store.ts    (per-agent adoption, one line)
+export { default } from "shared/tools/upload_run_to_object_store.js";
 ```
 
 Behavior:
@@ -117,8 +127,9 @@ where the run landed.
 
 ## 6. Environment / setup
 
-- New dependency: `@aws-sdk/client-s3` in
-  `agents/linkedin-cover-generator/package.json`.
+- New dependency: `@aws-sdk/client-s3` in `shared/package.json` (the tool is
+  shared-kit code; agents pick it up through the `shared` workspace package,
+  not by declaring the SDK themselves).
 - New env vars (see table above) — set via `vercel env add` per environment
   for a Vercel deployment, or in `.env` for local dev (though local dev has no
   need to configure these; the host-mirror path already gives direct disk
@@ -128,20 +139,53 @@ where the run landed.
 
 ## 7. File-by-file impact
 
-### Added
-- `agent/tools/upload_run_to_object_store.ts` — the new deterministic tool
-  described above.
+### Added (shared kit)
+- `shared/tools/upload_run_to_object_store.ts` — the single deterministic
+  implementation described above.
 
-### Modified
+### Added (this agent, first adopter)
+- `agent/tools/upload_run_to_object_store.ts` — one-line re-export of the
+  shared tool.
+
+### Modified (shared kit)
+- `shared/package.json` — add `@aws-sdk/client-s3`.
+- `shared/lib/summary.ts` (`buildRunSummary`) — optional
+  `artifacts.objectStore` field. **This is a shared-kit delta** consumed by
+  every agent; the field is optional and absent when no upload happened, so
+  existing agents are unaffected until they adopt the tool.
+
+### Modified (this agent)
 - `agent/instructions.md` — add step 11 (conditional object-store upload +
   surfacing the bucket/prefix/URLs).
-- `package.json` — add `@aws-sdk/client-s3`.
 - `README.md` — document the object-store connection env vars (AWS S3 and
   MinIO example configurations) and how a remote caller learns where the run
   folder landed.
 
 ### Unchanged
 - `shared/lib/run.ts` (`sync_run_to_host`, `hostRunDir`, `readHostRunArtifact`)
-  — reused as-is; no shared-kit changes.
+  — reused as-is.
 - Local dev flow, `HOST_REPORT_ROOT` default, sandbox definition.
+- Other agents (diagram-generator, api-test-generator, github-pr-digest,
+  job-scout) — they adopt later by adding the same one-line re-export and
+  orchestrator step; nothing changes for them in this delta.
+
+## 8. Open implementation questions
+
+Two risks surfaced in review; the implementer must resolve both:
+
+1. **`summary.json` sequencing.** `render_and_save_report` writes
+   `summary.json` at step 9, but the `artifacts.objectStore` content only
+   exists after step 11's upload. As specified, the block can never appear in
+   the summary that was already written — and the copy uploaded to the bucket
+   can't describe its own upload. Preferred resolution: the upload tool
+   uploads all files first, then patches the *host* `summary.json` with
+   `artifacts.objectStore` and re-uploads that one file last (the bucket copy
+   then describes the upload, minus itself).
+2. **`/tmp` durability between steps on Vercel.** The tool reads from
+   `hostRunDir()`, which is `/tmp` on Vercel. Under Workflows' durable
+   execution, step 11 is not guaranteed to run on the same Function instance
+   as step 10's `sync_run_to_host`, in which case `/tmp` is empty. Preferred
+   resolution: the shared tool falls back to reading files from the sandbox
+   (the same source `sync_run_to_host` copies from) when the host mirror is
+   missing or incomplete.
 

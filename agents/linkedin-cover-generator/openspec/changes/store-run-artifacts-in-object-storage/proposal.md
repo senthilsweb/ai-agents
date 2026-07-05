@@ -36,12 +36,18 @@ but that file only ever existed inside the sandbox and the Function's `/tmp`.
 
 ## What changes
 
-- Add a deterministic tool, `upload_run_to_object_store`, that uploads the
-  **entire timestamped run folder** (`run-meta.json`, `cover-spec.json`,
-  `cover.png`, `phases/*.json`, `report.md`, `summary.json` — every file under
-  `runs/<run-id>/`) to an **S3-compatible object store** after
-  `sync_run_to_host`, preserving the run's relative folder structure under a
-  `runs/<run-id>/...` key prefix in the target bucket.
+- Add a deterministic **shared-kit tool**,
+  `shared/tools/upload_run_to_object_store.ts`, re-exported by this agent as
+  `agent/tools/upload_run_to_object_store.ts` — the same
+  implement-once-re-export-per-agent pattern already used by
+  `sync_run_to_host` and `read_usage`. Every agent in the monorepo gets the
+  same upload behavior by adding a one-line re-export; this agent is the
+  first adopter. The tool uploads the **entire timestamped run folder**
+  (`run-meta.json`, `cover-spec.json`, `cover.png`, `phases/*.json`,
+  `report.md`, `summary.json` — every file under `runs/<run-id>/`) to an
+  **S3-compatible object store** after `sync_run_to_host`, preserving the
+  run's relative folder structure under a `runs/<run-id>/...` key prefix in
+  the target bucket.
 - Use the AWS SDK v3 S3 client (`@aws-sdk/client-s3`) configured generically
   enough to work against **either real AWS S3 or a self-hosted MinIO
   instance**, since both speak the same S3 API — the only difference is the
@@ -61,8 +67,12 @@ but that file only ever existed inside the sandbox and the Function's `/tmp`.
 ## Scope
 
 ### In scope
-- One new deterministic tool that uploads a full run folder (all files,
-  recursively) to an S3-compatible bucket.
+- One new deterministic **shared-kit** tool
+  (`shared/tools/upload_run_to_object_store.ts`) that uploads a full run
+  folder (all files, recursively) to an S3-compatible bucket — implemented
+  once in `shared/`, consumed per agent via a one-line re-export under
+  `agent/tools/`. This agent is the first adopter; other agents opt in by
+  adding the re-export and the orchestrator step.
 - Generic S3-compatible configuration (works with AWS S3 or MinIO — or any
   other S3-compatible provider — via the same env-var contract).
 - Wiring it into the orchestrator procedure as a conditional final step.
@@ -82,7 +92,10 @@ but that file only ever existed inside the sandbox and the Function's `/tmp`.
 
 Keep the artifact-retrieval concern a deterministic, environment-gated code
 tool — no LLM involvement, and no change to the single bounded creative pass
-that already exists for `cover-spec.json`. Local development and remote
+that already exists for `cover-spec.json`. Because run folders and
+`sync_run_to_host` are shared-kit concepts common to every agent, the upload
+tool is shared-kit code too (ADR 0001): one implementation in `shared/`,
+per-agent adoption via re-export, never a per-agent fork. Local development and remote
 deployments diverge only in *where* the run folder ends up (developer disk vs.
 a durable object-store bucket); the orchestrator procedure and cover
 generation logic are otherwise identical in both environments. The upload

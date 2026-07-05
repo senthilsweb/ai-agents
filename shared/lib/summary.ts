@@ -21,10 +21,30 @@ export interface SessionSummary {
   budgetExceeded: boolean;
 }
 
+export interface ObjectStoreUpload {
+  path: string;
+  size: number;
+  publicUrl?: string;
+}
+
+/**
+ * Where a run folder landed in S3-compatible object storage. Populated by
+ * the shared `upload_run_to_object_store` tool, which patches summary.json
+ * after render_and_save_report has written it (the upload result cannot
+ * exist yet when the summary is first built).
+ */
+export interface ObjectStoreArtifacts {
+  bucket: string;
+  prefix: string;
+  uploaded: ObjectStoreUpload[];
+}
+
 export interface RunSummary {
   runId: string;
   generatedAt: string;
   models?: Record<string, string>;
+  /** Optional artifact locations beyond the local run folder. */
+  artifacts?: { objectStore?: ObjectStoreArtifacts };
   totals: {
     inputTokens: number;
     outputTokens: number;

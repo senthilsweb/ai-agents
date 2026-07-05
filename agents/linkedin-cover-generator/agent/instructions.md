@@ -47,7 +47,14 @@ write them manually:
    compose the report yourself.
 10. Call `sync_run_to_host` with `{ runId }` to copy the entire run folder
     (including the binary `cover.png`) from the sandbox back to the host.
-11. Print final paths for `cover.png`, `cover-spec.json`, `report.md`, `summary.json`.
+11. Call `upload_run_to_object_store` with `{ run_dir }`. If it reports
+    `uploaded` entries, mention the bucket + prefix (and any `publicUrl`s) in
+    the final message alongside the local paths; if it reports `failed`
+    entries, list them briefly. If it reports everything `skipped` (object
+    storage not configured), say nothing about object storage and keep
+    reporting local paths only — this is expected and normal for local dev.
+    Never retry the upload.
+12. Print final paths for `cover.png`, `cover-spec.json`, `report.md`, `summary.json`.
 
 ## Defaults
 - size: linkedin-article (1280x720)
