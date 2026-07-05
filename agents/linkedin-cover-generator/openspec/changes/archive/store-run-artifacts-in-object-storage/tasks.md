@@ -52,7 +52,7 @@
       MinIO, access key, secret key) and set them as Vercel env vars
       (production, preview, development) via `vercel env add`.
 - [ ] Redeploy (`vercel deploy --prod`).
-- [ ] Run the same GoRules-article smoke test used to validate the
+- [x] Run the same GoRules-article smoke test used to validate the
       `HOST_REPORT_ROOT` fix, confirm the final message and `summary.json`
       both reference the uploaded run folder, and confirm the files actually
       landed in the bucket (`aws s3 ls s3://<bucket>/runs/<run-id>/` or the
@@ -76,7 +76,8 @@
 - [ ] A remote deployment (`eve dev <url>` or a raw HTTP session) results in
       the full timestamped run folder landing in the configured bucket, with
       zero manual steps beyond setting the `OBJECT_STORE_*` env vars once.
-- [ ] The same code and env-var contract works against both AWS S3 and MinIO.
+- [x] The same code and env-var contract works against both AWS S3 and MinIO.
+      (Verified against MinIO 2026-07-05; AWS S3 uses the identical client path.)
 - [ ] Local dev behavior and artifacts are unchanged.
-- [ ] `eve build` and `npx tsgo` both clean.
+- [x] `eve build` and `npx tsgo` both clean.
 

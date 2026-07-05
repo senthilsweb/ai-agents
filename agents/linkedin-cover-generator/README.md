@@ -11,6 +11,17 @@ All paths below are relative to that folder unless noted.
 > **Design notes:** see [`DESIGN.md`](DESIGN.md) for the architecture,
 > determinism boundary, model resolution, and cost-effectiveness decisions.
 
+## Documentation
+
+Fine-grained guides live in [`docs/`](docs/):
+
+| Guide | What it covers |
+|---|---|
+| [Quick Setup](docs/quick-setup.md) | Zero-to-first-cover: install, `.env`, dev server, headless HTTP runs, outputs, gotchas |
+| [Run with Telemetry](docs/run-with-telemetry.md) | OTel traces to Arize Phoenix (repo-root `docker compose up -d`), custom spans, privacy toggles |
+| [Upload Results to Object Store](docs/upload-results-to-object-store.md) | Persisting run folders to AWS S3 / MinIO, endpoint gotchas, failure semantics |
+| [Secure the Endpoints](docs/secure-the-endpoints.md) | Route auth, credential scoping, telemetry data safety, secrets hygiene |
+
 ---
 
 ## Prerequisites

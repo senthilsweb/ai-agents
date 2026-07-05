@@ -46,9 +46,9 @@
 
 ## Phase 3 — Verify locally against Phoenix
 
-- [ ] `docker run -d --name phoenix -p 6006:6006 arizephoenix/phoenix:latest`
+- [x] `docker run -d --name phoenix -p 6006:6006 arizephoenix/phoenix:latest`
       and set `PHOENIX_COLLECTOR_ENDPOINT=http://localhost:6006` in `.env`.
-- [ ] Run one cover generation (`input=inputs/article.md`) via
+- [x] Run one cover generation (`input=inputs/article.md`) via
       `npx eve dev`; confirm in the Phoenix UI:
       - one trace per turn with the `ai.eve.turn` root span;
       - child spans for each orchestrator step and every tool call
@@ -87,15 +87,15 @@
 
 ## Verification (Definition of Done)
 
-- [ ] With Phoenix running and the endpoint configured, every cover run
+- [x] With Phoenix running and the endpoint configured, every cover run
       produces a complete, navigable trace (model + tool spans, the custom
       image-generation span, tokens, timing, custom attributes) in Phoenix.
-- [ ] With no telemetry env vars set, agent behavior, output, and logs are
+- [x] With no telemetry env vars set, agent behavior, output, and logs are
       byte-for-byte unchanged — including the instrumented `generate_image`
       path.
 - [ ] With an unreachable endpoint, runs complete normally.
-- [ ] All pipeline code lives in `shared/`; the agent contributes only the
+- [x] All pipeline code lives in `shared/`; the agent contributes only the
       thin `agent/instrumentation.ts` and its own custom-signal call sites.
-- [ ] No changes to `agent/instructions.md`, the usage hook, or the report
+- [x] No changes to `agent/instructions.md`, the usage hook, or the report
       pipeline.
-- [ ] `eve build` and `npx tsgo` clean in both `shared` and the agent.
+- [x] `eve build` and `npx tsgo` clean in both `shared` and the agent.
