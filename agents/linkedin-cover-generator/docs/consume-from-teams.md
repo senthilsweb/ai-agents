@@ -107,7 +107,8 @@ default) — see `node_modules/eve/docs/channels/teams.mdx`.
 
 | Symptom | Cause / fix |
 |---|---|
-| `curl POST /eve/v1/teams` → 401 | **Expected** — the route only accepts JWT-signed Bot Connector traffic; it means the channel is mounted |
+| Opening the URL in a browser → 404 "Cannot find any route matching [GET] ..." | **Expected** — the route is POST-only (the Bot Connector POSTs activities); a browser GET proves nothing. Health-check with `curl -X POST` instead |
+| `curl POST /eve/v1/teams` → 401 | **Expected** — the route only accepts JWT-signed Bot Connector traffic; 404-on-GET + 401-on-POST together mean the channel is mounted and healthy |
 | Bot never replies in Teams | Messaging endpoint wrong (must be the public HTTPS URL ending `/eve/v1/teams`), or env vars missing in the deployed environment (redeploy after `vercel env add`) |
 | Replies fail with auth errors in server logs | `MICROSOFT_APP_PASSWORD` wrong/expired (secrets expire — rotate in Azure and update env) |
 | Works in personal chat, silent in a channel | The bot wasn't @mentioned, or the app package lacks the `team` scope |
