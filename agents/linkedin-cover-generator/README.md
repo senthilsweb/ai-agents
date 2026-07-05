@@ -22,6 +22,7 @@ Fine-grained guides live in [`docs/`](docs/):
 | [Upload Results to Object Store](docs/upload-results-to-object-store.md) | Persisting run folders to AWS S3 / MinIO, endpoint gotchas, failure semantics |
 | [Secure the Endpoints](docs/secure-the-endpoints.md) | Route auth, credential scoping, telemetry data safety, secrets hygiene |
 | [Deploy to Vercel](docs/deploy-to-vercel.md) | Production deploys: link, full env/secrets matrix, telemetry posture, remote smoke test |
+| [Consume the Deployed Agent](docs/consume-the-deployed-agent.md) | Running covers remotely via curl, Postman, the TypeScript SDK, a web app, or the eve TUI |
 
 ---
 
