@@ -1,0 +1,13 @@
+{
+  "phase": "generate",
+  "model": "gpt-image-2",
+  "started_at": "2026-07-05T01:44:33.301Z",
+  "ended_at": "2026-07-05T01:46:12.805Z",
+  "duration_s": 100,
+  "tokens": {
+    "input": 0,
+    "output": 0,
+    "total": 0,
+    "source": "runtime"
+  }
+}

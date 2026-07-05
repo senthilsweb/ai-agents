@@ -1,0 +1,13 @@
+{
+  "phase": "orchestrate",
+  "model": "claude-sonnet-5",
+  "started_at": "2026-07-05T01:21:32.981Z",
+  "ended_at": "2026-07-05T01:23:39.428Z",
+  "duration_s": 126,
+  "tokens": {
+    "input": 116980,
+    "output": 3974,
+    "total": 120954,
+    "source": "runtime"
+  }
+}

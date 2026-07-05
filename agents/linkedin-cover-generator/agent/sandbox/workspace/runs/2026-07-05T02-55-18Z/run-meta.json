@@ -1,0 +1,16 @@
+{
+  "run_id": "2026-07-05T02-55-18Z",
+  "request": "Create a LinkedIn cover from inputs/linkedin-article-cover-agent.md, palette=soft-blue-pink, density=balanced, size=1280x720, include GitHub repo link at bottom",
+  "options": {
+    "palette": "soft-blue-pink",
+    "density": "balanced",
+    "size": "1280x720",
+    "include_repo_link": true
+  },
+  "started_at": "2026-07-05T02:55:18.643Z",
+  "start_epoch": 1783220118,
+  "models": {
+    "orchestrator": "claude-sonnet-5",
+    "image": "gpt-image-2"
+  }
+}

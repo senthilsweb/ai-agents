@@ -1,0 +1,21 @@
+{
+  "source": {
+    "kind": "file",
+    "value": "inputs/article-job-scout.md",
+    "title": "Job Hunting Is a Data Problem. I Treated It Like One."
+  },
+  "canvas": { "width": 1280, "height": 720, "preset": "linkedin-article" },
+  "badge": "DATA ENGINEERING",
+  "title": "I Turned My Job Search Into a Pipeline",
+  "subtitle": "Deterministic data modeling beats guesswork job hunting",
+  "supportLine": "Models coordinate. Tools do the work.",
+  "palette": "midnight navy and deep teal base with warm amber and electric cyan data-flow accents",
+  "layout": "editorial-left-visual-right",
+  "visualConcept": "Abstract data pipeline flowing left to right: scattered glowing data rows funnel into a clean structured grid of tables, converging on one glowing toggle switch symbolizing the single point of judgment. Flat geometric tech illustration, soft glow, no screens or logos.",
+  "density": "minimal",
+  "style": "modern editorial tech illustration, flat vector shapes with subtle gradients and soft glow, clean geometric data motifs, no photorealism, no literal UI screenshots",
+  "includeBrands": false,
+  "forbiddenTerms": ["Databricks", "Workday", "Ashby", "Greenhouse", "GitHub", "DuckDB", "RPA", "marimo"],
+  "footer": [],
+  "safeMarginPx": 64
+}

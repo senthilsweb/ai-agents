@@ -1,0 +1,21 @@
+{
+  "source": {
+    "kind": "file",
+    "value": "inputs/article-job-scout.md",
+    "title": "Job Hunting Is a Data Problem"
+  },
+  "canvas": { "width": 1280, "height": 720, "preset": "linkedin-article" },
+  "badge": "DATA + AI",
+  "title": "Job Hunting Is a Data Problem",
+  "subtitle": "A deterministic data pipeline beats browsing job boards",
+  "supportLine": "Typed tables, SQL scoring, and one agentic switch",
+  "palette": "cream-emerald",
+  "layout": "editorial-left-visual-right",
+  "visualConcept": "Right-side abstract illustration: spreadsheet/database table rows transforming into a funnel of glowing emerald nodes and connecting lines, structured data filtering down to one ranked result. Clean cream/emerald grid lines, minimal table and funnel iconography, no literal screenshots, logos, or readable text.",
+  "density": "balanced",
+  "style": "modern editorial tech illustration, flat geometric shapes, soft gradients, clean vector linework, professional LinkedIn thought-leadership aesthetic",
+  "includeBrands": true,
+  "forbiddenTerms": ["Workday", "Ashby", "Greenhouse", "Databricks", "LinkedIn"],
+  "footer": ["github.com/senthilsweb/ai-agents"],
+  "safeMarginPx": 64
+}

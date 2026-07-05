@@ -96,6 +96,13 @@ after each run.
 Reference articles live in `agent/sandbox/workspace/inputs/`. Drop a `.md` file
 there, or use a remote URL, or paste text inline.
 
+> **Path note:** `input=inputs/<article>.md` is resolved relative to the
+> **sandbox workspace folder** (`agent/sandbox/workspace/`), not the agent
+> root and not the repo root. A file at
+> `agent/sandbox/workspace/inputs/article.md` is referenced as
+> `input=inputs/article.md` — do not prefix it with `agent/sandbox/workspace/`
+> or `agents/linkedin-cover-generator/`.
+
 ### Example 1 — From a local article file
 
 ```

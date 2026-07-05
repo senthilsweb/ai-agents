@@ -1,0 +1,13 @@
+{
+  "phase": "validate",
+  "model": "deterministic",
+  "started_at": "2026-07-05T01:46:15.555Z",
+  "ended_at": "2026-07-05T01:46:15.659Z",
+  "duration_s": 0,
+  "tokens": {
+    "input": 0,
+    "output": 0,
+    "total": 0,
+    "source": "runtime"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "run_id": "2026-07-05T01-44-03Z",
+  "request": "Create a LinkedIn cover (1280x720, cream-emerald palette, balanced density) from inputs/article-job-scout.md, including GitHub repo link https://github.com/senthilsweb/ai-agents at the bottom of the image (explicitly requested by user).",
+  "options": {
+    "size": "1280x720",
+    "palette": "cream-emerald",
+    "density": "balanced",
+    "include_brands": true
+  },
+  "started_at": "2026-07-05T01:44:03.369Z",
+  "start_epoch": 1783215843,
+  "models": {
+    "orchestrator": "claude-sonnet-5",
+    "image": "gpt-image-2"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "source": {
+    "kind": "file",
+    "value": "inputs/article-job-scout.md",
+    "title": "Job Hunting Is a Data Problem. I Treated It Like One."
+  },
+  "canvas": {
+    "width": 1280,
+    "height": 720,
+    "preset": "linkedin-article"
+  },
+  "badge": "DATA ENGINEERING",
+  "title": "Job Hunting Is a Data Pipeline",
+  "subtitle": "Deterministic SQL beats GenAI guesswork, with one agentic switch",
+  "supportLine": "Spec first. Typed tools do the work. Models step in only when judgment is needed.",
+  "footer": ["Open source: github.com/senthilsweb/ai-agents"],
+  "palette": "warm-coral-amber",
+  "layout": "editorial-left-visual-right",
+  "visualConcept": "Abstract rows of a data table on the right, glowing coral and amber, flowing downward and narrowing into a clean funnel/pipeline shape, small nodes turning into a single connected line at the bottom to suggest deterministic filtering and scoring; subtle grid and dotted schema lines in the background, one small node glowing brighter to suggest an agentic toggle switching on; no literal charts, no readable text inside the artwork, no logos.",
+  "density": "balanced",
+  "style": "modern editorial tech illustration, warm coral and amber gradient background, soft geometric shapes, subtle grain, clean sans-serif typography, high contrast for legibility at thumbnail size",
+  "includeBrands": true,
+  "forbiddenTerms": ["Workday", "Ashby", "Greenhouse", "Databricks", "eve framework"],
+  "safeMarginPx": 64
+}

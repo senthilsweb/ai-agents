@@ -1,0 +1,19 @@
+{
+  "run_id": "2026-07-05T01-21-32Z",
+  "request": "Create a LinkedIn cover from inputs/article-job-scout.md, size=linkedin-article, palette=auto, density=minimal",
+  "options": {
+    "approval": false,
+    "review": false,
+    "retry_on_failure": false,
+    "variations": 1,
+    "density": "minimal",
+    "palette": "auto",
+    "size": "linkedin-article"
+  },
+  "started_at": "2026-07-05T01:21:32.981Z",
+  "start_epoch": 1783214492,
+  "models": {
+    "orchestrator": "claude-sonnet-5",
+    "image": "gpt-image-2"
+  }
+}

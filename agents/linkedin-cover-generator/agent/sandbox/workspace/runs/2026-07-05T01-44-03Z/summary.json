@@ -1,0 +1,127 @@
+{
+  "runId": "2026-07-05T01-44-03Z",
+  "generatedAt": "2026-07-05T01:46:21.191Z",
+  "models": {
+    "orchestrator": "claude-sonnet-5",
+    "image": "gpt-image-2"
+  },
+  "totals": {
+    "inputTokens": 4794676,
+    "outputTokens": 96000,
+    "cacheReadTokens": 4188791,
+    "cacheWriteTokens": 384371,
+    "steps": 111,
+    "sessions": 7
+  },
+  "perSession": [
+    {
+      "sessionId": "wrun_01KW7BET8B90SNAGM0C03NXCMM",
+      "inputTokens": 1155246,
+      "outputTokens": 18636,
+      "cacheReadTokens": 1030935,
+      "cacheWriteTokens": 76904,
+      "steps": 22,
+      "budgetExceeded": false
+    },
+    {
+      "sessionId": "wrun_01KW7D5XX3N8VW971TS23JKY3B",
+      "inputTokens": 1619873,
+      "outputTokens": 25643,
+      "cacheReadTokens": 1460047,
+      "cacheWriteTokens": 98137,
+      "steps": 27,
+      "budgetExceeded": false
+    },
+    {
+      "sessionId": "wrun_01KW7EZCN5A2M97X51CG1VN3KC",
+      "inputTokens": 1086967,
+      "outputTokens": 23829,
+      "cacheReadTokens": 951687,
+      "cacheWriteTokens": 84978,
+      "steps": 21,
+      "budgetExceeded": false
+    },
+    {
+      "sessionId": "wrun_01KW7GM540810ZDEF6S9YA0S9H",
+      "inputTokens": 477418,
+      "outputTokens": 15048,
+      "cacheReadTokens": 360793,
+      "cacheWriteTokens": 70163,
+      "steps": 15,
+      "budgetExceeded": false
+    },
+    {
+      "sessionId": "wrun_01KWQXVG8RWAT92GQF5TYJYGGH",
+      "inputTokens": 203466,
+      "outputTokens": 4774,
+      "cacheReadTokens": 174837,
+      "cacheWriteTokens": 22303,
+      "steps": 11,
+      "budgetExceeded": false
+    },
+    {
+      "sessionId": "wrun_01KWQYSSP06GDY9D59J180TKQF",
+      "inputTokens": 116461,
+      "outputTokens": 4517,
+      "cacheReadTokens": 91661,
+      "cacheWriteTokens": 20179,
+      "steps": 7,
+      "budgetExceeded": false
+    },
+    {
+      "sessionId": "wrun_01KWQZ4NJ0B85FBCETYEYDNNQ2",
+      "inputTokens": 135245,
+      "outputTokens": 3553,
+      "cacheReadTokens": 118831,
+      "cacheWriteTokens": 11707,
+      "steps": 8,
+      "budgetExceeded": false
+    }
+  ],
+  "cost": {
+    "amount": 0,
+    "rated": false,
+    "byModel": [
+      {
+        "modelId": "claude-sonnet-5",
+        "rated": false,
+        "amount": 0
+      },
+      {
+        "modelId": "claude-sonnet-5",
+        "rated": false,
+        "amount": 0
+      },
+      {
+        "modelId": "claude-sonnet-5",
+        "rated": false,
+        "amount": 0
+      },
+      {
+        "modelId": "claude-sonnet-5",
+        "rated": false,
+        "amount": 0
+      },
+      {
+        "modelId": "claude-sonnet-5",
+        "rated": false,
+        "amount": 0
+      },
+      {
+        "modelId": "claude-sonnet-5",
+        "rated": false,
+        "amount": 0
+      },
+      {
+        "modelId": "claude-sonnet-5",
+        "rated": false,
+        "amount": 0
+      }
+    ]
+  },
+  "budget": {
+    "steps": 25,
+    "wallClockSeconds": 300,
+    "exceeded": false
+  }
+}
