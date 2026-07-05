@@ -60,9 +60,23 @@ MICROSOFT_APP_PASSWORD=your-bot-client-secret
 
 - Local: add to `agents/linkedin-cover-generator/.env` (never mid-run —
   the reload kills in-flight turns).
-- Vercel: `printf '%s' "$VALUE" | vercel env add MICROSOFT_APP_ID production`
-  (repeat for the secret), then `vercel deploy --prod` — env changes need a
-  new deployment.
+- Vercel (from the repo root; values piped so they stay out of shell
+  history):
+
+  ```bash
+  printf '%s' '<app-id>'        | vercel env add MICROSOFT_APP_ID production
+  printf '%s' '<client-secret>' | vercel env add MICROSOFT_APP_PASSWORD production
+  printf '%s' '<tenant-id>'     | vercel env add MICROSOFT_TENANT_ID production  # Single Tenant bots only
+  vercel deploy --prod   # REQUIRED — env changes only apply on the next deployment
+  ```
+
+  Verify with `vercel env ls production`. Gotchas: the secret is the
+  **Value** column of the Azure client secret (not the Secret ID); an
+  **empty** value is worse than a missing one (it's truthy-checked
+  nowhere and just breaks auth silently); client secrets **expire** —
+  when the bot stops replying months from now, check secret expiry first.
+  The full production env matrix lives in
+  [Deploy to Vercel](./deploy-to-vercel.md).
 
 The channel file is already in place; nothing else to code:
 
@@ -84,7 +98,37 @@ without hand-writing `manifest.json`: New app → fill basics → App features
 → **Bot** → pick your existing bot → scopes (personal, team) → Publish →
 download/upload the zip (requires sideloading permission).
 
-## 4. Talk to it
+## 4. Test from Azure Web Chat (no Teams client needed)
+
+Before touching a Teams client, verify the whole chain from the Azure
+Portal: **bot resource → "Test in Web Chat"** → type `hello`. This sends a
+real, JWT-signed activity to the same messaging endpoint, so a reply proves
+Bot Connector auth (including single-tenant), the agent turn, and the
+outbound reply path all work.
+
+Things to know about Web Chat — all learned the hard way:
+
+- **It requires the `unknown`-scope dispatch this repo already ships.**
+  Web Chat activities carry no `conversationType`, so eve classifies their
+  scope as `unknown`; the stock `teamsChannel()` default (personal +
+  @mentions only) silently drops them with a 200 and the bot looks dead.
+  `agent/channels/teams.ts` overrides `onMessage` to also dispatch
+  `unknown` — keep that override if you copy this setup to another agent.
+- **No typing indicator.** Web Chat rejects typing activities (HTTP 400);
+  eve logs `Teams typing indicator failed — swallowed` and continues.
+  Cosmetic only — but it means long runs give no visual progress cue.
+- **Expect real timing.** `hello` answers in ~10–30 s cold. A full cover
+  run is **2–4 minutes** of silence (image generation alone ~90 s) before
+  the reply with the bucket location arrives — don't conclude it's broken
+  at the one-minute mark. Check progress with
+  `vercel logs <alias>` — `/.well-known/workflow/v1/flow` invocations mean
+  the turn is executing.
+- **Article URLs may be unfetchable.** Medium and LinkedIn 403 all
+  server-side fetches regardless of user-agent — `load_input` will report
+  the failure and the bot replies with the error. Paste the article text
+  into the message instead (inline text is a first-class input).
+
+## 5. Talk to it from Teams
 
 - **Personal chat:** just message it —
   `Create a LinkedIn cover from input=https://example.com/article, palette=auto.`

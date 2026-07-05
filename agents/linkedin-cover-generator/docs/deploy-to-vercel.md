@@ -85,6 +85,9 @@ typing it interactively: `printf '%s' "$VALUE" | vercel env add NAME production`
 | `PHOENIX_COLLECTOR_ENDPOINT` / `OTEL_EXPORTER_OTLP_ENDPOINT` | — | **leave unset on Vercel** (see below) |
 | `ROUTE_AUTH_BASIC_USER` | for curl access | e.g. `operator` |
 | `ROUTE_AUTH_BASIC_PASSWORD` | for curl access | a generated secret — **must be non-empty**: an empty value silently disables `httpBasic` and production returns "auth not configured" |
+| `MICROSOFT_APP_ID` | Teams channel | Azure Bot App ID — see [Consume from Microsoft Teams](./consume-from-teams.md) |
+| `MICROSOFT_APP_PASSWORD` | Teams channel | Azure Bot client secret (the **Value**, not the Secret ID; secrets expire — rotate in Azure) |
+| `MICROSOFT_TENANT_ID` | Teams channel | only for **Single Tenant** bots; leave unset for Multi Tenant |
 | `COST_RATES_FILE` | — | leave unset on Vercel (the rate-card file isn't at a stable path in the bundle); cost shows `rated:false` remotely, and `report.md`/tokens are unaffected |
 
 ## 4. Telemetry posture on Vercel
@@ -134,6 +137,23 @@ curl -sN -u "operator:$PASSWORD" \
    `artifacts.objectStore`.
 4. Check the run appears under the project's **Observability → Agent Runs**
    tab in the Vercel dashboard.
+5. If the Teams channel is configured:
+   `curl -X POST .../eve/v1/teams` → expect `401` (mounted, JWT-gated;
+   a browser GET shows 404 — the route is POST-only), then run the
+   [Web Chat test](./consume-from-teams.md#4-test-from-azure-web-chat-no-teams-client-needed).
+
+### Reading production logs
+
+`vercel logs linkedin-cover-generator.vercel.app` shows recent function
+invocations (add `--json` for full messages). What to expect:
+
+- `POST /eve/v1/teams → 200` — inbound bot activity accepted.
+- `POST /.well-known/workflow/v1/flow` — the turn executing as a background
+  workflow (this is where the actual run happens; the channel POST returns
+  immediately).
+- `[telemetry] ...: disabled (...)` on cold starts — confirms the OTel
+  posture.
+- The log window is short — trigger the action, then pull logs right away.
 
 ## Troubleshooting
 
