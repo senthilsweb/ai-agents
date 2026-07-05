@@ -23,6 +23,7 @@ Fine-grained guides live in [`docs/`](docs/):
 | [Secure the Endpoints](docs/secure-the-endpoints.md) | Route auth, credential scoping, telemetry data safety, secrets hygiene |
 | [Deploy to Vercel](docs/deploy-to-vercel.md) | Production deploys: link, full env/secrets matrix, telemetry posture, remote smoke test |
 | [Consume the Deployed Agent](docs/consume-the-deployed-agent.md) | Running covers remotely via curl, Postman, the TypeScript SDK, a web app, or the eve TUI |
+| [Consume from Microsoft Teams](docs/consume-from-teams.md) | The agent as a Teams bot: Azure registration, endpoint wiring (Vercel or on-prem), testing |
 
 ---
 
