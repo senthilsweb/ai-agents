@@ -42,4 +42,8 @@ models:
   #   mode: per_request
   #   currency: USD
   #   per_request: 0.00
-  {}
+  "claude-sonnet-5":            # MODEL_ORCHESTRATOR (Anthropic; intro pricing through 2026-08-31)
+    mode: per_token
+    currency: USD
+    input_per_1m: 2.00
+    output_per_1m: 10.00

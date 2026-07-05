@@ -77,5 +77,6 @@ agents/github-pr-digest/agent/sandbox/workspace/runs/*
 
 # sandbox workspace inputs (user-provided, not tracked)
 **/sandbox/workspace/inputs/*.md
-agents/*/agent/sandbox/workspace/inputs/*.mdsession.db.bak
+!agents/linkedin-cover-generator/agent/sandbox/workspace/inputs/article-job-scout.md
+!agents/linkedin-cover-generator/agent/sandbox/workspace/inputs/linkedin-article-cover-agent.md
 session.db.bak
