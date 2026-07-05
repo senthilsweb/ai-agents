@@ -1,4 +1,4 @@
 schema: spec-driven
-name: store-run-artifacts-in-blob
+name: store-run-artifacts-in-object-storage
 status: proposed
 created: 2026-07-05

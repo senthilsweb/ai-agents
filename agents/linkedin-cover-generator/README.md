@@ -384,10 +384,11 @@ vercel env add HOST_REPORT_ROOT development  # value: /tmp
 ```
 
 > **Known limitation:** `/tmp` is ephemeral and local to the Function
-> instance — a remote caller cannot retrieve `cover.png` from it. See the
-> [`store-run-artifacts-in-blob`](openspec/changes/store-run-artifacts-in-blob/proposal.md)
-> proposal for adding durable, URL-retrievable artifact storage via Vercel
-> Blob.
+> instance — a remote caller cannot retrieve `cover.png` (or any other run
+> artifact) from it. See the
+> [`store-run-artifacts-in-object-storage`](openspec/changes/store-run-artifacts-in-object-storage/proposal.md)
+> proposal for uploading each timestamped run folder to an S3-compatible
+> bucket (AWS S3 or MinIO) so it's durably retrievable.
 
 ### 4 — Auth for testing a remote deployment
 
