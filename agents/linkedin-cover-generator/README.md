@@ -331,6 +331,95 @@ npx tsgo
 
 ---
 
+## Deploying to Vercel
+
+This agent depends on the monorepo's root [`shared`](../../shared) workspace
+package (`"shared": "*"` in `package.json`), so it must be deployed with the
+**whole repo** as build context, not just this folder.
+
+### 1 — Link the project with a Root Directory
+
+Set the Vercel project's **Root Directory** to
+`agents/linkedin-cover-generator` (Project Settings → General, or via the API:
+`PATCH /v9/projects/:id { "rootDirectory": "agents/linkedin-cover-generator" }`),
+then link and deploy from the **monorepo root** so the whole repo (including
+`shared/`, the root `package.json`, and `package-lock.json`) is uploaded as
+build context:
+
+```bash
+# from the repo root
+vercel link --yes --project linkedin-cover-generator --scope <your-team-id>
+vercel deploy --prod
+```
+
+`vercel deploy --dry --format=json` is useful to confirm `shared/**` is
+included in the upload before deploying for real.
+
+### 2 — Push env vars / secrets from `.env`
+
+Vercel doesn't read this agent's `.env` automatically — push each variable as
+a project env var (Production, Preview, and Development):
+
+```bash
+vercel env add MODEL_ORCHESTRATOR production
+vercel env add MODEL_ORCHESTRATOR_API_KEY production
+vercel env add IMAGE_MODEL production
+vercel env add IMAGE_API_KEY production
+# ...repeat per variable, per environment (or per `vercel env add --help`)
+```
+
+### 3 — `HOST_REPORT_ROOT` is required in the deployed environment
+
+`create_run` / `sync_run_to_host` (`shared/lib/run.ts`) mirror run artifacts to
+`${HOST_REPORT_ROOT}/agent/sandbox/workspace/...`, which defaults to
+`process.cwd()`. Locally that's the agent folder (writable). On Vercel, a
+Function's `cwd` is the **read-only** `/var/task` deployment bundle, so
+`create_run` fails with `ENOENT: ... mkdir '/var/task/agent'` unless
+`HOST_REPORT_ROOT` is redirected to a writable path:
+
+```bash
+vercel env add HOST_REPORT_ROOT production   # value: /tmp
+vercel env add HOST_REPORT_ROOT preview      # value: /tmp
+vercel env add HOST_REPORT_ROOT development  # value: /tmp
+```
+
+> **Known limitation:** `/tmp` is ephemeral and local to the Function
+> instance — a remote caller cannot retrieve `cover.png` from it. See the
+> [`store-run-artifacts-in-blob`](openspec/changes/store-run-artifacts-in-blob/proposal.md)
+> proposal for adding durable, URL-retrievable artifact storage via Vercel
+> Blob.
+
+### 4 — Auth for testing a remote deployment
+
+The scaffolded `agent/channels/eve.ts` ships `[localDev(), vercelOidc(),
+placeholderAuth()]`, which rejects all unauthenticated production traffic
+(`placeholderAuth()` fails closed). Two ways to reach a deployed session:
+
+- **`eve dev <url>`** — if your local checkout is linked to the same Vercel
+  project (`vercel link` was run in this repo), `eve dev` mints a Vercel OIDC
+  token automatically and `vercelOidc()` accepts it (the current project is
+  always trusted). No extra setup needed:
+  ```bash
+  npx eve dev https://<your-app>.vercel.app
+  ```
+- **Raw HTTP / curl** — there's no local Vercel CLI session to mint an OIDC
+  token from, so `eve.ts` adds an opt-in `httpBasic()` fallback, gated on a
+  `ROUTE_AUTH_BASIC_PASSWORD` env var (inert when unset, so it never changes
+  behavior unless you configure it):
+  ```bash
+  vercel env add ROUTE_AUTH_BASIC_USER production      # e.g. operator
+  vercel env add ROUTE_AUTH_BASIC_PASSWORD production  # a generated secret
+  ```
+  Then:
+  ```bash
+  curl -X POST https://<your-app>.vercel.app/eve/v1/session \
+    -u "operator:<password>" \
+    -H 'content-type: application/json' \
+    -d '{"message":"Create a LinkedIn cover from input=<url>, palette=soft-blue-pink, density=balanced, size=1280x720"}'
+  ```
+
+---
+
 ## Folder layout
 
 ```
