@@ -80,3 +80,4 @@ agents/github-pr-digest/agent/sandbox/workspace/runs/*
 !agents/linkedin-cover-generator/agent/sandbox/workspace/inputs/article-job-scout.md
 !agents/linkedin-cover-generator/agent/sandbox/workspace/inputs/linkedin-article-cover-agent.md
 session.db.bak
+.env*

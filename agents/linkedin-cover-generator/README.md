@@ -21,6 +21,7 @@ Fine-grained guides live in [`docs/`](docs/):
 | [Run with Telemetry](docs/run-with-telemetry.md) | OTel traces to Arize Phoenix (repo-root `docker compose up -d`), custom spans, privacy toggles |
 | [Upload Results to Object Store](docs/upload-results-to-object-store.md) | Persisting run folders to AWS S3 / MinIO, endpoint gotchas, failure semantics |
 | [Secure the Endpoints](docs/secure-the-endpoints.md) | Route auth, credential scoping, telemetry data safety, secrets hygiene |
+| [Deploy to Vercel](docs/deploy-to-vercel.md) | Production deploys: link, full env/secrets matrix, telemetry posture, remote smoke test |
 
 ---
 
