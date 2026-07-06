@@ -18,6 +18,10 @@ this agent's `agent/instrumentation.ts` is a ~5-line adapter. Telemetry is
 **off by default** — it activates only when an endpoint is configured, and
 an unreachable backend can never fail or slow a run.
 
+> **Want the implementation details** — how spans actually get created and
+> wired to Phoenix under the hood, the full eve lifecycle-hook vocabulary?
+> See [Observability Internals](./observability-internals.md).
+
 ## 1. Start Phoenix (common infra, repo root)
 
 ```bash
