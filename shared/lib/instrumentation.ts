@@ -19,10 +19,14 @@ import {
 //
 // Env contract (identical for every agent; set once per environment):
 //   PHOENIX_COLLECTOR_ENDPOINT    Phoenix base URL (e.g. http://localhost:6006)
-//   OTEL_EXPORTER_OTLP_ENDPOINT   generic OTLP alternative
+//   OTEL_EXPORTER_OTLP_ENDPOINT   generic OTLP endpoint (e.g. OpenObserve
+//                                 http://localhost:5080/api/default)
 //   OTEL_EXPORTER_OTLP_HEADERS    standard `key=value,key2=value2` auth headers
+//                                 (applies to OTEL_EXPORTER_OTLP_ENDPOINT only)
 //   TELEMETRY_RECORD_IO           "false" → omit prompts/completions on spans
 //
+// Setting both endpoint vars fans every span out to both backends — one
+// span processor + exporter per endpoint, each failing independently.
 // Both endpoint vars unset ⇒ telemetry fully off: setup registers nothing,
 // and every custom-signal call (shared/lib/telemetry.ts) no-ops via the OTel
 // global API. A configured-but-unreachable backend drops spans asynchronously
@@ -39,11 +43,28 @@ export interface AgentInstrumentationOptions {
   ) => Record<string, string>;
 }
 
-function resolveEndpoint(): string | undefined {
-  return (
-    process.env.PHOENIX_COLLECTOR_ENDPOINT ??
-    process.env.OTEL_EXPORTER_OTLP_ENDPOINT
-  );
+interface TraceTarget {
+  url: string;
+  headers: Record<string, string>;
+}
+
+function resolveTargets(): TraceTarget[] {
+  const targets: TraceTarget[] = [];
+  const phoenix = process.env.PHOENIX_COLLECTOR_ENDPOINT;
+  if (phoenix) {
+    targets.push({
+      url: `${phoenix.replace(/\/$/, "")}/v1/traces`,
+      headers: parseOtlpHeaders(process.env.PHOENIX_CLIENT_HEADERS),
+    });
+  }
+  const otlp = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
+  if (otlp) {
+    targets.push({
+      url: `${otlp.replace(/\/$/, "")}/v1/traces`,
+      headers: parseOtlpHeaders(process.env.OTEL_EXPORTER_OTLP_HEADERS),
+    });
+  }
+  return targets;
 }
 
 /** Parse the standard OTLP headers form: `key=value,key2=value2`. */
@@ -69,32 +90,32 @@ export function createAgentInstrumentation(
 
   return defineInstrumentation({
     setup: ({ agentName }) => {
-      const endpoint = resolveEndpoint();
+      const targets = resolveTargets();
       // Present-or-absent gate (same principle as the OBJECT_STORE_* group):
       // no endpoint → register nothing → the agent runs exactly as before.
-      if (!endpoint) {
+      if (targets.length === 0) {
         console.log(
           `[telemetry] ${agentName}: disabled (no PHOENIX_COLLECTOR_ENDPOINT / OTEL_EXPORTER_OTLP_ENDPOINT)`,
         );
         return;
       }
-      const traceUrl = `${endpoint.replace(/\/$/, "")}/v1/traces`;
       console.log(
-        `[telemetry] ${agentName}: exporting traces to ${traceUrl}` +
+        `[telemetry] ${agentName}: exporting traces to ${targets
+          .map((t) => t.url)
+          .join(", ")}` +
           (recordIO ? "" : " (prompt/completion recording off)"),
       );
       registerOTel({
         serviceName: agentName, // resolved by eve per agent; never hard-coded
-        spanProcessors: [
-          new OpenInferenceSimpleSpanProcessor({
-            exporter: new OTLPTraceExporter({
-              url: traceUrl,
-              headers: parseOtlpHeaders(
-                process.env.OTEL_EXPORTER_OTLP_HEADERS,
-              ),
+        spanProcessors: targets.map(
+          (target) =>
+            new OpenInferenceSimpleSpanProcessor({
+              exporter: new OTLPTraceExporter({
+                url: target.url,
+                headers: target.headers,
+              }),
             }),
-          }),
-        ],
+        ),
       });
     },
 

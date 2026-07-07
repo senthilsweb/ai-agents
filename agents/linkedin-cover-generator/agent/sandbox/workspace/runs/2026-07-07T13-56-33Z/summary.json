@@ -1,0 +1,86 @@
+{
+  "runId": "2026-07-07T13-56-33Z",
+  "generatedAt": "2026-07-07T13:59:06.155Z",
+  "models": {
+    "orchestrator": "claude-sonnet-5",
+    "image": "gpt-image-2"
+  },
+  "totals": {
+    "inputTokens": 170876,
+    "outputTokens": 4085,
+    "cacheReadTokens": 135355,
+    "cacheWriteTokens": 25872,
+    "steps": 8,
+    "sessions": 1
+  },
+  "perSession": [
+    {
+      "sessionId": "wrun_01KWYDVAKBJAJW5AWRR5ZN170N",
+      "inputTokens": 170876,
+      "outputTokens": 4085,
+      "cacheReadTokens": 135355,
+      "cacheWriteTokens": 25872,
+      "steps": 8,
+      "budgetExceeded": false
+    }
+  ],
+  "cost": {
+    "currency": "USD",
+    "amount": 0.409673,
+    "rated": true,
+    "byModel": [
+      {
+        "modelId": "claude-sonnet-5",
+        "rated": true,
+        "currency": "USD",
+        "amount": 0.409673,
+        "mode": "per_token"
+      }
+    ]
+  },
+  "budget": {
+    "steps": 25,
+    "wallClockSeconds": 300,
+    "exceeded": false
+  },
+  "artifacts": {
+    "objectStore": {
+      "bucket": "ai-agents",
+      "prefix": "runs/2026-07-07T13-56-33Z/",
+      "uploaded": [
+        {
+          "path": "cover-spec.json",
+          "size": 1304
+        },
+        {
+          "path": "cover.png",
+          "size": 1435557
+        },
+        {
+          "path": "phases/generate.json",
+          "size": 251
+        },
+        {
+          "path": "phases/orchestrate.json",
+          "size": 271
+        },
+        {
+          "path": "phases/report.json",
+          "size": 249
+        },
+        {
+          "path": "phases/validate.json",
+          "size": 251
+        },
+        {
+          "path": "report.md",
+          "size": 1418
+        },
+        {
+          "path": "run-meta.json",
+          "size": 444
+        }
+      ]
+    }
+  }
+}

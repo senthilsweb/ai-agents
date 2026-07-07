@@ -1,0 +1,24 @@
+{
+  "source": {
+    "kind": "file",
+    "value": "inputs/telemetry-and-observability.md",
+    "title": "Telemetry and Observability for Claude Code"
+  },
+  "canvas": {
+    "width": 1280,
+    "height": 720,
+    "preset": "linkedin-article"
+  },
+  "badge": "OBSERVABILITY",
+  "title": "Seeing What Your AI Actually Does",
+  "subtitle": "Turning raw agent telemetry into cost, patterns, and guardrails",
+  "supportLine": "Instrument. Collect. Store. Query.",
+  "palette": "warm-coral-amber",
+  "layout": "editorial-left-visual-right",
+  "visualConcept": "An abstract data-observability scene: layered translucent waveform and metric-stream lines in warm coral and amber tones flowing left to right across the dark right panel, converging into a single glowing baseline graph or pulse line that steadies into a calm horizontal signal, evoking telemetry turning noise into a trustworthy baseline. No dashboards, no screens, no logos, purely abstract light and line art.",
+  "density": "balanced",
+  "style": "modern editorial tech illustration, soft gradient lighting, clean geometric abstraction, subtle grain texture, high contrast typography-friendly left zone",
+  "includeBrands": false,
+  "forbiddenTerms": ["Claude Code", "OpenObserve", "Vercel", "Eve", "OpenTelemetry", "OTel"],
+  "safeMarginPx": 64
+}

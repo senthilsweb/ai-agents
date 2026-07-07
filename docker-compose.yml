@@ -14,7 +14,7 @@ services:
     platform: linux/amd64
     ports:
       - "6006:6006" # UI + OTLP/HTTP collector (POST /v1/traces)
-      - "4317:4317" # OTLP/gRPC collector (optional)
+      - "6007:4317" # OTLP/gRPC collector (optional; host 4317 is owned by the OpenObserve otel-collector)
     volumes:
       - phoenix-data:/mnt/data # persist traces across restarts
     restart: unless-stopped

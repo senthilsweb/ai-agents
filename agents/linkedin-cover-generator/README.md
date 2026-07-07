@@ -18,8 +18,9 @@ Fine-grained guides live in [`docs/`](docs/):
 | Guide | What it covers |
 |---|---|
 | [Quick Setup](docs/quick-setup.md) | Zero-to-first-cover: install, `.env`, dev server, headless HTTP runs, outputs, gotchas |
-| [Run with Telemetry](docs/run-with-telemetry.md) | OTel traces to Arize Phoenix (repo-root `docker compose up -d`), custom spans, privacy toggles |
+| [Run with Telemetry](docs/run-with-telemetry.md) | OTel traces to Arize Phoenix + OpenObserve (dual fan-out), custom spans, privacy toggles |
 | [Observability Internals](docs/observability-internals.md) | Technical deep-dive: how spans get wired up, plus every eve lifecycle hook (diagram + tables) |
+| [Telemetry Eval Queries](docs/telemetry-eval-queries.md) | Copy-paste Phoenix REST/GraphQL and OpenObserve SQL queries to verify and analyze exported traces |
 | [Upload Results to Object Store](docs/upload-results-to-object-store.md) | Persisting run folders to AWS S3 / MinIO, endpoint gotchas, failure semantics |
 | [Secure the Endpoints](docs/secure-the-endpoints.md) | Route auth, credential scoping, telemetry data safety, secrets hygiene |
 | [Deploy to Vercel](docs/deploy-to-vercel.md) | Production deploys: link, full env/secrets matrix, telemetry posture, remote smoke test |
@@ -389,17 +390,22 @@ The pipeline is shared-kit code (`shared/lib/instrumentation.ts`);
 an endpoint is configured:
 
 ```bash
-# Local Phoenix in one container
-docker run -d --name phoenix -p 6006:6006 arizephoenix/phoenix:latest
-echo 'PHOENIX_COLLECTOR_ENDPOINT=http://localhost:6006' >> .env
-npx eve dev --port 3535
+# Local Phoenix — use the repo-root compose file, NOT an ad-hoc docker run:
+# it pins platform: linux/amd64 (the arm64 image SIGILLs on Apple Silicon)
+# and remaps OTLP/gRPC to host 6007 (4317 is often taken by other collectors).
+cd <repo-root> && docker compose up -d
+echo 'PHOENIX_COLLECTOR_ENDPOINT=http://localhost:6006' >> agents/linkedin-cover-generator/.env
+npx eve dev --port 3939
 # run a cover, then open http://localhost:6006 → traces
 ```
 
-Any OTLP backend works instead of Phoenix — set
-`OTEL_EXPORTER_OTLP_ENDPOINT` (+ `OTEL_EXPORTER_OTLP_HEADERS` for API keys).
-Both endpoint vars unset ⇒ telemetry fully off; an unreachable backend drops
-spans and never affects a run.
+Any OTLP backend works — set `OTEL_EXPORTER_OTLP_ENDPOINT` (+
+`OTEL_EXPORTER_OTLP_HEADERS` for API keys). Setting **both** endpoint vars
+fans every span out to both backends (e.g. Phoenix locally *and*
+OpenObserve), each with its own exporter failing independently. Both vars
+unset ⇒ telemetry fully off; an unreachable backend drops spans and never
+affects a run. Verification queries for both backends:
+[Telemetry Eval Queries](docs/telemetry-eval-queries.md).
 
 **Correlating a run with its trace:** `summary.json` →
 `perSession[].sessionId` → filter traces on `eve.session.id`.

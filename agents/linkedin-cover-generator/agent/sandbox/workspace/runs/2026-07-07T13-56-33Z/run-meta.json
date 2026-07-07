@@ -1,0 +1,15 @@
+{
+  "run_id": "2026-07-07T13-56-33Z",
+  "request": "Create a LinkedIn cover from inputs/telemetry-and-observability.md, palette=warm-coral-amber, density=balanced, size=1280x720",
+  "options": {
+    "palette": "warm-coral-amber",
+    "density": "balanced",
+    "size": "1280x720"
+  },
+  "started_at": "2026-07-07T13:56:33.004Z",
+  "start_epoch": 1783432593,
+  "models": {
+    "orchestrator": "claude-sonnet-5",
+    "image": "gpt-image-2"
+  }
+}

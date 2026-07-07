@@ -1,8 +1,8 @@
 ---
 title: Run with Telemetry
-description: Export OpenTelemetry traces to Arize Phoenix (or any OTLP backend) — setup, verification, custom spans, and privacy controls.
+description: Export OpenTelemetry traces to Arize Phoenix and/or any OTLP backend (e.g. OpenObserve) — setup, dual-backend fan-out, verification, custom spans, and privacy controls.
 order: 2
-updated: 2026-07-05
+updated: 2026-07-07
 ---
 
 # Run with Telemetry
@@ -34,25 +34,48 @@ The compose file pins `platform: linux/amd64` — the arm64 image variant
 crash-loops with SIGILL on Apple Silicon; the amd64 image under emulation
 is stable. Traces persist in the `phoenix-data` volume.
 
-## 2. Point the agent at it
+Port layout: **6006** serves both the UI and the OTLP/HTTP collector
+(`POST /v1/traces`) — this is the port that matters. OTLP/gRPC is remapped
+to host **6007** (`6007:4317`) because host 4317/4318 are commonly owned by
+a standalone OTel collector (as on the reference machine, where one feeds
+Docker logs to OpenObserve). The agent exports over OTLP/HTTP, so the gRPC
+port is optional.
+
+## 2. Point the agent at it — one backend or several
 
 In `agents/linkedin-cover-generator/.env`:
 
 ```dotenv
+# Local Phoenix
 PHOENIX_COLLECTOR_ENDPOINT=http://localhost:6006
+
+# Optionally ALSO a second OTLP backend — e.g. OpenObserve, org "default".
+# Setting both vars fans every span out to both backends.
+OTEL_EXPORTER_OTLP_ENDPOINT=https://openobserve.example.com/api/default
+OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic <base64 user:password>
 ```
+
+Each configured endpoint gets its own span processor + OTLP/HTTP exporter
+(`<endpoint>/v1/traces`), so backends fail independently — a down
+OpenObserve never blocks Phoenix, and vice versa. Headers are per-backend:
+`OTEL_EXPORTER_OTLP_HEADERS` applies only to `OTEL_EXPORTER_OTLP_ENDPOINT`;
+use `PHOENIX_CLIENT_HEADERS` for an authenticated Phoenix.
 
 Restart `eve dev` (or let the `.env` watcher reload it — only between
 runs!) and check the startup line:
 
 ```
-[telemetry] linkedin-cover-generator: exporting traces to http://localhost:6006/v1/traces
+[telemetry] linkedin-cover-generator: exporting traces to http://localhost:6006/v1/traces, https://openobserve.example.com/api/default/v1/traces
 [telemetry] linkedin-cover-generator: disabled (no PHOENIX_COLLECTOR_ENDPOINT / OTEL_EXPORTER_OTLP_ENDPOINT)
 ```
 
-That line is the enabled/disabled source of truth. Any OTLP backend works
-instead of Phoenix: set `OTEL_EXPORTER_OTLP_ENDPOINT` (plus
-`OTEL_EXPORTER_OTLP_HEADERS=api_key=...` for hosted backends).
+That line is the enabled/disabled source of truth — it lists every endpoint
+that will receive spans.
+
+> **Note on the standalone OTel collector:** if you already run an
+> otel-collector for logs (4317/4318), traces sent there are dropped unless
+> its config has a `traces` pipeline. The app-side fan-out above needs no
+> collector change and no infra restart.
 
 ## 3. Run a cover and inspect the trace
 
@@ -71,6 +94,10 @@ curl -s -X POST http://localhost:6006/graphql -H "Content-Type: application/json
 
 **Correlate a run folder with its trace:** `summary.json` →
 `perSession[].sessionId` → filter spans on `eve.session.id`.
+
+For the full set of verification queries — Phoenix REST/GraphQL and
+OpenObserve SQL (`_search` API) — see
+[Telemetry Eval Queries](./telemetry-eval-queries.md).
 
 ## 4. Custom signals from code (need basis)
 

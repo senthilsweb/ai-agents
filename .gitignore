@@ -70,6 +70,7 @@ agents/linkedin-cover-generator/agent/sandbox/workspace/runs/*
 !agents/linkedin-cover-generator/agent/sandbox/workspace/runs/2026-07-05T01-44-03Z/
 !agents/linkedin-cover-generator/agent/sandbox/workspace/runs/2026-07-05T01-50-51Z/
 !agents/linkedin-cover-generator/agent/sandbox/workspace/runs/2026-07-05T02-55-18Z/
+!agents/linkedin-cover-generator/agent/sandbox/workspace/runs/2026-07-07T13-56-33Z/
 
 # github-pr-digest run outputs (live outputs, keep .gitkeep)
 agents/github-pr-digest/agent/sandbox/workspace/runs/*
@@ -79,5 +80,6 @@ agents/github-pr-digest/agent/sandbox/workspace/runs/*
 **/sandbox/workspace/inputs/*.md
 !agents/linkedin-cover-generator/agent/sandbox/workspace/inputs/article-job-scout.md
 !agents/linkedin-cover-generator/agent/sandbox/workspace/inputs/linkedin-article-cover-agent.md
+!agents/linkedin-cover-generator/agent/sandbox/workspace/inputs/telemetry-and-observability.md
 session.db.bak
 .env*

@@ -24,20 +24,23 @@ spans.
 flowchart LR
     A["eve harness boot:<br/>registerTelemetry(AI-SDK OTel)<br/>— always, unconditional"] --> G
     B["agent/instrumentation.ts<br/>setup() — eve calls this<br/>once at boot"] --> D{"endpoint set?<br/>PHOENIX_COLLECTOR_ENDPOINT /<br/>OTEL_EXPORTER_OTLP_ENDPOINT"}
-    D -->|"no"| F["stays No-op Tracer<br/>(spans created, not exported)"]
-    D -->|"yes"| E["registerOTel()<br/>registers global<br/>TracerProvider + AsyncContext"]
+    D -->|"none set"| F["stays No-op Tracer<br/>(spans created, not exported)"]
+    D -->|"one or both set"| E["registerOTel()<br/>registers global<br/>TracerProvider + AsyncContext"]
     E --> G["trace.getTracer(...)<br/>global accessor<br/>('gen_ai' / 'ai-agents.shared')"]
     G --> H["AI SDK step/tool<br/>lifecycle spans<br/>(automatic, every call)"]
     I["shared/lib/telemetry.ts<br/>withSpan() — manual,<br/>one call site today"] --> G
-    H --> J["OpenInference<br/>SpanProcessor<br/>(attribute remap)"]
-    J --> K["OTLPTraceExporter"]
-    K --> L[("Arize Phoenix /<br/>any OTLP backend")]
+    H --> J1["OpenInference<br/>SpanProcessor<br/>(attribute remap)"]
+    H --> J2["OpenInference<br/>SpanProcessor<br/>(one per endpoint)"]
+    J1 --> K1["OTLPTraceExporter"]
+    J2 --> K2["OTLPTraceExporter"]
+    K1 --> L1[("Arize Phoenix")]
+    K2 --> L2[("OpenObserve /<br/>any OTLP backend")]
 ```
 
 | Layer | What happens | Automatic? | Where it lives |
 |---|---|---|---|
 | A — lifecycle hooks | Model-call + tool-call spans, the whole `ai.eve.turn` tree | Always running (no-op without a provider) | eve's harness + `@ai-sdk/otel`, unconditional — not gated by this repo at all |
-| B — provider registration | Real tracer provider, OTLP exporter, async context propagation | Only if `PHOENIX_COLLECTOR_ENDPOINT` / `OTEL_EXPORTER_OTLP_ENDPOINT` is set | `shared/lib/instrumentation.ts` → `registerOTel()` |
+| B — provider registration | Real tracer provider, one OTLP exporter **per configured endpoint** (fan-out when both are set), async context propagation | Only if `PHOENIX_COLLECTOR_ENDPOINT` and/or `OTEL_EXPORTER_OTLP_ENDPOINT` is set | `shared/lib/instrumentation.ts` → `registerOTel()` |
 | C — attribute mapping | `ai.*` (AI SDK) → OpenInference semantic conventions, so Phoenix renders LLM traces | Automatic once B is on | `OpenInferenceSimpleSpanProcessor` (`@arizeai/openinference-vercel`) |
 | D — custom attributes | `eve.*` + our `cover.orchestrator_model` / `cover.image_model` land on spans | Automatic once B is on | `events["step.started"]` → AI SDK `runtimeContext` |
 | E — custom spans | One-off spans for code the AI SDK can't see (e.g. a raw `fetch`) | Manual call site; auto-nests, auto-no-ops | `shared/lib/telemetry.ts` (`withSpan`, `logEvent`) |
