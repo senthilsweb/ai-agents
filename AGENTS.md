@@ -6,11 +6,12 @@ lives under `agents/<name>/` and follows the shared conventions below.
 Before writing code for any agent, read the relevant guide in `node_modules/eve/docs/`.
 
 Every non-trivial change goes through `openspec/changes/<name>/` (proposal →
-design → tasks → spec) before and during implementation — see
-`AI-SDLC-TAILORING.md` at the repo root for the full process, its status
-lifecycle (`proposed → approved → implemented → verified → archived`), and
-where it deliberately trades the full AI-DLC methodology for a lighter-weight
-equivalent.
+design → tasks → spec) before and during implementation — **this applies
+repo-wide (root-level tooling, `shared/`, `openspec/` itself, and every
+`agents/<name>/`), not just agent code.** See `AI-SDLC-TAILORING.md` at the
+repo root for the full process, its status lifecycle (`proposed → approved →
+implemented → verified → archived`), and where it deliberately trades the
+full AI-DLC methodology for a lighter-weight equivalent.
 
 ---
 

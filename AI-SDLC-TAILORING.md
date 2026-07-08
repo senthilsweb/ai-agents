@@ -14,6 +14,19 @@ went lighter-weight on, and why — so the gap between "the full spec" and
 "what actually runs in this repo" is a documented judgment call, not an
 accident.
 
+## Scope
+
+This process applies to **any non-trivial change anywhere in this
+repository** — root-level tooling and config, the `shared/` package,
+`openspec/` itself, and every `agents/<name>/` — not just agent code. Folder
+location doesn't decide whether a change needs an openspec proposal;
+triviality does. A typo fix, a dependency bump, or a doc wording tweak
+doesn't need one regardless of where it lives. A new capability, a schema
+change, a new cross-cutting shared module, a new CI gate, or anything that
+changes what the repo *does* — including at the repo root — does, exactly
+the same way `add-privacy-classifier` covered its `shared/` additions
+alongside the agent itself.
+
 ## Mapping: AI-DLC phase → this repo's artifact
 
 | AI-DLC concept | This repo | Notes |
