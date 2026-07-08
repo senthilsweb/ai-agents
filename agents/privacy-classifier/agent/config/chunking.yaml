@@ -1,0 +1,9 @@
+# Semantic chunking config for privacy-classifier (Chonkie SemanticChunker).
+# See agent/tools/chunk_text.ts and https://docs.chonkie.ai/oss/chunkers/semantic-chunker.
+# Point CHUNKING_CONFIG_FILE at this file (or your own copy) to override the
+# tool's built-in defaults.
+
+version: 2
+chunker: chonkie-semantic
+chunk_size: 800
+threshold: 0.7

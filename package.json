@@ -14,7 +14,10 @@
     "typecheck": "npm -w agent-diagram-generator run typecheck",
     "dev:linkedin": "npm -w linkedin-cover-generator run dev",
     "build:linkedin": "npm -w linkedin-cover-generator run build",
-    "typecheck:linkedin": "npm -w linkedin-cover-generator run typecheck"
+    "typecheck:linkedin": "npm -w linkedin-cover-generator run typecheck",
+    "dev:privacy-classifier": "npm -w privacy-classifier run dev",
+    "build:privacy-classifier": "npm -w privacy-classifier run build",
+    "typecheck:privacy-classifier": "npm -w privacy-classifier run typecheck"
   },
   "devDependencies": {
     "@types/node": "24.x",

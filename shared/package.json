@@ -18,8 +18,13 @@
     "./tools/sync_run_to_host.js": "./tools/sync_run_to_host.ts",
     "./tools/upload_run_to_object_store.js": "./tools/upload_run_to_object_store.ts",
     "./tools/cleanup_sandbox.js": "./tools/cleanup_sandbox.ts",
+    "./tools/classify_document_structure.js": "./tools/classify_document_structure.ts",
+    "./lib/taxonomy.js": "./lib/taxonomy.ts",
+    "./lib/compliance.js": "./lib/compliance.ts",
     "./sandbox/base-sandbox.js": "./sandbox/base-sandbox.ts",
-    "./cost/rates.yaml": "./cost/rates.yaml"
+    "./cost/rates.yaml": "./cost/rates.yaml",
+    "./config/label_aliases.yaml": "./config/label_aliases.yaml",
+    "./config/compliance_matrix.yaml": "./config/compliance_matrix.yaml"
   },
   "scripts": {
     "typecheck": "tsgo"

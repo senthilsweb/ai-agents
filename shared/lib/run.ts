@@ -25,6 +25,10 @@ export interface SandboxLike {
   readTextFile(opts: { path: string }): PromiseLike<unknown>;
   readBinaryFile?(opts: { path: string }): PromiseLike<unknown>;
   writeTextFile(opts: { path: string; content: string }): PromiseLike<unknown>;
+  writeBinaryFile?(opts: {
+    path: string;
+    content: Uint8Array;
+  }): PromiseLike<unknown>;
 }
 
 // Extensions copied verbatim as raw bytes (images, archives, fonts, pdfs).
@@ -169,6 +173,42 @@ export async function writeRunArtifact(
   await sandbox.writeTextFile({ path: sandboxPath, content });
 
   return { hostPath, sandboxPath, bytes: Buffer.byteLength(content, "utf8") };
+}
+
+/**
+ * Write one BINARY run artifact to BOTH the sandbox and the host run folder.
+ * Companion to `writeRunArtifact` (text-only) — needed for OCR page snapshots,
+ * uploaded source documents, and other non-UTF-8 content that must survive
+ * the round trip to the sandbox.
+ */
+export async function writeBinaryRunArtifact(
+  ctx: SandboxAccess,
+  runId: string,
+  relativePath: string,
+  bytes: Buffer,
+): Promise<WriteRunArtifactResult> {
+  const rel = assertSafeRelative(relativePath);
+  const hostDir = hostRunDir(runId);
+  const hostPath = path.join(hostDir, rel);
+  const hostWorkspace = hostWorkspaceRoot();
+  if (!path.resolve(hostPath).startsWith(`${hostWorkspace}${path.sep}`)) {
+    throw new Error("Resolved host path escapes the workspace.");
+  }
+
+  await mkdir(path.dirname(hostPath), { recursive: true });
+  await writeFile(hostPath, bytes);
+
+  const sandboxPath = `${sandboxRunDir(runId)}/${rel}`;
+  const sandbox = await ctx.getSandbox();
+  await sandbox.run({
+    command: `mkdir -p ${JSON.stringify(path.posix.dirname(sandboxPath))}`,
+  });
+  if (!sandbox.writeBinaryFile) {
+    throw new Error("Sandbox does not support writeBinaryFile.");
+  }
+  await sandbox.writeBinaryFile({ path: sandboxPath, content: bytes });
+
+  return { hostPath, sandboxPath, bytes: bytes.byteLength };
 }
 
 /** Read one run artifact from the host run folder. */

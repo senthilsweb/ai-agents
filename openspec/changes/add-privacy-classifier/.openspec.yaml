@@ -1,0 +1,13 @@
+schema: spec-driven
+name: add-privacy-classifier
+status: implemented
+approval:
+  reviewed_by: senthilsweb
+  reviewed_date: 2026-07-08
+  note: >
+    Retroactive Inception-gate approval — design/proposal/spec were reviewed
+    and approved after implementation had already been completed, not before
+    Construction started. See "AI-SDLC-TAILORING.md" at the repo root for the
+    process-gap writeup. Construction is complete, typechecked, and has passed
+    a security-baseline review (see design.md). Status advances to `verified`
+    once tasks.md items 25-26 (live smoke run + eval run) pass.

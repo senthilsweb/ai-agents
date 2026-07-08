@@ -1,0 +1,13 @@
+CoreVista Inc — New Employee Onboarding Record
+
+Employee: Jennifer White
+Email: jennifer.white@example.com
+Phone: 415-555-1234
+Social Security Number: 519-28-4663
+Date of Birth: 12/03/1996
+Address: 635 Walnut Court, Chicago, IL 60601
+
+Emergency Contact: Kevin Moore — 926-460-2020
+
+This document is provided for onboarding purposes only and should be stored
+in accordance with company data retention policy.
