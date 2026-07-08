@@ -208,3 +208,13 @@ no-ops — no `MeterProvider` is registered yet (see
 [Observability Internals](./observability-internals.md), layer F). When
 metrics export is wired, OpenObserve's `/api/default/prometheus/api/v1/query`
 endpoint is the natural PromQL surface.
+
+## 5. Token and cost columns
+
+None of the queries above touch a token or cost attribute. For the verified
+column names (`llm_token_count_prompt`, `llm_model_name`, etc.), the
+`CAST(... AS DOUBLE)` requirement, the `gen_ai.usage.cost` stub, the
+double-span-per-call gotcha that silently doubles a naive `SUM()`, a working
+cost SQL query, and an open discrepancy against `summary.json` — see
+[`openspec/observations/0001-openobserve-token-cost-verification.md`](../../../openspec/observations/0001-openobserve-token-cost-verification.md)
+at the repo root (shared-pipeline scope, not agent-specific).
