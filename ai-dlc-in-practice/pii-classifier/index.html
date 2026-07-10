@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI-DLC In Practice: From Intent to Operations</title>
+
+  <!-- read theme synchronously, no flash -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('ai-dlc-deck-theme');
+        if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css">
+
+  <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+
+  <style>
+    :root {
+      --color-navy: #0a0f24;
+      --color-panel: #121937;
+      --color-panel-2: #0f1530;
+      --color-panel-3: #0c1430;
+      --color-cyan: #3ec9d6;
+      --color-cyan-2: #6ee7ff;
+      --color-purple: #8b5cf6;
+      --color-green: #10b981;
+      --color-amber: #f59e0b;
+      --color-red: #ef4444;
+      --color-white: #e7ecff;
+      --color-light-gray: #cdd5ee;
+      --color-mid-gray: #94a3c7;
+      --color-dark-gray: #6b7aa3;
+      --color-border: #1f2a55;
+      --color-border-2: #2a3a72;
+      --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    [data-theme="light"] {
+      --color-navy: #ffffff;
+      --color-panel: #f1f5f9;
+      --color-panel-2: #f8fafc;
+      --color-panel-3: #eef2fb;
+      --color-cyan: #0891b2;
+      --color-cyan-2: #0e7490;
+      --color-purple: #7c3aed;
+      --color-green: #059669;
+      --color-amber: #b45309;
+      --color-red: #b91c1c;
+      --color-white: #0f172a;
+      --color-light-gray: #334155;
+      --color-mid-gray: #64748b;
+      --color-dark-gray: #94a3b8;
+      --color-border: #d8e0f0;
+      --color-border-2: #c2cde8;
+    }
+
+    .theme-toggle {
+      position: fixed; top: 16px; left: 16px; z-index: 1000;
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--color-panel); border: 1px solid var(--color-border-2);
+      color: var(--color-white); display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: transform 0.15s ease;
+    }
+    .theme-toggle:hover { transform: scale(1.08); }
+    .theme-toggle iconify-icon { font-size: 17px; }
+
+    body, html { background: var(--color-navy) !important; }
+    .reveal-viewport { background: var(--color-navy); }
+    .reveal { font-family: var(--font-primary); font-size: 22px; color: var(--color-white); letter-spacing: -0.01em; }
+    .reveal .slides { text-align: left; }
+    .reveal .slides section { padding: 28px 44px; box-sizing: border-box; height: 100%; }
+    .reveal .slides section.slide-brand { background: var(--color-navy); }
+
+    .reveal h1, .reveal h2, .reveal h3, .reveal h4 { font-family: var(--font-primary); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 0.5rem 0; color: var(--color-white); }
+    .reveal h1 { font-size: 1.6em; margin-bottom: 0.4rem; }
+    .reveal h2 { font-size: 1.05em; }
+    .reveal h3 { font-size: 0.85em; font-weight: 600; color: var(--color-cyan); }
+    .reveal p { margin: 0 0 0.5rem 0; line-height: 1.5; color: var(--color-light-gray); font-size: 0.62em; }
+
+    /* Phase kicker: tells the viewer where they are in the lifecycle */
+    .kicker { font-size: 0.5em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--color-cyan); margin-bottom: 0.25rem; display: block; }
+    .kicker .ph { display: inline-block; padding: 2px 10px; margin-right: 8px; background: var(--color-cyan); color: #06282d; }
+    .kicker.ph-inception .ph { background: var(--color-cyan); }
+    .kicker.ph-gate { color: var(--color-purple); }
+    .kicker.ph-gate .ph { background: var(--color-purple); color: #fff; }
+    .kicker.ph-construction { color: var(--color-green); }
+    .kicker.ph-construction .ph { background: var(--color-green); color: #06281c; }
+    .kicker.ph-operations { color: var(--color-amber); }
+    .kicker.ph-operations .ph { background: var(--color-amber); color: #2d1c02; }
+    .lede { font-size: 0.62em; color: var(--color-mid-gray); margin: 0; line-height: 1.45; }
+
+    .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .panel { background: var(--color-panel-2); border: 1px solid var(--color-border); padding: 14px 16px; }
+    .panel h3 { margin: 0 0 8px; font-size: 0.72em; }
+    .panel code { background: rgba(62, 201, 214, 0.10); padding: 0 4px; font-size: 0.95em; color: var(--color-cyan-2); font-family: var(--font-mono); }
+    .panel ul { margin: 0; padding-left: 18px; font-size: 0.58em; color: var(--color-light-gray); line-height: 1.6; }
+    .panel li { margin-bottom: 5px; }
+    .panel li b { color: var(--color-white); }
+
+    .codepanel { background: #060a18; border: 1px solid var(--color-border); padding: 14px 18px; font-family: var(--font-mono); font-size: 0.55em; line-height: 1.6; color: #dbe2ff; white-space: pre-wrap; word-wrap: break-word; overflow-x: auto; }
+    [data-theme="light"] .codepanel { background: #0f172a; }
+    .codepanel .cmt { color: var(--color-mid-gray); }
+    .codepanel .cmd { color: var(--color-cyan-2); }
+    .codepanel .acc { color: var(--color-amber); }
+    .code-label { display: inline-block; font-size: 0.48em; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-cyan-2); background: rgba(62,201,214,0.12); border: 1px solid rgba(62,201,214,0.35); padding: 2px 10px; margin: 0 0 6px; font-family: var(--font-mono); }
+
+    /* Status pipeline (slide 4) */
+    .pipeline { display: flex; align-items: stretch; gap: 0; margin-top: 16px; }
+    .pipe-step { flex: 1; text-align: center; position: relative; padding: 0 4px; }
+    .pipe-chip { display: block; font-family: var(--font-mono); font-size: 0.6em; font-weight: 700; padding: 10px 6px; background: var(--color-panel-2); border: 2px solid var(--color-border-2); color: var(--color-mid-gray); }
+    .pipe-step.done .pipe-chip { border-color: var(--color-green); color: var(--color-green); background: rgba(16,185,129,0.08); }
+    .pipe-step.current .pipe-chip { border-color: var(--color-cyan); color: var(--color-cyan-2); background: rgba(62,201,214,0.12); }
+    .pipe-gate { flex: 0 0 auto; display: flex; align-items: center; padding: 0 2px; color: var(--color-dark-gray); font-size: 0.55em; }
+    .pipe-note { display: block; margin-top: 8px; font-size: 0.46em; line-height: 1.45; color: var(--color-mid-gray); }
+    .pipe-note b { color: var(--color-light-gray); }
+
+    /* Numbered flow cards (slide 3/5 reading order) */
+    .flow-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
+    .flow-card { background: var(--color-panel-2); border: 1px solid var(--color-border); border-top: 3px solid var(--color-cyan); padding: 14px 16px; position: relative; }
+    .flow-card.green { border-top-color: var(--color-green); }
+    .flow-card.amber { border-top-color: var(--color-amber); }
+    .flow-num { position: absolute; top: -14px; left: 14px; width: 26px; height: 26px; border-radius: 50%; background: var(--color-cyan); color: #06282d; font-size: 0.6em; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+    .flow-card.green .flow-num { background: var(--color-green); color: #06281c; }
+    .flow-card.amber .flow-num { background: var(--color-amber); color: #2d1c02; }
+    .flow-card h3 { margin: 4px 0 2px; font-size: 0.7em; }
+    .flow-card .src { font-family: var(--font-mono); font-size: 0.48em; color: var(--color-dark-gray); display: block; margin-bottom: 8px; }
+    .flow-card ul { margin: 0; padding-left: 18px; font-size: 0.56em; color: var(--color-light-gray); line-height: 1.55; }
+    .flow-card li { margin-bottom: 4px; }
+    .flow-card li b { color: var(--color-white); }
+
+    /* Readable data tables — min ~13px on 1280 canvas */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.6em; background: var(--color-panel-2); border: 1px solid var(--color-border); }
+    .data-table th, .data-table td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--color-border); vertical-align: top; color: var(--color-light-gray); line-height: 1.45; }
+    .data-table th { background: #101839; color: var(--color-mid-gray); font-weight: 600; font-size: 0.85em; letter-spacing: 0.04em; text-transform: uppercase; }
+    [data-theme="light"] .data-table th { background: #e2e8f0; }
+    .data-table tr:last-child td { border-bottom: 0; }
+    .data-table td b { color: var(--color-white); }
+    .data-table code { background: rgba(62, 201, 214, 0.10); padding: 1px 5px; font-size: 0.95em; color: var(--color-cyan-2); font-family: var(--font-mono); }
+
+    .toolkit-table { width: 100%; border-collapse: collapse; font-size: 0.55em; background: var(--color-panel-2); border: 1px solid var(--color-border); }
+    .toolkit-table th, .toolkit-table td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--color-border); vertical-align: top; }
+    .toolkit-table th { background: #101839; color: var(--color-mid-gray); font-weight: 600; font-size: 0.85em; letter-spacing: 0.04em; text-transform: uppercase; }
+    .toolkit-table tr:last-child td { border-bottom: 0; }
+    .toolkit-table td b { color: var(--color-white); }
+    .toolkit-table code { background: rgba(62, 201, 214, 0.10); padding: 1px 5px; font-size: 0.95em; color: var(--color-cyan-2); font-family: var(--font-mono); }
+
+    /* Lifecycle map (slide 2) */
+    .aidlc-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 12px; }
+    .aidlc-phase { background: var(--color-panel-2); border: 1px solid var(--color-border); border-top: 3px solid var(--color-cyan); padding: 12px 14px; }
+    .aidlc-phase.construction { border-top-color: var(--color-green); }
+    .aidlc-phase.operations { border-top-color: var(--color-amber); }
+    .aidlc-phase h3 { margin: 0 0 1px; font-size: 0.72em; color: var(--color-white); display: flex; align-items: center; gap: 8px; }
+    .aidlc-phase .ph-num { flex: 0 0 auto; width: 1.55em; height: 1.55em; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: 700; color: #0a1222; background: var(--color-cyan); }
+    .aidlc-phase.construction .ph-num { background: var(--color-green); }
+    .aidlc-phase.operations .ph-num { background: var(--color-amber); }
+    .aidlc-phase .ph-sub { font-size: 0.5em; color: var(--color-mid-gray); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 8px; }
+    .aidlc-step { background: var(--color-panel-3); border: 1px solid var(--color-border-2); padding: 7px 10px; margin-bottom: 6px; }
+    .aidlc-step:last-child { margin-bottom: 0; }
+    .aidlc-step b { font-size: 0.58em; color: var(--color-cyan-2); display: block; }
+    .aidlc-step span { font-size: 0.52em; color: var(--color-light-gray); }
+    .aidlc-step .file { font-family: var(--font-mono); font-size: 0.5em; color: var(--color-mid-gray); display: block; margin-top: 1px; }
+
+    .cover-wrap { display: flex; flex-direction: column; justify-content: center; height: 100%; max-width: 1040px; }
+    .cover-wrap h1 { font-size: 1.85em; line-height: 1.06; margin: 0 0 0.35rem; letter-spacing: -0.02em; }
+    .cover-wrap h2 { font-size: 0.95em; margin: 0 0 0.8rem; color: var(--color-cyan); font-weight: 500; }
+    .cover-sub { font-size: 0.72em; font-weight: 500; color: var(--color-mid-gray); margin: 0 0 22px; line-height: 1.4; }
+    .cover-cards { display: flex; gap: 16px; margin-bottom: 22px; }
+    .cover-card { flex: 1; display: flex; align-items: center; gap: 13px; background: var(--color-panel-2); border: 1px solid var(--color-border); border-left: 3px solid var(--color-cyan); padding: 14px 17px; }
+    .cover-card.purple { border-left-color: var(--color-purple); }
+    .cover-card.purple iconify-icon { color: var(--color-purple); }
+    .cover-card.green { border-left-color: var(--color-green); }
+    .cover-card.green iconify-icon { color: var(--color-green); }
+    .cover-card iconify-icon { font-size: 1.8em; color: var(--color-cyan); flex: 0 0 auto; }
+    .cover-card h4 { margin: 0; font-size: 0.62em; color: var(--color-white); }
+    .cover-card p { margin: 2px 0 0; font-size: 0.5em; color: var(--color-mid-gray); }
+    .cover-badges { display: flex; flex-wrap: wrap; gap: 9px; }
+    .cover-badges .pill-tag { font-size: 0.5em; padding: 4px 11px; }
+
+    .pill-tag { display: inline-block; font-size: 0.85em; padding: 1px 7px; background: rgba(62, 201, 214, 0.14); color: var(--color-cyan-2); border: 1px solid rgba(62, 201, 214, 0.4); letter-spacing: 0.04em; font-weight: 600; }
+
+    .emphasis-box { background: rgba(62, 201, 214, 0.10); border: 1px solid rgba(62, 201, 214, 0.4); border-left: 3px solid var(--color-cyan); padding: 10px 14px; margin-top: 12px; font-size: 0.56em; color: var(--color-light-gray); line-height: 1.5; }
+    .emphasis-box b, .emphasis-box strong { color: var(--color-cyan-2); }
+    .emphasis-box.green { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.4); border-left-color: var(--color-green); }
+    .emphasis-box.green b, .emphasis-box.green strong { color: var(--color-green); }
+
+    /* Numbered precedence steps (slide 8) */
+    .step-list { list-style: none; margin: 0; padding: 0; }
+    .step-list li { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--color-border-2); }
+    .step-list li:last-child { border-bottom: 0; }
+    .step-list .n { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: var(--color-purple); color: #fff; font-size: 0.55em; font-weight: 800; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+    .step-list .t { font-size: 0.56em; color: var(--color-light-gray); line-height: 1.45; }
+    .step-list .t b { color: var(--color-white); }
+    .step-list .t code { background: rgba(139,92,246,0.14); color: #c4b5fd; padding: 0 5px; font-family: var(--font-mono); font-size: 0.95em; }
+
+    .gloss-note { font-size: 0.5em; color: var(--color-light-gray); margin-top: 10px; line-height: 1.45; border-left: 3px solid var(--color-cyan); padding: 6px 12px; background: rgba(62,201,214,0.06); }
+    .gloss-src { font-size: 0.44em; color: var(--color-dark-gray); margin-top: 6px; }
+    .refs { font-size: 0.4em; color: var(--color-mid-gray); margin-top: 12px; line-height: 1.7; }
+    .refs b { color: var(--color-light-gray); font-weight: 600; }
+    .refs a { color: var(--color-cyan); text-decoration: none; }
+    .refs a:hover { text-decoration: underline; }
+    .refs .sep { color: var(--color-border); margin: 0 8px; }
+
+    .slide-footer { position: absolute; bottom: 18px; left: 44px; right: 44px; display: flex; justify-content: space-between; font-size: 0.5em; color: var(--color-dark-gray); }
+
+    .highlight-cyan { color: var(--color-cyan); }
+    .highlight-green { color: var(--color-green); }
+    .highlight-amber { color: var(--color-amber); }
+  </style>
+</head>
+<body>
+  <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle light / dark">
+    <iconify-icon icon="mdi:weather-night"></iconify-icon>
+  </button>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- ==========================================
+           SLIDE 1: Cover
+           ========================================== -->
+      <section class="slide-brand">
+        <div class="cover-wrap">
+          <span class="kicker">AI-Driven Development Lifecycle · Implemented, Not Aspirational</span>
+          <h1>AI-DLC In Practice</h1>
+          <h2>From Intent to Operations</h2>
+          <p class="cover-sub">This deck follows <b style="color:var(--color-cyan);">one real change</b> — <code style="font-family:var(--font-mono);color:var(--color-cyan-2);">add-privacy-classifier</code> — through every AI-DLC phase in this monorepo: the ceremonies, the approval gates, the security review, and the evals that block promotion.</p>
+
+          <div class="cover-cards">
+            <div class="cover-card">
+              <iconify-icon icon="mdi:account-group"></iconify-icon>
+              <div>
+                <h4>Mob Ceremonies</h4>
+                <p>Elaboration → Construction</p>
+              </div>
+            </div>
+            <div class="cover-card purple">
+              <iconify-icon icon="mdi:checkbox-marked-outline"></iconify-icon>
+              <div>
+                <h4>Status Gates</h4>
+                <p>proposed → verified → archived</p>
+              </div>
+            </div>
+            <div class="cover-card green">
+              <iconify-icon icon="mdi:test-tube"></iconify-icon>
+              <div>
+                <h4>Evals Framework</h4>
+                <p>Tests that block promotion</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="cover-badges">
+            <span class="pill-tag">Governance</span>
+            <span class="pill-tag">Security Review</span>
+            <span class="pill-tag">Evals</span>
+            <span class="pill-tag">Observability</span>
+            <span class="pill-tag">Real Artifacts</span>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>AI-DLC In Practice</span>
+          <span>1 / 12</span>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 2: The Storyline — why this deck exists
+           ========================================== -->
+      <section class="slide-brand">
+        <span class="kicker"><span class="ph">The Storyline</span> Why This Deck Exists</span>
+        <h1 style="font-size:1.1em;margin:0 0 0.1rem;">Teach the method by solving a real problem</h1>
+        <p class="lede">This is a teaching deck. Instead of explaining AI-DLC in the abstract, we build something real from my own domain — and let the method prove itself along the way.</p>
+
+        <div class="flow-row" style="grid-template-columns:1fr 1fr 1fr;">
+          <div class="flow-card">
+            <span class="flow-num">1</span>
+            <h3>A real problem</h3>
+            <span class="src">privacy engineering, my expertise area</span>
+            <ul>
+              <li>Given <b>any document</b> — a contract PDF, a scanned form, an email export — which <b>PII/NPI</b> does it contain?</li>
+              <li>And which regulations does that implicate — <b>GDPR, HIPAA, CCPA, DPDP, LGPD, PIPEDA</b>?</li>
+              <li>Today this is expert judgment and one-off scripts, tied to whichever system asked. It doesn't scale and it doesn't transfer.</li>
+            </ul>
+          </div>
+          <div class="flow-card amber">
+            <span class="flow-num">2</span>
+            <h3>A method to trust</h3>
+            <span class="src">AI-DLC, not vibe coding</span>
+            <ul>
+              <li>AI can build this agent <b>fast</b> — but fast without gates means unreviewed architecture and untested claims.</li>
+              <li>AI-DLC adds <b>ceremonies</b> (mob elaboration, mob construction), <b>approval gates</b>, and <b>evidence</b> (security review, evals).</li>
+              <li>AI does the execution; a human stays accountable for every decision — in writing.</li>
+            </ul>
+          </div>
+          <div class="flow-card green">
+            <span class="flow-num">3</span>
+            <h3>A working result</h3>
+            <span class="src">agents/privacy-classifier, in this repo</span>
+            <ul>
+              <li>A real agent with a <b>proposal, design, task log, security findings, and 8 evals</b> — every excerpt in this deck is an actual file you can open.</li>
+              <li>Including the part that went wrong: Construction ran <b>ahead of the approval gate</b> once, got caught, and the process tightened.</li>
+              <li>The problem is mine; the method is yours to reuse.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="emphasis-box">
+          <b>How to teach with this deck:</b> every phase slide follows the same pattern — the <b>ceremony</b> (what we did), the <b>artifact</b> (the file it produced), and <b>why it matters</b>. Swap in a real problem from your own domain and the method transfers unchanged.
+        </div>
+
+        <div class="slide-footer">
+          <span>AI-DLC In Practice · The Storyline</span>
+          <span>2 / 12</span>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 3: The Map — lifecycle → repo artifacts
+           ========================================== -->
+      <section class="slide-brand">
+        <span class="kicker"><span class="ph">The Map</span> How to Read This Deck</span>
+        <h1 style="font-size:1.1em;margin:0 0 0.1rem;">Three phases, one repo — every concept is a file</h1>
+        <p class="lede">AI-DLC's phases map to concrete artifacts in <code style="font-family:var(--font-mono);">openspec/changes/&lt;name&gt;/</code>. The rest of the deck walks them left to right.</p>
+
+        <div class="aidlc-grid">
+          <div class="aidlc-phase">
+            <h3><span class="ph-num">1</span> Inception</h3>
+            <p class="ph-sub">Slides 4–5 · "What &amp; why"</p>
+            <div class="aidlc-step">
+              <b>Mob Elaboration</b>
+              <span>AI drafts scope, team validates</span>
+              <span class="file">→ proposal.md</span>
+            </div>
+            <div class="aidlc-step">
+              <b>Approval Gate</b>
+              <span>Repo owner signs off before build</span>
+              <span class="file">→ .openspec.yaml (status field)</span>
+            </div>
+          </div>
+          <div class="aidlc-phase construction">
+            <h3><span class="ph-num">2</span> Construction</h3>
+            <p class="ph-sub">Slides 6–8 · "Build with gates"</p>
+            <div class="aidlc-step">
+              <b>Mob Construction</b>
+              <span>AI proposes design + code, human reviews</span>
+              <span class="file">→ design.md + tasks.md</span>
+            </div>
+            <div class="aidlc-step">
+              <b>Security Baseline</b>
+              <span>Pre-merge review; findings fixed &amp; logged</span>
+              <span class="file">→ design.md "Security baseline"</span>
+            </div>
+            <div class="aidlc-step">
+              <b>Evals</b>
+              <span>Tests that gate implemented → verified</span>
+              <span class="file">→ evals/*.eval.ts</span>
+            </div>
+          </div>
+          <div class="aidlc-phase operations">
+            <h3><span class="ph-num">3</span> Operations</h3>
+            <p class="ph-sub">Slides 9–10 · "Run &amp; retune"</p>
+            <div class="aidlc-step">
+              <b>Config Without Code</b>
+              <span>Swappable engines, prompt overrides</span>
+              <span class="file">→ .env (PII_ENGINE, PII_SYSTEM_PROMPT)</span>
+            </div>
+            <div class="aidlc-step">
+              <b>Observability</b>
+              <span>OTel traces + post-hoc cost, dual export</span>
+              <span class="file">→ Phoenix + OpenObserve, summary.json</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="emphasis-box">
+          <b>Then two reference slides:</b> single- vs multi-agent architecture patterns (slide 11) and the AI-DLC glossary with source links (slide 12).
+        </div>
+
+        <div class="slide-footer">
+          <span>AI-DLC In Practice</span>
+          <span>3 / 12</span>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 3: Inception — Mob Elaboration
+           ========================================== -->
+      <section class="slide-brand">
+        <span class="kicker ph-inception"><span class="ph">Phase 1 · Inception</span> Mob Elaboration</span>
+        <h1 style="font-size:1.1em;margin:0 0 0.1rem;">The intent becomes a reviewable proposal</h1>
+        <p class="lede">The ceremony: a one-line intent goes in, AI drafts the scope, the team validates it — and nothing gets built until it's approved.</p>
+
+        <div class="flow-row">
+          <div class="flow-card">
+            <span class="flow-num">1</span>
+            <h3>The ceremony</h3>
+            <span class="src">what happened, in order</span>
+            <ul>
+              <li><b>Intent stated:</b> "Classify a document's PII/NPI content and the compliance regimes it implicates — independent of any consumer."</li>
+              <li><b>AI drafts</b> proposal.md: why, what changes, what's explicitly out of scope, impact on <code>shared/</code>.</li>
+              <li><b>Team validates:</b> which compliance regimes? local vs cloud detection? columnar files in or out? (out — rejected at a gate).</li>
+              <li><b>Nothing is coded yet.</b> The output of Inception is a document, not software.</li>
+            </ul>
+          </div>
+          <div class="flow-card">
+            <span class="flow-num">2</span>
+            <h3>The artifact</h3>
+            <span class="src">openspec/changes/add-privacy-classifier/proposal.md</span>
+            <ul>
+              <li><b>Why:</b> privacy work is one-off and consumer-tied; the repo needs a generic, standalone building block with a swappable detection backend.</li>
+              <li><b>What:</b> new Eve agent · PDF/DOCX/TXT/images with OCR · 4 detection engines · deterministic compliance mapping (GDPR, CCPA/CPRA, HIPAA, LGPD, PIPEDA, DPDP, PDPL).</li>
+              <li><b>Excluded, on purpose:</b> columnar files, fingerprinting, subagents — roadmap only.</li>
+              <li><b>Impact:</b> 3 new reusable <code>shared/</code> libs; Python toolchain in sandbox; no changes to other agents.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="emphasis-box">
+          <b>Why this matters:</b> scope disagreements surface here — in a diff-able markdown review — not three weeks into implementation. The proposal is the contract Construction is measured against.
+        </div>
+
+        <div class="slide-footer">
+          <span>AI-DLC In Practice · Phase 1: Inception</span>
+          <span>4 / 12</span>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 4: The Approval Gate — status lifecycle
+           ========================================== -->
+      <section class="slide-brand">
+        <span class="kicker ph-gate"><span class="ph">The Gate</span> Inception → Construction</span>
+        <h1 style="font-size:1.1em;margin:0 0 0.1rem;">One status field decides what happens next</h1>
+        <p class="lede">Every change carries a <code style="font-family:var(--font-mono);">.openspec.yaml</code>. Its <code style="font-family:var(--font-mono);">status:</code> field is the single source of truth for how far the change may advance.</p>
+
+        <div class="pipeline">
+          <div class="pipe-step done">
+            <span class="pipe-chip">proposed</span>
+            <span class="pipe-note">Proposal + design drafted, <b>not yet reviewed</b></span>
+          </div>
+          <div class="pipe-gate">▶</div>
+          <div class="pipe-step done">
+            <span class="pipe-chip">approved</span>
+            <span class="pipe-note">Repo owner signed off — <b>only now may Construction start</b></span>
+          </div>
+          <div class="pipe-gate">▶</div>
+          <div class="pipe-step current">
+            <span class="pipe-chip">implemented</span>
+            <span class="pipe-note">Code done, typechecked, <b>security baseline passed</b> — privacy-classifier is here</span>
+          </div>
+          <div class="pipe-gate">▶</div>
+          <div class="pipe-step">
+            <span class="pipe-chip">verified</span>
+            <span class="pipe-note">Live smoke run + <b>eve eval pass</b> — evals gate this hop</span>
+          </div>
+          <div class="pipe-gate">▶</div>
+          <div class="pipe-step">
+            <span class="pipe-chip">archived</span>
+            <span class="pipe-note">Merged and closed out</span>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;">
+          <span class="code-label">openspec/changes/add-privacy-classifier/.openspec.yaml — actual file</span>
+          <div class="codepanel">status: <span class="acc">implemented</span>
+approval:
+  reviewed_by: senthilsweb
+  reviewed_date: 2026-07-08
+  note: >
+    <span class="cmt">Retroactive Inception-gate approval — design was reviewed AFTER
+    implementation had completed. See AI-SDLC-TAILORING.md for the
+    process-gap writeup. Status advances to `verified` once the live
+    smoke run + eval run pass.</span></div>
+        </div>
+
+        <div class="emphasis-box">
+          <b>The honest part:</b> this change was built <i>before</i> the gate was approved — the exact "vibe coding" failure AI-DLC exists to prevent. It was caught, approved retroactively, and the lifecycle above now exists so status reaches <b>approved</b> before tasks.md fills in.
+        </div>
+
+        <div class="slide-footer">
+          <span>AI-DLC In Practice · The Approval Gate</span>
+          <span>5 / 12</span>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 5: Construction — Mob Construction
+           ========================================== -->
+      <section class="slide-brand">
+        <span class="kicker ph-construction"><span class="ph">Phase 2 · Construction</span> Mob Construction</span>
+        <h1 style="font-size:1.1em;margin:0 0 0.1rem;">Design decides, tasks execute — decisions stay in the artifact</h1>
+        <p class="lede">AI proposes design and code; the human pairs, reviews, and corrects. Every correction is logged where it happened — not in a chat that disappears.</p>
+
+        <div class="flow-row">
+          <div class="flow-card green">
+            <span class="flow-num">1</span>
+            <h3>design.md decides</h3>
+            <span class="src">the blueprint, approved before code</span>
+            <ul>
+              <li><b>Model routing:</b> reasoning-class orchestrator (never sees raw document text) + fast non-reasoning PII detector for glue work.</li>
+              <li><b>Engine routing:</b> one env var, four swappable backends (detail on slide 9).</li>
+              <li><b>Loop policy:</b> single deterministic pipeline — no subagents, no regeneration loops, one <code>generateObject</code> call per chunk.</li>
+              <li><b>Deployment constraint stated upfront:</b> local/on-prem only; not Vercel-serverless compatible.</li>
+            </ul>
+          </div>
+          <div class="flow-card green">
+            <span class="flow-num">2</span>
+            <h3>tasks.md executes</h3>
+            <span class="src">checklist + corrections + sign-off, in one file</span>
+            <ul>
+              <li><b>25+ build tasks checked off:</b> sandbox bootstrap, 15+ tools, 3 shared libs, 8 evals, typecheck clean.</li>
+              <li><b>Correction logged:</b> engine <code>genai_local_lightweight</code> renamed to <code>openai_privacy_filter</code> — repo owner corrected a wrong assumption (it's not an LLM).</li>
+              <li><b>Correction logged:</b> TS paragraph splitter replaced with real semantic chunking (Chonkie); dead code removed from <code>shared/</code>.</li>
+              <li><b>Sign-off recorded:</b> who approved, when, and what's still blocked (live runs).</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="emphasis-box green">
+          <b>The audit trail is the artifact itself.</b> <code>**Correction:**</code> and <code>**Sign-off:**</code> entries live inside tasks.md and design.md — next to the decision they changed, reviewable in any diff.
+        </div>
+
+        <div class="slide-footer">
+          <span>AI-DLC In Practice · Phase 2: Construction</span>
+          <span>6 / 12</span>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 6: Construction gate — Security Baseline
+           ========================================== -->
+      <section class="slide-brand">
+        <span class="kicker ph-construction"><span class="ph">Phase 2 · Construction</span> Quality Gate 1: Security Baseline</span>
+        <h1 style="font-size:1.1em;margin:0 0 0.1rem;">Pre-merge review found real vulnerabilities — and blocked the status</h1>
+        <p class="lede">A change touching untrusted input cannot reach <b>implemented</b> without this pass. Here is what it actually caught in privacy-classifier.</p>
+
+        <table class="data-table" style="margin-top:12px;">
+          <thead>
+            <tr>
+              <th style="width:24%;">Finding</th>
+              <th style="width:33%;">Root cause</th>
+              <th style="width:33%;">Fix</th>
+              <th style="width:10%;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b style="color:var(--color-red);">Shell injection</b><br/>HIGH · 9/10<br/><code>detect_privacy_entities</code> + 2 more tools</td>
+              <td><code>JSON.stringify()</code> as arg-escaping doesn't stop <code>$(…)</code> command substitution — and the <code>language</code> arg was free-form, reachable by the LLM.</td>
+              <td>New <code>shellQuote</code> helper (single-quote, fully literal) at all 3 call sites; <code>language</code> constrained to ISO&nbsp;639-1.</td>
+              <td><b style="color:var(--color-green);">✓ Fixed</b></td>
+            </tr>
+            <tr>
+              <td><b style="color:var(--color-red);">Arbitrary file read</b><br/>HIGH · 9/10<br/><code>load_input</code></td>
+              <td>Raw host path, no confinement — any authenticated caller could "classify" <code>/etc/passwd</code> and read it back from the result.</td>
+              <td>Input confined to sandbox-staged <code>/workspace/inputs/</code>; read via sandbox API, never <code>node:fs</code>. Evals restaged to match.</td>
+              <td><b style="color:var(--color-green);">✓ Fixed</b></td>
+            </tr>
+            <tr>
+              <td><b style="color:var(--color-amber);">Quote breakout</b><br/>MEDIUM · hardening<br/><code>read_run_file</code></td>
+              <td>A <code>"</code> in the path could escape the quoted shell argument.</td>
+              <td>Hardened; downgraded from blocking — the path is orchestrator-chosen and the orchestrator never sees raw document text.</td>
+              <td><b style="color:var(--color-green);">✓ Hardened</b></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="emphasis-box">
+          <b>Findings are logged in design.md's "Security baseline" section</b> — severity, confidence, root cause, and fix — then re-typechecked. It's a triggered pre-merge pass today, promoted to a CI gate when the repo takes external contributions (documented in AI-SDLC-TAILORING.md).
+        </div>
+
+        <div class="slide-footer">
+          <span>AI-DLC In Practice · Phase 2: Construction</span>
+          <span>7 / 12</span>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 7: Construction gate — Evals
+           ========================================== -->
+      <section class="slide-brand">
+        <span class="kicker ph-construction"><span class="ph">Phase 2 · Construction</span> Quality Gate 2: Evals ⭐</span>
+        <h1 style="font-size:1.1em;margin:0 0 0.1rem;">Evals are the gate between <span class="highlight-green">implemented</span> and <span class="highlight-cyan">verified</span></h1>
+        <p class="lede">First adopter of eve's native eval harness in this repo. Eight evals assert on the <b>actual files a run writes</b> — not on the agent's prose reply.</p>
+
+        <div class="twocol" style="margin-top:12px;">
+          <div class="panel">
+            <h3 style="color:var(--color-green);">8 evals, two kinds</h3>
+            <ul>
+              <li><b>Integration (5)</b> — drive a real turn, then read run artifacts:<br/>
+                <code>schema_conformance</code> · result.json validates against schema<br/>
+                <code>pii_entity_detection</code> · planted email + SSN are found<br/>
+                <code>engine_selection</code> · findings carry the right engine tags<br/>
+                <code>ocr_fallback</code> · scanned PNG still yields text<br/>
+                <code>columnar_rejection</code> · CSV is refused at the gate</li>
+              <li><b>Unit (3)</b> — pure deterministic checks, no model call:<br/>
+                <code>compliance_mapping</code> · HEALTH_RECORD_ID → HIPAA, not CCPA<br/>
+                <code>label_alias_normalization</code> · "ssn" → GOVERNMENT_ID_SSN<br/>
+                <code>doc_type_classification</code> · columnar gate logic</li>
+            </ul>
+          </div>
+          <div>
+            <span class="code-label">evals/schema_conformance.eval.ts — abridged</span>
+            <div class="codepanel">export default defineEval({
+  async test(t) {
+    const turn = await t.send(
+      <span class="acc">"Classify this document for PII/NPI…"</span>);
+    turn.expectOk();
+
+    <span class="cmt">// read the file the pipeline actually wrote</span>
+    const runId = extractRunId(turn.toolCalls);
+    const result = readRunJson(runId, <span class="acc">"result.json"</span>);
+    t.check(result,
+      matches(DocumentClassificationSchema));
+  }
+});</div>
+            <div class="emphasis-box green" style="margin-top:10px;">
+              <b>Production gates, not post-hoc checks.</b> Assertions run against result.json and findings.normalized.json on disk. A schema drift or a missed entity fails the eval — and the change stays at <b>implemented</b>.
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>AI-DLC In Practice · Phase 2: Construction</span>
+          <span>8 / 12</span>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 8: Operations — config without code
+           ========================================== -->
+      <section class="slide-brand">
+        <span class="kicker ph-operations"><span class="ph">Phase 3 · Operations</span> Retune Without a Rebuild</span>
+        <h1 style="font-size:1.1em;margin:0 0 0.1rem;">Swappable engines + prompt overrides — ops decisions, not PRs</h1>
+        <p class="lede">Detection accuracy/cost/privacy trade-offs are runtime configuration. Same codebase, no rebuild, no code review cycle.</p>
+
+        <div class="twocol" style="margin-top:12px;">
+          <div>
+            <h3 style="font-size:0.7em;margin:0 0 8px;">Engine routing — <code style="font-family:var(--font-mono);font-size:0.9em;">PII_ENGINE</code></h3>
+            <table class="data-table">
+              <thead>
+                <tr><th>Engine</th><th>Presidio</th><th>GenAI</th><th>Use when</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>presidio</code></td><td>✓</td><td>—</td><td>Fully local, no LLM</td></tr>
+                <tr><td><code>presidio_genai</code></td><td>✓</td><td>✓</td><td>Hybrid, merged findings</td></tr>
+                <tr><td><code>genai_only</code></td><td>—</td><td>✓</td><td>Frontier-model accuracy</td></tr>
+                <tr><td><code>openai_privacy_filter</code></td><td>—</td><td>—</td><td>Reserved — fails fast (TODO)</td></tr>
+              </tbody>
+            </table>
+            <div class="emphasis-box" style="margin-top:10px;">
+              <b>No default.</b> Unset = startup error — same "no silent defaults" rule as model resolution across this repo.
+            </div>
+          </div>
+          <div>
+            <h3 style="font-size:0.7em;margin:0 0 8px;color:var(--color-purple);">Detection-prompt precedence — highest wins</h3>
+            <div class="panel" style="padding:12px 16px;">
+              <ol class="step-list">
+                <li><span class="n">1</span><span class="t"><b>Per-invocation</b> <code>system_prompt</code> argument — one-off experiments</span></li>
+                <li><span class="n">2</span><span class="t"><code>PII_SYSTEM_PROMPT</code> — inline env override</span></li>
+                <li><span class="n">3</span><span class="t"><code>PII_SYSTEM_PROMPT_FILE</code> — a maintained prompt file, versionable per deployment</span></li>
+                <li><span class="n">4</span><span class="t"><b>Bundled default</b> — <code>agent/config/detection_prompt.default.md</code></span></li>
+              </ol>
+            </div>
+            <div class="emphasis-box" style="margin-top:10px;">
+              <b>Example:</b> "be stricter about credit-card patterns" ships as an env var today and becomes a reviewed prompt file tomorrow — the code never changes.
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>AI-DLC In Practice · Phase 3: Operations</span>
+          <span>9 / 12</span>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 9: Operations — observability
+           ========================================== -->
+      <section class="slide-brand">
+        <span class="kicker ph-operations"><span class="ph">Phase 3 · Operations</span> Observability</span>
+        <h1 style="font-size:1.1em;margin:0 0 0.1rem;">One trace per run, two backends, zero custom instrumentation</h1>
+        <p class="lede">LLM calls use the AI SDK's native telemetry; non-LLM steps get a thin <code style="font-family:var(--font-mono);">withSpan</code> wrapper. Both ride the shared OTel pipeline.</p>
+
+        <div class="twocol" style="margin-top:12px;">
+          <div class="panel">
+            <h3>How it's wired</h3>
+            <ul>
+              <li><b>GenAI calls:</b> <code>generateObject({ telemetry: { isEnabled: true } })</code> — tokens, latency, and cache stats come free on the AI SDK's own span.</li>
+              <li><b>Presidio / Docling / Chonkie</b> (no LLM tokens): wrapped in <code>withSpan(...)</code> carrying <code>runId</code>, <code>chunkId</code>, <code>engine</code> — the AI SDK span nests inside via normal OTel context.</li>
+              <li><b>Dual export:</b> set both endpoints and every span fans out to local <b>Phoenix</b> (dev UI) and <b>OpenObserve</b> (durable, queryable) independently.</li>
+              <li><b>Cost:</b> computed post-hoc from <code>summary.json</code> against the shared rate card — no runtime overhead, same as every agent here.</li>
+            </ul>
+          </div>
+          <div>
+            <span class="code-label">one run, one trace — per-chunk spans</span>
+            <div class="codepanel">TRACE · privacy-classifier run
+├─ extract_document_text   <span class="cmt">Docling · 2.3s</span>
+├─ chunk_text              <span class="cmt">Chonkie · 0.9s</span>
+├─ detect_pii_genai        <span class="cmt">chunk_0 · engine=genai_only</span>
+│  └─ ai.generateObject    <span class="acc">tokens 450→180 · cache stats</span>
+├─ detect_pii_genai        <span class="cmt">chunk_1 … (bounded ×5)</span>
+├─ normalize_findings      <span class="cmt">deterministic · 45ms</span>
+└─ assemble_report         <span class="cmt">→ result.json, summary.json</span></div>
+            <div class="emphasis-box" style="margin-top:10px;">
+              <b>1 chunk = 1 span, by design.</b> The single-agent loop policy (next slide) exists partly to keep this mapping clean.
+            </div>
+          </div>
+        </div>
+
+        <div class="slide-footer">
+          <span>AI-DLC In Practice · Phase 3: Operations</span>
+          <span>10 / 12</span>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 10: Patterns — single vs multi-agent
+           ========================================== -->
+      <section class="slide-brand">
+        <span class="kicker"><span class="ph">Reference</span> Architecture Patterns</span>
+        <h1 style="font-size:1.1em;margin:0 0 0.1rem;">Single-agent vs multi-agent — two real answers in this repo</h1>
+        <p class="lede">Same monorepo, two deliberate choices. Pick the pattern the work demands, not the fancier one.</p>
+
+        <table class="data-table" style="margin-top:12px;">
+          <thead>
+            <tr>
+              <th style="width:22%;"></th>
+              <th style="width:39%;"><span style="color:var(--color-cyan);">privacy-classifier</span> — single agent</th>
+              <th style="width:39%;"><span style="color:var(--color-purple);">api-test-generator</span> — multi-agent</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>Shape</b></td>
+              <td>One orchestrator; PII detection is a direct <code>generateObject</code> call per chunk</td>
+              <td>Sonnet orchestrator + Opus pairwise-designer + Haiku assertion-writer subagents</td>
+            </tr>
+            <tr>
+              <td><b>Why it fits</b></td>
+              <td>Stateless, parallelizable extraction — no multi-turn reasoning needed</td>
+              <td>Factor analysis needs heavy reasoning; assertion writing is bulk template work</td>
+            </tr>
+            <tr>
+              <td><b>Tracing</b></td>
+              <td>Clean 1:1 chunk-to-span mapping (slide 10 depends on it)</td>
+              <td>Spans across 3 agents, correlated per run</td>
+            </tr>
+            <tr>
+              <td><b>Cost model</b></td>
+              <td>One cheap fast model for all detection calls</td>
+              <td>Per-role optimization — Opus only where reasoning pays for itself</td>
+            </tr>
+            <tr>
+              <td><b>The trade</b></td>
+              <td>No multi-hop refinement — a chunk gets one shot</td>
+              <td>Sandbox + conversation overhead per subagent; slower, more moving parts</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="emphasis-box">
+          <b>The design.md says it out loud:</b> "spinning up an isolated-sandbox subagent per chunk would add overhead with no benefit and would blur the 1:1 chunk-to-telemetry-span mapping." Architecture choices are documented with their reasons — that's the AI-DLC habit.
+        </div>
+
+        <div class="slide-footer">
+          <span>AI-DLC In Practice · Reference</span>
+          <span>11 / 12</span>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           SLIDE 11: AI-DLC Glossary (kept verbatim)
+           ========================================== -->
+      <section class="slide-brand">
+        <span class="kicker">Reference</span>
+        <h1 style="font-size:1.15em;margin:0 0 0.15rem;">AI-DLC glossary — the new vocabulary</h1>
+        <p class="lede">AI-DLC renames the Agile ceremonies. Same intent, rebuilt for AI-speed execution.</p>
+
+        <div class="panel" style="padding:0;overflow:hidden;margin-top:10px;">
+          <table class="toolkit-table" style="margin:0;">
+            <thead>
+              <tr><th style="width:20%;">Term</th><th style="width:46%;">What it means</th><th style="width:34%;">Example</th></tr>
+            </thead>
+            <tbody>
+              <tr><td style="color:var(--color-cyan);font-weight:600;">Intent</td><td>High-level business goal in plain language &mdash; the single seed.</td><td><em>"Generate API tests for the Patient Management API with pairwise coverage."</em></td></tr>
+              <tr><td style="color:var(--color-cyan);font-weight:600;">Mob elaboration</td><td>Inception ritual: AI drafts questions, plans, and requirements; the team validates.</td><td>AI asks: auth method? coverage strength (1-3)? which endpoints to include?</td></tr>
+              <tr><td style="color:var(--color-purple);font-weight:600;">Unit of work</td><td>Independently buildable slice. Replaces the Agile <em>epic</em>.</td><td>Parse spec &middot; Design pairwise &middot; Generate assertions &middot; Validate &middot; Execute.</td></tr>
+              <tr><td style="color:var(--color-purple);font-weight:600;">Mob construction</td><td>Construction ritual: AI proposes design, code &amp; tests while humans pair and approve.</td><td>AI drafts pairwise factors; engineer reviews constraint definitions.</td></tr>
+              <tr><td style="color:var(--color-amber);font-weight:600;">Bolt</td><td>Lightning iteration in hours or days. Replaces the Agile <em>sprint</em>.</td><td>Ship API test collection for 5 endpoints in a day, not a two-week sprint.</td></tr>
+              <tr><td style="color:var(--color-green);font-weight:600;">Deployment unit</td><td>Construction's finished output: validated, tested, packaged for CI.</td><td>A Postman collection that passes all 8 validation gates.</td></tr>
+              <tr><td style="color:var(--color-green);font-weight:600;">Production</td><td>Operations phase: units run in CI; results feed the next Intent cycle.</td><td>Newman runs in GitHub Actions; structured JSONL results for analysis.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="gloss-note">
+          <iconify-icon icon="mdi:lightbulb-on"></iconify-icon>
+          AI-DLC doesn't bolt AI onto Agile &mdash; it rebuilds the SDLC from first principles: <em>"we need automobiles, not faster horse chariots."</em> AI does the execution; humans stay accountable for every decision.
+        </div>
+        <div class="gloss-src">Source: AWS AI-DLC Method Definition Paper &mdash; Raja SP, AWS</div>
+
+        <div class="refs">
+          <b>References &mdash; concepts &amp; inspirations:</b>
+          <a href="https://prod.d13rzhkk8cj2z0.amplifyapp.com/" target="_blank" rel="noopener">AI-DLC</a><span class="sep">&middot;</span><a href="https://specs.md/" target="_blank" rel="noopener">specs.md</a><span class="sep">&middot;</span><a href="https://fabriqa.ai/" target="_blank" rel="noopener">fabriqa.ai</a><span class="sep">&middot;</span><a href="https://github.com/dlt-hub/dlthub-ai-workbench" target="_blank" rel="noopener">dltHub AI Workbench</a><span class="sep">&middot;</span><a href="https://github.com/senthilsweb/ai-agents" target="_blank" rel="noopener">ai-agents repo</a>
+        </div>
+
+        <div class="slide-footer">
+          <span>AI-DLC In Practice · Reference</span>
+          <span>12 / 12</span>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      width: 1280,
+      height: 720,
+      margin: 0,
+      controls: true,
+      progress: true,
+      center: false,
+      hash: true,
+      transition: 'fade',
+    });
+
+    // Theme toggle
+    (function () {
+      var root = document.documentElement;
+      var btn = document.getElementById('themeToggle');
+      var icon = btn.querySelector('iconify-icon');
+      function sync() {
+        var light = root.getAttribute('data-theme') === 'light';
+        icon.setAttribute('icon', light ? 'mdi:white-balance-sunny' : 'mdi:weather-night');
+      }
+      btn.addEventListener('click', function () {
+        var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+        root.setAttribute('data-theme', next);
+        try { localStorage.setItem('ai-dlc-deck-theme', next); } catch (e) {}
+        sync();
+      });
+      sync();
+    })();
+  </script>
+</body>
+</html>
