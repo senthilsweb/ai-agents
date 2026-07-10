@@ -1,0 +1,11 @@
+# Job Fit Analyzer Dependencies
+pydantic-ai
+openai
+pydantic
+requests
+beautifulsoup4
+pypdf
+python-docx
+fpdf2
+streamlit
+python-dotenv

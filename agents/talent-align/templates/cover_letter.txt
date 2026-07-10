@@ -1,0 +1,20 @@
+{{candidate_name}}
+{{candidate_title}}
+{{candidate_email}} · {{candidate_phone}} · {{candidate_location}}
+{{candidate_linkedin}} · {{candidate_github}} · {{candidate_website}}
+
+{{date}}
+
+Dear Hiring Manager,
+
+{{paragraph_1}}
+
+{{paragraph_2}}
+
+{{paragraph_3}}
+
+{{paragraph_4}}
+
+Sincerely,
+{{candidate_name}}
+{{candidate_email}} · {{candidate_linkedin}} · {{candidate_website}}

@@ -1,0 +1,16 @@
+services:
+  langflow:
+    image: langflowai/langflow:latest   # or pin to a specific release, e.g. langflowai/langflow:1.10.1
+    pull_policy: always                 # keep 'always' when using 'latest'
+    platform: linux/amd64
+    ports:
+      - "7860:7860"
+    env_file:
+      - .env
+    environment:
+      - LANGFLOW_CONFIG_DIR=/app/langflow
+    volumes:
+      - langflow-data:/app/langflow
+
+volumes:
+  langflow-data:
