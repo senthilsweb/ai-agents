@@ -95,3 +95,16 @@ export function matchBandFor(totalScore: number): MatchStatus {
   if (totalScore >= 35) return "weak_match";
   return "no_match";
 }
+
+const RECOMMENDATIONS: Record<MatchStatus, string> = {
+  strong_match: "Strong match — prioritize applying and tailor the resume to the few remaining gaps.",
+  good_match: "Good match — worth applying; address the missing skills in the cover letter.",
+  moderate_match: "Moderate match — apply if the role is a priority, but expect to close real gaps first.",
+  weak_match: "Weak match — significant gaps against this posting's requirements; consider other roles first.",
+  no_match: "Not a match — the resume does not currently support this posting's requirements.",
+};
+
+/** Deterministic recommendation text keyed off the match band — never an LLM output. */
+export function recommendationFor(matchStatus: MatchStatus): string {
+  return RECOMMENDATIONS[matchStatus];
+}

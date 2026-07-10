@@ -105,6 +105,13 @@ export const JobReportSchema = z.object({
   resume_file: z.string(),
   models: z.record(z.string(), z.string()),
   analysis: JobAnalysisSchema,
+  cover_letter_text: z
+    .string()
+    .describe(
+      "analysis.cover_letter_paragraphs rendered as one text block, through " +
+        "an inputs/templates/cover_letter.txt template when present, else " +
+        "the paragraphs joined by a blank line. Text content only.",
+    ),
   score_breakdown: ScoreBreakdownSchema,
   match_status: MatchStatusSchema,
   recommendation: z.string(),
