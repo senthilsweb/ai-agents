@@ -83,3 +83,5 @@ agents/github-pr-digest/agent/sandbox/workspace/runs/*
 !agents/linkedin-cover-generator/agent/sandbox/workspace/inputs/telemetry-and-observability.md
 session.db.bak
 .env*
+!.env.example
+!agents/*/.env.example
