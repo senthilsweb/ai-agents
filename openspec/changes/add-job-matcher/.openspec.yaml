@@ -1,0 +1,20 @@
+schema: spec-driven
+name: add-job-matcher
+status: approved
+approval:
+  reviewed_by: senthilsweb
+  reviewed_date: 2026-07-09
+  note: >
+    Inception-gate approval. Gate review on 2026-07-09 produced four owner
+    corrections (per-job traces, JSON-only v1 output with slugged file
+    names, templates under inputs/, deck folder layout) — logged in
+    tasks.md and applied to proposal/design/spec. Final open question
+    resolved: candidate identity is derived from the resume only, no
+    separate CANDIDATE_INFO-style config. Construction (Bolts 1-4) may
+    now begin, per AI-SDLC-TAILORING.md.
+
+    Construction status (2026-07-09): Bolt 1 of 4 complete (workspace
+    scaffold, schemas, scoring formula, two deterministic evals — 15/15
+    gates green on a live `eve eval` run). Bolts 2-4 (tools, orchestration
+    + fan-out, remaining evals) and the security baseline remain before
+    status can advance to `implemented`.

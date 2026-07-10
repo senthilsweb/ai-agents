@@ -1,0 +1,81 @@
+Expert Senior Manager, AI Engineering - 104335
+Expert Senior Manager, AI Engineering
+General Information
+Job Title
+Expert Senior Manager, AI Engineering
+Job ID
+104335
+Work Areas
+Analytics, Data & Research, Management Consulting, Technology & Engineering
+Employment Type
+Permanent Full-Time
+Location(s)
+Atlanta, Austin, Boston, Chicago, Dallas, Houston, Los Angeles, New York, San Francisco, Seattle, Washington DC
+Description & Requirements
+WHAT MAKES US A GREAT PLACE TO WORK
+We are proud to be consistently recognized as one of the world’s best places to work. We are currently the top ranked consulting firm on
+Glassdoor’s Best Places to Work list
+and have earned the #1 overall spot a record seven times. Extraordinary teams are at the heart of our business strategy, but these don’t happen by chance. They require intentional focus on bringing together a broad set of backgrounds, cultures, experiences, perspectives, and skills in a supportive and inclusive work environment. We hire people with exceptional talent and create an environment in which every individual can thrive professionally and personally.
+WHO YOU’LL WORK WITH
+You’ll join our engineering experts within the
+AI, Insights & Solutions
+team. This team is part of Bain’s digital capabilities practice, which includes experts in analytics, engineering, product management, and design. In this multidisciplinary environment, you'll leverage deep technical expertise and business acumen to help clients tackle their most transformative challenges. You’ll work on integrated teams alongside our general consultants and clients to develop data-driven strategies and innovative solutions. Together, we create human-centric solutions that harness the power of data and artificial intelligence to drive competitive advantage. Our collaborative and supportive environment fosters creativity and continuous learning, enabling us to consistently deliver exceptional results.
+WHERE YOU’LL FIT WITHIN THE TEAM
+The AI Engineering Expert Senior Manager will architect, build, and scale next-generation generative AI systems and agentic solutions for Bain’s clients. As a leader in the practice, you will sit at the intersection of advanced engineering, applied AI research, product strategy, and responsible AI governance.   You will own the full lifecycle — from research and experimentation to production deployment and ongoing optimization — and guide teams across engineering, product, data science, ethics, and client stakeholders.
+WHAT YOU’LL DO
+Design, build, and deploy end-to-end generative AI systems, including multi-agent workflows and production-grade AI applications.
+Architect multi-component pipelines, including:
+Retrieval-Augmented Generation (RAG)
+Fine-tuning and parameter-efficient tuning
+Embedding generation and optimization
+Hybrid retrieval strategies (vector, graph, keyword)
+Integrate reasoning, tool use, function calling, and orchestration across complex workflows
+Engineer advanced agentic systems, ensuring clear separation of concerns, robust memory architecture, and scalable tool ecosystems
+Lead everything from early-stage research, model experimentation, and evaluation design to production system deployment
+Oversee API development, microservices, CI/CD pipelines, observability, and cloud-native deployment
+Build scalable GenAIOps processes for automated testing, regression evaluation, latency monitoring, and continual improvement
+Balance performance, safety, responsible AI principles, and cost across system design:
+Implement guardrails, fallbacks, red-teaming strategies, and human-in-the-loop (HITL) workflows
+Partner with global ethics teams to ensure alignment with Bain’s Responsible AI standards
+Build automated evaluation suites integrating user signals, continual learning cycles, and ongoing model updates
+Design and implement evaluation frameworks covering:
+Hallucination rate and factual consistency
+Relevance and precision/recall
+Latency, throughput, and system-level performance
+Cost tracking and efficiency
+Partner closely with product, engineering, data science, ethics, and infrastructure teams to build robust, compliant AI systems
+Act as a thought partner to executives and clients on AI strategy, architecture decisions, emerging capabilities, and implementation roadmaps
+Mentor and upskill technical teams on best practices including RAG, agents, prompt engineering, and AI safety
+ABOUT YOU:
+8–12+ years in software engineering, ML engineering, or applied AI roles with significant hands-on building responsibilities
+Demonstrated experience leading complex, multi-stack generative AI programs from conception through production
+Strong executive communication skills with the ability to translate highly technical concepts to business stakeholders
+Track record of leading engineering teams, mentoring technical talent, and collaborating with diverse cross-functional groups
+Advanced prompt engineering, context engineering, and conversation design
+Strong expertise in evaluation design, experimentation frameworks, and data labeling strategies for LLM apps
+Deep experience with:
+Advanced RAG architectures (vector, hybrid, graph-based retrieval)
+Agentic architectures (multi-agent systems, tool selection, routing, memory, planning, reflection)
+ReAct, RLAIF, and other HITL + feedback loops.
+AI-Specific Tools & Frameworks - Orchestration frameworks, Vector and graph databases and Model + API ecosystems
+Strong background in system design, architecture, and production-grade deployment
+Deep familiarity with cost optimization and computational tradeoffs for LLM workloads
+Comfort operating in high-ambiguity environments with collaborative cross-functional teams
+Clear ability to lead, mentor, and inspire technical teams
+Experience in client-facing consulting or enterprise transformation environments is a strong plus
+U.S. Compensation Information
+Compensation for this role includes base salary, annual discretionary performance bonus, 401(k) plan with an annual employer contribution based on years of service and Bain’s best in class benefits package (details listed below).
+Some local governments in the United States require a good-faith, reasonable salary range be included in job postings for open roles. The estimated annualized compensation for this role is as follows:
+In New York City, California, Washington State, and Washington D.C, the good-faith, reasonable annualized full-time salary for this role is $293,500; In the state of Illinois, Georgia, Massachusetts, and Texas, the good-faith, reasonable annualized full-time salary for this role is $258,000.
+For all other locations, the good-faith, reasonable annualized full-time salary range for this role is commensurate with competitive geographic market rates for this role and will vary based on several factors including, but not limited to experience, education, licensure/certifications, training and skill level.
+Annual discretionary performance bonus
+This role may also be eligible for other elements of discretionary compensation
+4.5% 401(k) company contribution, which increases after 3 years of service and is 100% vested upon start date
+Bain & Company's comprehensive benefits and wellness program is designed to help employees achieve personal independence, protection and stability in the areas most important to you and your family.
+Bain pays 100% individual employee premiums for medical, dental and vision programs, offering one of the most comprehensive medical plans for employees without impacting your paycheck
+Generous paid time off, including parental leave, sick leave and paid holidays
+Fully vested 401(k) company contribution
+Paid Life and Long-Term Disability insurance
+Annual fitness reimbursements
+It is unlawful in Massachusetts to require or administer a lie detector test as a condition of employment or continued employment. An employer who violates this law shall be subject to criminal penalties and civil liability
+Go back

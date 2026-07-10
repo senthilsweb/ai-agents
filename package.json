@@ -17,7 +17,10 @@
     "typecheck:linkedin": "npm -w linkedin-cover-generator run typecheck",
     "dev:privacy-classifier": "npm -w privacy-classifier run dev",
     "build:privacy-classifier": "npm -w privacy-classifier run build",
-    "typecheck:privacy-classifier": "npm -w privacy-classifier run typecheck"
+    "typecheck:privacy-classifier": "npm -w privacy-classifier run typecheck",
+    "dev:job-matcher": "npm -w job-matcher run dev",
+    "build:job-matcher": "npm -w job-matcher run build",
+    "typecheck:job-matcher": "npm -w job-matcher run typecheck"
   },
   "devDependencies": {
     "@types/node": "24.x",

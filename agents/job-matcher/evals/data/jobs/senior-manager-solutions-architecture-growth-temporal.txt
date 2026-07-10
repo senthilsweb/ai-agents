@@ -1,0 +1,175 @@
+Job Application for Senior Manager, Solutions Architecture - Growth at Temporal Technologies
+Back to jobs
+Senior Manager, Solutions Architecture - Growth
+United States - Remote Opportunity
+Apply
+About Us
+Temporal is an open source programming model that can simplify code, make applications more reliable, and help developers focus on the important things like delivering features faster. We are on a mission to be the reliable foundation of every developer’s toolbox, and are building the team that will make that happen.
+Our values guide us —they are present in how we show up, make decisions, and work together to make an impact. We’re curious, driven, collaborative, genuine and humble.
+Temporal is growing and we are looking for those who share our values, challenge 'standard' thinking, and want to influence our future. If you have a passion for improving the developer experience, building world-class open-source software and communities, and want to be a part of our amazing team, we'd love to hear from you!
+Summary:
+The Senior Manager, Solutions Architecture leads a team of Scale and Enterprise Solutions Architects within Temporal’s Growth organization. This leader is responsible for building, coaching, and scaling a high-performing pre-sales technical team that helps prospects and customers evaluate the suitability of their applications for Temporal’s platform, understand the technical advantages of our cloud service, and expand adoption in production environments. Temporal Cloud is what this team is selling, and the right leader will ensure every engagement clearly articulates its value.
+The ideal candidate combines deep technical credibility with a proven track record of leading solutions-oriented teams in open-source or developer-infrastructure companies. They bring intellectual curiosity, process discipline, and a strategic mindset to sales engagements—knowing where to focus, how to prioritize, and when to go deep on technical discovery.
+What You’ll Do:
+Team Leadership & Development
+Recruit, hire, onboard, and develop a team of Solutions Architects supporting Scale and Enterprise accounts.
+Establish clear performance expectations, coaching rhythms, and career development paths for direct reports.
+Foster a culture of curiosity, technical excellence, and customer obsession across the team.
+Drive consistent execution through defined processes for technical discovery, proof-of-value engagements, and deal support.
+Sales Strategy & Process
+Partner closely with Sales leadership and Account Executives to build and execute comprehensive account strategies.
+Ensure the team conducts thorough, high-quality technical discovery to identify the right use cases and champion the right solutions.
+Prioritize team resources against the highest-impact opportunities, balancing pipeline coverage with deal quality.
+Bring rigor and repeatability to the pre-sales process—from qualification through technical win—while adapting to each customer’s unique context.
+Serve as an escalation point and strategic advisor on complex, high-value engagements.
+Technical Leadership
+Guide the team in positioning Temporal against competing technologies and architectural patterns with clarity and credibility.
+Ensure Solutions Architects can educate customers on both the technical benefits and the limitations of Temporal’s platform and cloud service.
+Maintain a hands-on understanding of Temporal’s product, staying close to product roadmap and engineering developments.
+Act as a voice of the customer back into Product, Engineering, and Marketing organizations.
+Cross-Functional Collaboration
+Work closely with Customer Success, Professional Services, and Developer Relations to ensure seamless post-sale transitions and ongoing expansion.
+Partner with Marketing on field content, competitive positioning, and event strategy.
+Collaborate with Product to surface customer needs, feature requests, and market trends.
+What You’ll Bring:
+Experience
+5+ years of experience in Solutions Architecture, Sales Engineering, or a comparable customer-facing technical role, with at least 2 years managing or leading a technical pre-sales team.
+Proven success in open-source, developer-tools, or infrastructure-software companies—you understand the unique dynamics of selling to and with developer communities.
+Strong technical background with hands-on experience in distributed systems, microservices, or event-driven architectures.
+Proficiency in one or more of Temporal’s supported languages: Java, Golang, TypeScript, Python, C#, or PHP.
+Experience with at least one major cloud provider (AWS, GCP, Azure) and familiarity with modern development and deployment tooling (CI/CD, containers, orchestration).
+Skills and Competencies
+Process-Driven Operator: You bring structure and repeatability to technical sales without making it bureaucratic. You know how to build playbooks, track leading indicators, and coach your team through them.
+Exceptional Technical Discovery: You know how to uncover the real problems behind a customer’s ask, identify the right stakeholders, and map solutions to business outcomes.
+Strategic Prioritization: You have a sharp sense of where to invest the team’s time and energy—which deals to go deep on, which to qualify out, and how to balance long-term relationships with near-term pipeline.
+Curious & Adaptive: You’re naturally curious about technology and business alike. You learn quickly, stay current, and bring a growth mindset to everything you do.
+Communication Excellence: You can translate complex technical concepts for executive audiences and dive deep with engineering teams with equal ease.
+Coaching Mindset: You invest in the growth of your people—through structured feedback, deal reviews, and hands-on mentorship—because you know that’s how teams scale.
+Compensation:
+The estimated pay range for this role is $280,000 - $340,000.
+This is a base salary and variable role with a 70/30 split.
+Additionally, this role is eligible to participate in Temporal's equity plan.
+Compensation ranges reflect salary and commission compensation (when applicable) across several geographic markets. Employment offers carefully consider multiple factors, including prior experience, knowledge, expertise, skillset, market location, and job level assessed during the interview process.
+Employee benefits and perks below are for full-time employees, part-time or temporary positions are excluded.
+U.S. Benefits
+Unlimited PTO, 12 Holidays + 2 Floating Holidays
+100% Premiums Coverage for Medical, Dental, and Vision
+AD&D, LT & ST Disability, and Life Insurance (Standard & Supplemental Available)
+Empower 401K Plan
+Additional Perks for Learning & Development, Lifestyle Spending, In-Home Office Setup, Professional Memberships, WFH Meals, Internet Stipend and more!
+International Benefits
+Paid Time Off (PTO) and Benefits outside the United States vary by country, and are issued in partnership with
+Remote.com
+.  Additionally, Temporal offers perks to all international employees for learning & career development, a lifestyle spending account, in-home office setup (in addition to company-issued hardware), professional memberships, work-from-home meals, and access to the Calm app for mental wellness.
+Travel
+Temporal is a globally distributed, collaborative team that values opportunities for in-person connection. Occasional travel may be required for company events, team offsites, and other meaningful moments that bring us together.
+Additional Perks
+$3,600 / Year Work from Home Meals
+$1,800 / Year Professional Enrichment (Career Development & Professional Memberships)
+$1,200 / Year Lifestyle Spending Account
+$1,000 / Year In-Home Office Setup (In addition to Temporal issued equipment - laptop, monitor, keyboard, mouse, trackpad, and extension power cable at no cost to you)
+$74 / Month Reimbursement for Internet
+Calm App Subscription for Mental Health & Wellness
+Temporal Technologies is an Equal Opportunity Employer. Temporal Technologies does not discriminate on the basis of race, religion, color, sex, gender identity, sexual orientation, age, non-disqualifying physical or mental disability, national origin, veteran status, or any other basis covered by appropriate law. All employment is decided on the basis of qualifications, merit, and business need. We embrace and celebrate differences and diversity.
+Temporal is committed to providing access, equal opportunity, and reasonable accommodation for individuals with disabilities in employment, its services, programs, and activities. If you need to request a reasonable accommodation, please let your Recruiter know so we can assist.
+We are not working with external recruitment agencies, thanks.
+Apply for this job
+*
+indicates a required field
+First Name
+*
+Last Name
+*
+Preferred First Name
+Email
+*
+Phone
+Country
+*
+Phone
+*
+Resume/CV
+*
+Attach
+Attach
+Dropbox
+Google Drive
+Enter manually
+Enter manually
+Accepted file types: pdf, doc, docx, txt, rtf
+LinkedIn Profile
+Website
+*
+Where is your specific working location?
+*
+Please list city, state, country or city, providence, country. Thank you!
+Which country are you working from?
+*
+Select...
+Are you legally authorized to work in the United States?
+*
+Select...
+Will you require sponsorship now or in the future?
+*
+Select...
+Voluntary Self-Identification
+For government reporting purposes, we ask candidates to respond to the below self-identification survey.
+Completion of the form is entirely voluntary. Whatever your decision, it will not be considered in the hiring
+process or thereafter. Any information that you do provide will be recorded and maintained in a
+confidential file.
+As set forth in Temporal Technologies’s Equal Employment Opportunity policy,
+we do not discriminate on the basis of any protected group status under any applicable law.
+Gender
+Select...
+Are you Hispanic/Latino?
+Select...
+Race & Ethnicity Definitions
+If you believe you belong to any of the categories of protected veterans listed below, please indicate by making the appropriate selection.
+  As a government contractor subject to the Vietnam Era Veterans Readjustment Assistance Act (VEVRAA), we request this information in order to measure
+  the effectiveness of the outreach and positive recruitment efforts we undertake pursuant to VEVRAA. Classification of protected categories
+  is as follows:
+A "disabled veteran" is one of the following: a veteran of the U.S. military, ground, naval or air service who is entitled to compensation (or who but for the receipt of military retired pay would be entitled to compensation) under laws administered by the Secretary of Veterans Affairs; or a person who was discharged or released from active duty because of a service-connected disability.
+A "recently separated veteran" means any veteran during the three-year period beginning on the date of such veteran's discharge or release from active duty in the U.S. military, ground, naval, or air service.
+An "active duty wartime or campaign badge veteran" means a veteran who served on active duty in the U.S. military, ground, naval or air service during a war, or in a campaign or expedition for which a campaign badge has been authorized under the laws administered by the Department of Defense.
+An "Armed forces service medal veteran" means a veteran who, while serving on active duty in the U.S. military, ground, naval or air service, participated in a United States military operation for which an Armed Forces service medal was awarded pursuant to Executive Order 12985.
+Veteran Status
+Select...
+Voluntary Self-Identification of Disability
+Form CC-305
+Page 1 of 1
+OMB Control Number 1250-0005
+Expires 04/30/2026
+Why are you being asked to complete this form?
+We are a federal contractor or subcontractor. The law requires us to provide equal employment opportunity to qualified people with disabilities. We have a goal of having at least 7% of our workers as people with disabilities. The law says we must measure our progress towards this goal. To do this, we must ask applicants and employees if they have a disability or have ever had one. People can become disabled, so we need to ask this question at least every five years.
+Completing this form is voluntary, and we hope that you will choose to do so. Your answer is confidential. No one who makes hiring decisions will see it. Your decision to complete the form and your answer will not harm you in any way. If you want to learn more about the law or this form, visit the U.S. Department of Labor’s Office of Federal Contract Compliance Programs (OFCCP) website at
+www.dol.gov/ofccp
+.
+How do you know if you have a disability?
+A disability is a condition that substantially limits one or more of your “major life activities.” If you have or have ever had such a condition, you are a person with a disability.
+Disabilities include, but are not limited to:
+Alcohol or other substance use disorder (not currently using drugs illegally)
+Autoimmune disorder, for example, lupus, fibromyalgia, rheumatoid arthritis, HIV/AIDS
+Blind or low vision
+Cancer (past or present)
+Cardiovascular or heart disease
+Celiac disease
+Cerebral palsy
+Deaf or serious difficulty hearing
+Diabetes
+Disfigurement, for example, disfigurement caused by burns, wounds, accidents, or congenital disorders
+Epilepsy or other seizure disorder
+Gastrointestinal disorders, for example, Crohn's Disease, irritable bowel syndrome
+Intellectual or developmental disability
+Mental health conditions, for example, depression, bipolar disorder, anxiety disorder, schizophrenia, PTSD
+Missing limbs or partially missing limbs
+Mobility impairment, benefiting from the use of a wheelchair, scooter, walker, leg brace(s) and/or other supports
+Nervous system condition, for example, migraine headaches, Parkinson’s disease, multiple sclerosis (MS)
+Neurodivergence, for example, attention-deficit/hyperactivity disorder (ADHD), autism spectrum disorder, dyslexia, dyspraxia, other learning disabilities
+Partial or complete paralysis (any cause)
+Pulmonary or respiratory conditions, for example, tuberculosis, asthma, emphysema
+Short stature (dwarfism)
+Traumatic brain injury
+Disability Status
+Select...
+PUBLIC BURDEN STATEMENT: According to the Paperwork Reduction Act of 1995 no persons are required to respond to a collection of information unless such collection displays a valid OMB control number. This survey should take about 5 minutes to complete.
+Submit application

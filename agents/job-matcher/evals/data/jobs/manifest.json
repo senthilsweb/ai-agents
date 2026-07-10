@@ -1,0 +1,76 @@
+{
+  "captured_at": "2026-07-09",
+  "capture_method": "curl, browser UA, single attempt, stdlib HTML-to-text extraction (script/style/nav/footer/aside stripped)",
+  "resume": "evals/data/resume/sk-resume-june-2026.pdf",
+  "min_extractable_words_guard": 100,
+  "jobs": [
+    {
+      "id": "anthropic-data-engineering-manager",
+      "url": "https://job-boards.greenhouse.io/anthropic/jobs/5125387008?gh_src=LinkedIn",
+      "company": "Anthropic",
+      "job_title": "Data Engineering Manager, Product",
+      "board": "greenhouse",
+      "source": "LinkedIn",
+      "fetch_status": "ok",
+      "extracted_words": 2268,
+      "snapshot": "data-engineering-manager-product-anthropic.txt"
+    },
+    {
+      "id": "bain-expert-senior-manager-ai-engineering",
+      "url": "https://careers.bain.com/jobs/FolderDetail?folderId=104335&source=Linked-In",
+      "company": "Bain & Company",
+      "job_title": "Expert Senior Manager, AI Engineering",
+      "board": "bain-careers",
+      "source": "LinkedIn",
+      "fetch_status": "ok",
+      "extracted_words": 1062,
+      "snapshot": "expert-senior-manager-ai-engineering-bain.txt"
+    },
+    {
+      "id": "gusto-staff-swe-ai-developer-tools",
+      "url": "https://job-boards.greenhouse.io/gusto/jobs/7947684?gh_src=80fddc691us",
+      "company": "Gusto",
+      "job_title": "Staff Software Engineer, AI Developer Tools",
+      "board": "greenhouse",
+      "source": "LinkedIn",
+      "fetch_status": "ok",
+      "extracted_words": 1617,
+      "snapshot": "staff-software-engineer-ai-developer-tools-gusto.txt"
+    },
+    {
+      "id": "temporal-senior-manager-solutions-architecture",
+      "url": "https://job-boards.greenhouse.io/temporaltechnologies/jobs/5148370007?gh_src=9ccaace87us",
+      "company": "Temporal Technologies",
+      "job_title": "Senior Manager, Solutions Architecture - Growth",
+      "board": "greenhouse",
+      "source": "LinkedIn",
+      "fetch_status": "ok",
+      "extracted_words": 2084,
+      "snapshot": "senior-manager-solutions-architecture-growth-temporal.txt"
+    },
+    {
+      "id": "adp-workforcenow-566276",
+      "url": "https://workforcenow.adp.com/mascsr/default/mdf/recruitment/recruitment.html?cid=42f1973b-8a01-4b27-bfff-f6f28e03c8ef&ccId=19000101_000001&lang=en_US&jobId=566276&source=LI",
+      "company": "unknown (ADP-hosted)",
+      "job_title": "unknown",
+      "board": "adp-workforcenow",
+      "source": "LinkedIn",
+      "fetch_status": "failed_js_shell",
+      "failure_reason": "HTTP 200 but JavaScript-rendered shell; 17 extractable words (below min-words guard). Expected agent behavior: log, record per-job failure status, stop this job, no retry.",
+      "extracted_words": 17,
+      "snapshot": "failures/adp-workforcenow-566276.js-shell.html"
+    },
+    {
+      "id": "jerry-ai-senior-manager-ai-agents-automation",
+      "url": "https://jobs.ashbyhq.com/Jerry.ai/b8857bb2-9861-4188-88c9-800fe4495409?utm_source=6Vdva5VPyD",
+      "company": "Jerry.ai",
+      "job_title": "Senior Manager, AI Agents and Automation",
+      "board": "ashby",
+      "source": "LinkedIn",
+      "fetch_status": "failed_js_shell",
+      "failure_reason": "HTTP 200 but Ashby SPA; only the page title (8 words) is server-rendered, JD body is client-side JSON. Expected agent behavior: log, record per-job failure status, stop this job, no retry.",
+      "extracted_words": 8,
+      "snapshot": "failures/senior-manager-ai-agents-and-automation-jerry-ai.js-shell.html"
+    }
+  ]
+}
