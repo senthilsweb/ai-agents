@@ -91,6 +91,47 @@ All paths below are relative to `agents/privacy-classifier/`:
 
 Run: `cd agents/privacy-classifier && npm run dev`
 
+### Job Matcher (`agents/job-matcher/`)
+
+Compares a candidate's resume against one or more job postings and produces
+one scored, evidence-grounded JSON report per job — a governed rebuild of
+the vibe-coded `agents/talent-align/` prototype (kept untouched as the
+"before" teaching prop), and the running example for
+`ai-dlc-in-practice/job-matcher/`. Headless, no GUI (`nextjs-gui/` is a
+reserved later phase). One generative step only: typed skill/evidence
+extraction. Scoring is a pure deterministic function (`agent/lib/scoring.ts`)
+— the LLM never emits a number, which is also the agent's prompt-injection
+defense. Fan-out: exactly one job link runs through a direct tool call
+(`analyze_job_fit`); more than one delegates to the `job-analyst` subagent
+once per job, each its own eve session.
+
+All paths below are relative to `agents/job-matcher/`:
+
+- `agent/instructions.md` — the always-on **Orchestrator** system prompt.
+- `agent/tools/*.ts` — deterministic tools: `create_run`, `load_input`,
+  `extract_resume_text` (Docling, in-sandbox Python exec, OCR fallback),
+  `fetch_job_postings` (one call for every job source, bounded concurrency,
+  exactly one attempt per source, no retry), `score_job_fit`,
+  `assemble_report`; plus `analyze_job_fit`, the one tool that calls a
+  GenAI model (the N=1 direct-call path — mirrors privacy-classifier's
+  tool-wraps-the-model-call pattern).
+- `agent/subagents/job-analyst/` — the N>1 fan-out path; `outputSchema` on
+  its own `agent.ts` runs it in task mode, returning a validated
+  `JobAnalysis` directly, no raw-JSON-in-prose parsing.
+- `agent/lib/scoring.ts` — the pinned scoring formula (40/20/20/20 +
+  match bands), pure and unit-eval-covered before any tool wraps it.
+- `agent/sandbox/sandbox.ts` — bootstraps Python 3 + `docling` (resume
+  extraction only — no Presidio/Chonkie, unlike privacy-classifier).
+- `openspec/changes/add-job-matcher/` — the full design spec, including a
+  "Security baseline" section and two logged Construction-time corrections.
+- `evals/*.eval.ts` — 8 evals; `evals/rubrics.md` states the canonical
+  scoring formula and HARD/SOFT pass criteria for each, written at
+  Inception. `evals/data/` holds a real resume + real 2026-07-09
+  LinkedIn-sourced job postings, including two genuine JavaScript-shell
+  fetch failures kept as fixtures for the graceful-failure requirement.
+
+Run: `cd agents/job-matcher && npm run dev`
+
 ---
 
 ## Monorepo Conventions

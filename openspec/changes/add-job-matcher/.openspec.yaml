@@ -1,6 +1,6 @@
 schema: spec-driven
 name: add-job-matcher
-status: approved
+status: implemented
 approval:
   reviewed_by: senthilsweb
   reviewed_date: 2026-07-09
@@ -13,8 +13,23 @@ approval:
     separate CANDIDATE_INFO-style config. Construction (Bolts 1-4) may
     now begin, per AI-SDLC-TAILORING.md.
 
-    Construction status (2026-07-09): Bolt 1 of 4 complete (workspace
-    scaffold, schemas, scoring formula, two deterministic evals — 15/15
-    gates green on a live `eve eval` run). Bolts 2-4 (tools, orchestration
-    + fan-out, remaining evals) and the security baseline remain before
-    status can advance to `implemented`.
+    Construction complete (2026-07-10): all four bolts done. Bolt 1 —
+    workspace scaffold, schemas, scoring formula, 2 deterministic evals
+    (15/15 gates, live-verified, no model). Bolt 2 — 9 tools, typechecked,
+    0 discovery errors. Bolt 3 — orchestrator instructions.md, job-analyst
+    subagent, model routing, instrumentation.ts (2 design corrections
+    logged: fetch batching for code-enforced concurrency, and a corrected
+    claim about run-id span attributes — eve's step.started callback is
+    read-only, cannot thread a tool-minted run_id). Bolt 4 — remaining 6
+    evals (8 total), structurally verified: typecheck clean, `eve eval
+    --list` discovers all 8, a live attempt against a real-but-invalid
+    credential reached the actual model-call boundary cleanly (proves the
+    whole pipeline is wired correctly; live pass/fail of the 6 new evals
+    is a Verification-phase task, not claimed here). Security baseline
+    pass: 7 items reviewed, 2 real gaps fixed (resume upload size cap +
+    extension allowlist; local JD file size cap), 1 residual risk
+    documented and accepted (SSRF DNS rebinding — see design.md), rest
+    verified safe or inherited-fixed. Re-typechecked after fixes, exit 0.
+    `status: verified` needs a live smoke run + `eve eval` green against a
+    real dev server with real credentials — not done from this
+    environment; see tasks.md "Verification (live)".

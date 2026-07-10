@@ -3,11 +3,13 @@
 **Running example: `job-matcher`** — rebuilding a vibe-coded job-fit
 prototype as a governed, evaluated, observable agent.
 
-> **Status: Inception.** This document is developed *in parallel* with the
-> change it narrates (`openspec/changes/add-job-matcher/`). Sections below
-> the inception gate are written in the future tense and get rewritten with
-> real artifact excerpts as each gate is passed. That is itself an AI-DLC
-> practice: documentation is a lifecycle artifact, not an afterthought.
+> **Status: Construction complete (`status: implemented`).** This document
+> is developed *in parallel* with the change it narrates
+> (`openspec/changes/add-job-matcher/`). Sections get rewritten with real
+> artifact excerpts as each gate is passed — that is itself an AI-DLC
+> practice: documentation is a lifecycle artifact, not an afterthought. A
+> new §6 below covers Construction as it actually happened, including two
+> corrections the framework itself forced.
 
 ---
 
@@ -239,7 +241,74 @@ previously-hit gotcha (LLM-span double counting in OpenObserve).
 
 ---
 
-## 4. One-page summary
+## 4. Construction as it actually happened
+
+The four Bolts from §3's ceremonies table were not a plan that survived
+contact with the framework unchanged. Two things the design assumed at
+Inception turned out not to hold once code was actually being written
+against eve — both caught, logged as `**Correction:**` entries, and fixed
+in the design docs, not silently patched over. This is the gate's economic
+argument (§3, Ceremony 3) playing out a second time, one level down: a
+Bolt is a *reviewable* unit, and "reviewable" caught these two before they
+became load-bearing assumptions three Bolts later.
+
+**Correction 1 — fan-out concurrency isn't code-enforceable the way the
+design assumed.** `design.md` originally sketched `fetch_job_posting`
+(singular) called once per job link by the orchestrator, with
+`JOB_FANOUT_CONCURRENCY` bounding how many ran at once. Building it
+surfaced a real constraint: subagents are dispatched by the *model*
+issuing tool calls, not by our own code — there is no runtime hook to
+throttle how many `job-analyst` delegations a model decides to fire in one
+turn. The fix split the problem in two: `fetch_job_postings` (now plural)
+became one deterministic tool call fetching every job source at once,
+internally bounded by a real `mapWithConcurrency` worker pool — a genuine,
+testable guarantee. Subagent fan-out concurrency, which *can't* be
+code-enforced, became an explicit instruction to the orchestrator ("batch
+delegations at `fanout_concurrency`") — honest about being pacing
+guidance, not a scheduler.
+
+**Correction 2 — "stamp the run id on every trace" wasn't buildable as
+stated.** `design.md` claimed every trace would carry a `run_id` attribute
+for cross-job correlation. Writing `agent/instrumentation.ts` surfaced that
+eve's one hook for custom span attributes (`step.started`) is documented
+as side-effect-free and read-only over its own callback input — it has no
+channel for a business-level id minted mid-turn by our own `create_run`
+tool. The corrected story: correlation rides on eve's own automatic
+`$eve.parent`/`$eve.root` session-tree tags (no code needed from us) plus
+the `run_id` appearing as plain text inside each delegation message
+(recoverable from recorded span data). Different mechanism, same practical
+outcome — but the design doc said something the framework couldn't
+actually do, and now it says what the framework actually does instead.
+
+**What Bolt 4's evals could and couldn't prove this pass.** All 8 evals
+are written, typecheck clean, and are discovered by `eve eval --list` with
+zero errors. Six of them drive a real orchestrator turn — writing them
+doesn't run them. Without live model credentials in this environment, the
+honest verification available was structural: a deliberately-fake
+credential run reached the actual model-call boundary cleanly
+(`MODEL_CALL_FAILED: AI Gateway rejected the provided API key`) rather
+than failing anywhere in the agent's own code. That is real evidence the
+pipeline is wired correctly — instructions, all 9 tools, the subagent, the
+eval driver — but it is not the same claim as "the evals pass." `status:
+implemented` reflects exactly that boundary: code done, security-reviewed,
+typechecked, evals *exist*. `status: verified` — the next gate — needs a
+live smoke run with real credentials, which is a Verification-phase task,
+not a Construction one (see AI-SDLC-TAILORING.md's own definition of the
+two statuses).
+
+The security baseline pass (Ceremony 5, §3) found two real gaps while
+building `load_input` and `fetch_job_postings` — no size cap on either the
+resume upload or a locally staged job-description file — both fixed in
+code, not just noted. It also surfaced one residual, deliberately-accepted
+risk (SSRF via DNS rebinding on job-posting URLs) with a documented reason
+it wasn't fixed this pass: the fetch runs in the tool/app runtime, not
+inside eve's sandbox, so the sandbox's own network-policy controls don't
+reach it — a real fix needs a DNS-resolving fetch wrapper, flagged as
+follow-up work rather than blocking this change.
+
+---
+
+## 5. One-page summary
 
 ```
  PHASE        CEREMONY                  LEAD ROLE(S)          ARTIFACT                        GATE
@@ -259,7 +328,7 @@ human-written at every transition.
 
 ---
 
-## 5. Glossary crosswalk (AI-DLC term → this repo, job-matcher edition)
+## 6. Glossary crosswalk (AI-DLC term → this repo, job-matcher edition)
 
 | AI-DLC term | Meaning | Where you can touch it here |
 |---|---|---|

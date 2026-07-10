@@ -514,7 +514,7 @@
           <div class="panel">
             <h3><iconify-icon icon="mdi:gavel"></iconify-icon> The owner's corrections — logged with dates</h3>
             <ul>
-              <li><b>One trace per job link</b>, not one per run — traces joined by run id. Cleaner cost tracking per posting.</li>
+              <li><b>One trace per job link</b>, not one per run — cleaner cost tracking per posting. Traces of a run stay linked through eve's own session tags.</li>
               <li><b>V1 output is JSON only</b> — one full file per job: <code>slug(&lt;job title&gt;)_&lt;timestamp&gt;.json</code>. No Word/PDF/HTML yet.</li>
               <li><b>Templates stay in the <code>inputs/</code> folder</b> — changing a template is not a code change.</li>
               <li><b>Each teaching deck in its own folder</b> (<code>pii-classifier/</code>, <code>job-matcher/</code>).</li>
@@ -706,7 +706,7 @@
         <div class="twocol" style="margin-top:10px;">
           <div>
             <span class="code-label">traces for one 6-link run</span>
-            <div class="codepanel"><span class="cmt">— all joined by attribute run_id = 2026-07-09T14-22-31Z —</span>
+            <div class="codepanel"><span class="cmt">— all linked as one session tree by eve's own $eve.root tag —</span>
 <span class="acc">trace A</span>  orchestrator: run steps, fetches, merge, ranking
 <span class="acc">trace B</span>  job-analyst · anthropic       <span class="ok">tokens · latency · cost</span>
 <span class="acc">trace C</span>  job-analyst · bain            <span class="ok">tokens · latency · cost</span>
@@ -718,7 +718,7 @@
             <h3><iconify-icon icon="mdi:chart-timeline-variant"></iconify-icon> Why one trace per job (an owner correction)</h3>
             <ul>
               <li><b>Clear cost per job:</b> "what did the Anthropic match cost?" is one whole trace — not a slice of a shared one. This also avoids a token double-counting problem we hit before in OpenObserve.</li>
-              <li><b>The run id joins all traces of one run</b> when you want the full picture.</li>
+              <li><b>eve links a run's traces by itself</b> — every subagent call carries automatic parent/root session tags, so no custom code is needed to see the full picture. (A construction-time correction: the first design said we would stamp a run id on every trace; the framework showed us it already solves this.)</li>
               <li><b>Evals check the trace layout too:</b> N links → N trace ids; a single-job run → exactly one trace.</li>
               <li><b>Questions waiting for Operations review:</b> fan-out cost vs. one-by-one runs · behavior with more links · token accuracy per job.</li>
             </ul>
