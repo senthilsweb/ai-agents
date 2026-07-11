@@ -1,7 +1,7 @@
 import { defineAgent } from "eve";
 import { resolveModel } from "shared/lib/model.js";
 
-import { JobAnalysisSchema } from "#lib/schemas.js";
+import { JobAnalysisSchema } from "#lib/schemas.ts";
 
 // ── Job Analyst subagent (N>1 fan-out path) ────────────────────────────────
 //

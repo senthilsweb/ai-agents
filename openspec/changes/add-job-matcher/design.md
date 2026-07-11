@@ -26,7 +26,7 @@ prompt: "resume at inputs/resume.pdf, jobs: <url1> <url2> ..."
 Orchestrator (MODEL_ORCHESTRATOR)
   create_run ──► runs/<ts>/
   load_input ──► resume.<ext>          (staged path under inputs/ OR inline upload)
-  extract_resume_text ──► resume.txt   (Docling in-sandbox, OCR fallback)
+  extract_resume_text ──► resume.txt   (pure Node: unpdf/mammoth — see Correction 3)
   fetch_job_postings (ALL sources, one call) ──► jobs/<n>.txt + fetch-attempts.json
         │
         ├─ 1 successful fetch  ──► analyze_job_fit tool (generateObject, typed JobAnalysis)
@@ -80,13 +80,55 @@ made while building, neither changing an approved requirement's substance:
    (`agent/instructions.md` step 7), not a scheduler. Every job still gets
    exactly one delegation; only the pacing is soft.
 
-### Tools (deterministic unless noted)
+**Correction 3 (2026-07-10, Construction — post-first-run):** resume
+extraction swapped from Docling (Python, in-sandbox exec, OCR fallback —
+privacy-classifier's pattern) to pure Node in the tool itself: `unpdf`
+for PDF, `mammoth` for DOCX, TXT/MD pass through. Reasons, observed on
+the first real run:
+1. **Proportionality** — the Docling bootstrap builds a ~5.4GB Python
+   venv (torch et al.) and took ~25 minutes of sandbox template build for
+   what is one short, text-based resume. Right-sized for
+   privacy-classifier's any-document scope; overkill here.
+2. **Deployability** — the `apt-get` bootstrap made the agent
+   local/on-prem only. With the plain base sandbox it deploys on Vercel
+   exactly like linkedin-cover-generator (the stated direction for this
+   agent's later GUI/channel phases).
+Trade-offs accepted: no OCR (scanned image-only PDFs now fail fast with a
+clear error instead of being OCR'd) and no legacy `.doc` (dropped from
+`load_input`'s allowlist). `agent/lib/shell.ts` and the in-sandbox
+`extract_resume.py` were deleted with the swap; security-baseline row 4
+(shell-quoting of sandbox exec args) is thereby obsolete — the tool no
+longer shells out at all.
+Follow-up fix (same day): unpdf's merged output is one long line, which
+the orchestrator's `read_file` truncates (per-line limit) — the first
+live run detoured into bash spelunking and a second `analyze_job_fit`
+model call. `extract_resume_text` now deterministically normalizes all
+output (per-page extraction joined with blank lines, word-wrapped at 120
+chars) so `read_file` works first try. Evidence-grounding evals are
+whitespace-insensitive, so wrapping doesn't affect them.
+
+**Correction 4 (2026-07-10, Construction — first timed profile):**
+pass-by-reference tool contracts. The original contracts moved payloads
+through the orchestrator model's context: `analyze_job_fit` took
+`resume_text`/`job_text` as arguments (the model retyped ~15K characters
+into the tool call at output-token speed — 83s measured), `score_job_fit`
+took the full `JobAnalysis` inline (28s), and `assemble_report` took every
+analysis inline again. Total: >110s of a ~141s run was the model working
+as a copy machine. Corrected: `analyze_job_fit` reads `resume.txt` and
+`jobs/<i>.txt` from the run folder itself and writes
+`analysis/<i>.json`, returning only a path + short summary;
+`score_job_fit` takes `analysis_path` (or, on the subagent path only, the
+inline analysis once — which it persists); `assemble_report` takes
+`analysis_path` per ok job and reads/validates the file itself. The
+orchestrator now passes only ids, paths, and small scores between tools.
+The N>1 subagent path still carries resume/job text in delegation
+messages (subagents share no sandbox — unchanged design constraint).
 
 | Tool | Purpose |
 |---|---|
 | `create_run` | Timestamped `runs/` folder (shared pattern) |
 | `load_input` | Resume from staged `inputs/` path or inline base64 upload — reuse of privacy-classifier's implementation, including path-confinement guards (no absolute paths, no `..`) |
-| `extract_resume_text` | Docling in-sandbox extraction (PDF/DOCX), OCR fallback; TXT/MD pass through |
+| `extract_resume_text` | Pure-Node extraction (unpdf for PDF, mammoth for DOCX); TXT/MD pass through; scanned image-only PDFs rejected — **originally Docling in-sandbox with OCR fallback, see Correction 3 below** |
 | `fetch_job_postings` | **One call for every job source** (renamed from the singular `fetch_job_posting` sketched at Inception — see Correction above). HTTP GET with browser UA, http/https scheme allowlist + partial SSRF hostname blocklist, byte cap, minimum-words guard ("page may require JavaScript or login"). **Exactly one attempt per source (code-enforced) — on failure: log, record per-source failure status with reason, stop that job, no retry.** Bounded concurrency via `mapWithConcurrency`. Also accepts a local `inputs/`-relative JD file for offline/eval use |
 | `analyze_job_fit` | The N=1 path: one wrapped `generateObject` call (`MODEL_JOB_ANALYST`) — a deterministic tool, not the orchestrator reasoning directly |
 | `score_job_fit` | The 40/20/20/20 formula + match banding computed in code from a `JobAnalysis`'s matched/total counts and alignment levels; also derives the deterministic `recommendation` string from the match band |

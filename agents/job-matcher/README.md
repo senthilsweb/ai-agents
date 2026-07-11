@@ -10,19 +10,103 @@ See `openspec/changes/add-job-matcher/` for the full design (proposal,
 design, spec, tasks) and `evals/rubrics.md` for the scoring formula and
 every eval's pass criteria.
 
+## Prerequisites
+
+- **Node 24+** — Eve requires it. Use `nvm use 24` if you have multiple versions.
+- **Docker** — the local sandbox uses `ghcr.io/vercel/eve:latest`. On Vercel
+  deployments it auto-switches to Vercel Sandbox.
+- Network access to your model provider (any OpenAI-compatible provider or
+  the Vercel AI Gateway).
+
+Resume extraction is pure Node (`unpdf` for PDF, `mammoth` for DOCX) — no
+Python, no Docling, no heavy sandbox bootstrap — so this agent is
+deployable on Vercel the same way as `linkedin-cover-generator`.
+
 ## Setup
+
+### 1 — Install dependencies
+
+From the **repo root** (installs all workspace agents):
+
+```bash
+nvm use 24
+npm install
+```
+
+### 2 — Configure environment variables
+
+This agent has its **own `.env` file** in the agent folder. Eve loads it
+when you run `eve dev` from there.
 
 ```bash
 cd agents/job-matcher
 cp .env.example .env   # fill in MODEL_ORCHESTRATOR / MODEL_JOB_ANALYST credentials
-npm run dev
 ```
 
-Requires a Docker (or similarly capable) sandbox backend — the sandbox
-bootstraps Python + Docling on first run (cached afterward) for resume
-extraction. See `agents/privacy-classifier/PREREQUISITES.md` for the
-shared pattern this reuses; the same local/on-prem, non-Vercel-serverless
-caveat applies.
+## Run in dev mode (interactive TUI)
+
+From the **agent folder**:
+
+```bash
+nvm use 24
+npx eve dev --port 3535
+```
+
+This starts `eve dev` — an interactive TUI where you type prompts. Run
+artifacts are synced from the sandbox back to
+`agent/sandbox/workspace/runs/` after each run.
+
+> **Note:** Use `npx eve dev` directly rather than `npm run dev`. The
+> latter may pick up the wrong Node version from your shell. Always
+> activate Node 24 first with `nvm use 24`.
+
+## Model configuration
+
+Both roles (`MODEL_ORCHESTRATOR` and `MODEL_JOB_ANALYST`) are env-driven.
+Each role resolves `MODEL_<ROLE>_*` → `MODEL_*` → an explicit startup
+error (no built-in default, per ADR 0001 §4).
+
+### How the resolver picks a provider
+
+`shared/lib/model.ts` decides the provider from what you set:
+
+| You set | Provider used | Requests go to |
+|---|---|---|
+| `BASE_URL` **and** `API_KEY` | OpenAI-compatible | `<BASE_URL>/chat/completions` |
+| `API_KEY` only (Anthropic key, `BASE_URL` blank) | Native Anthropic | Anthropic Messages API |
+| Neither (model id only + `AI_GATEWAY_API_KEY`) | Eve AI Gateway | Vercel AI Gateway |
+
+### Frontier model base URLs
+
+| Provider | Example model id | `MODEL_<ROLE>_BASE_URL` | Notes |
+|---|---|---|---|
+| **Anthropic (Claude)** | `claude-sonnet-5` | **leave blank** | Blank + an `sk-ant-...` key uses the native Anthropic provider. Do **not** set `https://api.anthropic.com` — it has no `/chat/completions` endpoint, so every call fails with `404 Not Found`. Anthropic's OpenAI-compatible layer is `https://api.anthropic.com/v1/`, but Anthropic documents it as a test/evaluation tool, not for production. |
+| **OpenAI** | `gpt-5.4-mini` | `https://api.openai.com/v1` | |
+| **Google Gemini** | `gemini-2.5-pro` | `https://generativelanguage.googleapis.com/v1beta/openai/` | Google's OpenAI-compatible layer. |
+| **xAI (Grok)** | `grok-4` | `https://api.x.ai/v1` | |
+| **DeepSeek** | `deepseek-chat` | `https://api.deepseek.com/v1` | |
+| **Mistral** | `mistral-large-latest` | `https://api.mistral.ai/v1` | |
+| **Groq** | `llama-3.3-70b-versatile` | `https://api.groq.com/openai/v1` | Hosted open models. |
+| **Ollama (local)** | `llama3.1` | `http://localhost:11434/v1` | No real key needed, but the resolver requires one to pick the OpenAI-compatible path — set any placeholder (e.g. `MODEL_..._API_KEY=ollama`). |
+| **Vercel AI Gateway** | `anthropic/claude-sonnet-5` | **leave blank** | Set `AI_GATEWAY_API_KEY` instead; eve routes the bare model id through the gateway. |
+
+Example `.env` (Anthropic for both roles — the verified working setup):
+
+```dotenv
+MODEL_ORCHESTRATOR=claude-haiku-4-5
+MODEL_ORCHESTRATOR_BASE_URL=
+MODEL_ORCHESTRATOR_API_KEY=sk-ant-...
+
+MODEL_JOB_ANALYST=claude-haiku-4-5
+MODEL_JOB_ANALYST_BASE_URL=
+MODEL_JOB_ANALYST_API_KEY=sk-ant-...
+```
+
+`claude-haiku-4-5` is the recommended default: this agent keeps all
+scoring and decisions in deterministic code, so the LLM only does typed
+extraction and step sequencing — a small, fast, cheap model is enough.
+Upgrade a role to `claude-sonnet-5` only if you see the orchestrator skip
+procedure steps or the analyst miss skill nuances.
 
 ## Usage
 
@@ -53,6 +137,13 @@ runs also get a `ranking.md` ordered by score.
 produced. Cover-letter content is text inside the JSON
 (`cover_letter_text`), optionally rendered through a template staged at
 `agent/sandbox/workspace/inputs/templates/cover_letter.txt`.
+
+**Supported resume formats:** PDF (text-based), DOCX, TXT, Markdown.
+Scanned image-only PDFs are rejected with a clear error — the pure-Node
+extraction path has no OCR (that was a Docling capability, dropped when
+extraction moved to Node; see the correction log in
+`openspec/changes/add-job-matcher/design.md`). Legacy `.doc` is also not
+supported.
 
 ## Scoring
 

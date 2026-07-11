@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { writeRunArtifact } from "shared/lib/run.js";
 
-import { mapWithConcurrency } from "#lib/concurrency.js";
+import { mapWithConcurrency } from "#lib/concurrency.ts";
 
 // ── Deterministic, bounded-concurrency job-posting fetch (no LLM) ─────────
 //

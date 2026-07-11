@@ -56,6 +56,9 @@ shared/.output
 # live run outputs (keep example runs, ignore new ones)
 agents/diagram-generator/agent/sandbox/workspace/runs/*
 !agents/diagram-generator/agent/sandbox/workspace/runs/.gitkeep
+# job-matcher runs contain the candidate's real resume/PII — never commit
+# (openspec/changes/refactor-job-matcher/proposal.md D8)
+agents/job-matcher/agent/sandbox/workspace/runs/
 !agents/diagram-generator/agent/sandbox/workspace/runs/2026-06-20T15-14-27Z/
 !agents/diagram-generator/agent/sandbox/workspace/runs/2026-06-20T20-14-42Z/
 

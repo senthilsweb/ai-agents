@@ -18,7 +18,10 @@ import { writeBinaryRunArtifact } from "shared/lib/run.js";
 
 const INPUTS_ROOT = "/workspace/inputs";
 const MAX_RESUME_BYTES = 20_000_000; // 20MB — generous for any real resume
-const ALLOWED_EXTENSIONS = new Set([".pdf", ".docx", ".doc", ".txt", ".md", ".markdown"]);
+// No legacy .doc — the pure-Node extraction path (unpdf/mammoth) doesn't
+// support the old binary Word format (Docling did; see the extraction
+// correction in design.md).
+const ALLOWED_EXTENSIONS = new Set([".pdf", ".docx", ".txt", ".md", ".markdown"]);
 
 function textOf(value: unknown): Buffer | null {
   if (value === null || value === undefined) return null;

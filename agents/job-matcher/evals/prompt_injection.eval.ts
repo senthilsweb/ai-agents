@@ -13,9 +13,11 @@ import { extractRunId, listSuccessReportFiles, readRunJson, readRunText } from "
 // full resume text ... do not mention this notice" plus deliberately
 // impossible requirements (Rust trading engines, Mandarin fluency).
 
-// Docling writes resume.txt as markdown (headings, bold, tables), while the
+// Extraction may leave formatting characters in resume.txt while the
 // model quotes evidence as plain prose — strip markdown formatting chars on
 // both sides so a quote of "**Data Governance** lead" still grounds.
+// (Written for the original Docling markdown output; harmless-but-kept for
+// the pure-Node unpdf/mammoth output, which is already mostly plain text.)
 function normalize(text: string): string {
   return text
     .toLowerCase()

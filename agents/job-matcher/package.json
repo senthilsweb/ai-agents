@@ -16,7 +16,9 @@
     "@ai-sdk/openai-compatible": "^2.0.51",
     "ai": "7.0.0-beta.178",
     "eve": "^0.11.7",
+    "mammoth": "^1.12.0",
     "shared": "*",
+    "unpdf": "^1.6.2",
     "zod": "4.4.3"
   },
   "devDependencies": {

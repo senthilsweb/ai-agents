@@ -109,7 +109,8 @@ All paths below are relative to `agents/job-matcher/`:
 
 - `agent/instructions.md` — the always-on **Orchestrator** system prompt.
 - `agent/tools/*.ts` — deterministic tools: `create_run`, `load_input`,
-  `extract_resume_text` (Docling, in-sandbox Python exec, OCR fallback),
+  `extract_resume_text` (pure Node: unpdf for PDF, mammoth for DOCX — no
+  Python/Docling, no OCR, scanned PDFs rejected),
   `fetch_job_postings` (one call for every job source, bounded concurrency,
   exactly one attempt per source, no retry), `score_job_fit`,
   `assemble_report`; plus `analyze_job_fit`, the one tool that calls a
@@ -120,8 +121,9 @@ All paths below are relative to `agents/job-matcher/`:
   `JobAnalysis` directly, no raw-JSON-in-prose parsing.
 - `agent/lib/scoring.ts` — the pinned scoring formula (40/20/20/20 +
   match bands), pure and unit-eval-covered before any tool wraps it.
-- `agent/sandbox/sandbox.ts` — bootstraps Python 3 + `docling` (resume
-  extraction only — no Presidio/Chonkie, unlike privacy-classifier).
+- `agent/sandbox/sandbox.ts` — plain shared base sandbox (no Python
+  bootstrap, unlike privacy-classifier), so the agent deploys on Vercel
+  the same way as linkedin-cover-generator.
 - `openspec/changes/add-job-matcher/` — the full design spec, including a
   "Security baseline" section and two logged Construction-time corrections.
 - `evals/*.eval.ts` — 8 evals; `evals/rubrics.md` states the canonical
@@ -130,7 +132,9 @@ All paths below are relative to `agents/job-matcher/`:
   LinkedIn-sourced job postings, including two genuine JavaScript-shell
   fetch failures kept as fixtures for the graceful-failure requirement.
 
-Run: `cd agents/job-matcher && npm run dev`
+Run: `cd agents/job-matcher && nvm use 24 && npx eve dev --port 3535`
+(use `npx eve dev` directly, not `npm run dev` — the latter can pick up
+the wrong Node version; see the agent's README)
 
 ---
 
@@ -144,6 +148,9 @@ Run: `cd agents/job-matcher && npm run dev`
 - Skills are scoped per agent; copy markdown under each agent that needs it.
 - Subagents are declared under `agent/subagents/<name>/` with their own
   `agent.ts`, `instructions.md`, `sandbox/`, and `skills/`.
-- `runs/` is committed so history is preserved.
+- `runs/` is committed so history is preserved. **Exception:**
+  job-matcher's runs are gitignored — they contain the candidate's real
+  resume/PII (see `openspec/changes/refactor-job-matcher/proposal.md` D8,
+  which also questions this convention repo-wide).
 - All models are resolved from env vars — no hard-coded model defaults.
   Each role resolves `MODEL_<ROLE>_* → MODEL_* → startup error`.

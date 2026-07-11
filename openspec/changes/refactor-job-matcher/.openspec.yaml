@@ -1,0 +1,13 @@
+schema: spec-driven
+name: refactor-job-matcher
+status: proposed
+approval:
+  reviewed_by: null
+  reviewed_date: null
+  note: >
+    Defect log raised by the owner on 2026-07-10 after the first live
+    operation day. The owner is not happy with the implementation as it
+    stands (a working system, but reached through patch-on-patch
+    corrections) and prefers a complete refactor. Planning session
+    scheduled for 2026-07-11; scope, design, and tasks to be written
+    there. Nothing in this change is approved for Construction yet.

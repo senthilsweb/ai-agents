@@ -1,19 +1,19 @@
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 
-import { writeRunArtifact } from "shared/lib/run.js";
+import { sandboxRunDir, writeRunArtifact } from "shared/lib/run.js";
 import { buildRunSummary } from "shared/lib/summary.js";
 
-import { formatCoverLetter } from "#lib/templates.js";
-import { recommendationFor } from "#lib/scoring.js";
-import { reportFileName, slugify } from "#lib/slug.js";
+import { formatCoverLetter } from "#lib/templates.ts";
+import { recommendationFor } from "#lib/scoring.ts";
+import { reportFileName, slugify } from "#lib/slug.ts";
 import {
   JobAnalysisSchema,
   JobFetchFailureSchema,
   JobReportSchema,
   MatchStatusSchema,
   ScoreBreakdownSchema,
-} from "#lib/schemas.js";
+} from "#lib/schemas.ts";
 
 // ── Deterministic final assembly (no LLM) ──────────────────────────────────
 //
@@ -24,11 +24,18 @@ import {
 
 const TEMPLATE_PATH = "/workspace/inputs/templates/cover_letter.txt";
 
+// Correction 4 (design.md): ok entries carry analysis_path (run-relative,
+// written by analyze_job_fit or score_job_fit), never the inline analysis —
+// the orchestrator model must not retype the JobAnalysis JSON into this
+// call. This tool reads and validates each analysis file itself.
 const JobResultInputSchema = z.discriminatedUnion("fetch_status", [
   z.object({
     fetch_status: z.literal("ok"),
     job_source: z.string(),
-    analysis: JobAnalysisSchema,
+    analysis_path: z
+      .string()
+      .min(1)
+      .describe("Run-relative path to the analysis JSON, e.g. analysis/0.json."),
     score_breakdown: ScoreBreakdownSchema,
     match_status: MatchStatusSchema,
   }),
@@ -95,11 +102,27 @@ export default defineTool({
 
     for (const result of results) {
       if (result.fetch_status === "ok") {
+        if (
+          result.analysis_path.startsWith("/") ||
+          result.analysis_path.split("/").includes("..")
+        ) {
+          throw new Error(
+            `analysis_path must be run-relative with no '..': ${result.analysis_path}`,
+          );
+        }
+        const sandbox = await ctx.getSandbox();
+        const rawAnalysis = textOf(
+          await sandbox.readTextFile({
+            path: `${sandboxRunDir(runId)}/${result.analysis_path}`,
+          }),
+        );
+        const analysis = JobAnalysisSchema.parse(JSON.parse(rawAnalysis));
+
         const coverLetter = formatCoverLetter(
-          result.analysis.cover_letter_paragraphs,
+          analysis.cover_letter_paragraphs,
           {
-            jobTitle: result.analysis.job_title,
-            companyName: result.analysis.company_name,
+            jobTitle: analysis.job_title,
+            companyName: analysis.company_name,
             generatedAt,
           },
           templateText,
@@ -112,18 +135,18 @@ export default defineTool({
           fetch_status: "ok",
           resume_file,
           models,
-          analysis: result.analysis,
+          analysis,
           cover_letter_text: coverLetter,
           score_breakdown: result.score_breakdown,
           match_status: result.match_status,
           recommendation: recommendationFor(result.match_status),
         });
 
-        const fileName = reportFileName(result.analysis.job_title, runId);
+        const fileName = reportFileName(analysis.job_title, runId);
         await writeRunArtifact(ctx, runId, fileName, JSON.stringify(report, null, 2) + "\n");
         successFiles.push({
           file_name: fileName,
-          job_title: result.analysis.job_title,
+          job_title: analysis.job_title,
           total_score: result.score_breakdown.total_score,
           match_status: result.match_status,
         });
