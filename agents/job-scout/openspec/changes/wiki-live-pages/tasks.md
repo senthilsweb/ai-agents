@@ -15,4 +15,4 @@
 - [x] 3.2 style guide: FAQ naming, Runbook-for-all, Configuration-when-config-exists, CI/CD-page rule
 - [x] 3.3 docs/ci-cd.md with LR mermaid diagram + write-up; added to nav
 - [x] 3.4 agent-job-matcher parity (its project-wiki Bolt 3): FAQ rename + plugin set + tablesort js
-- [ ] 3.5 deploy verified: /console/ works, /trends/ facts-only + ?roles= works, mermaid/tables/footnotes render
+- [x] 3.5 deploy verified: /console/ works, /trends/ facts-only + ?roles= works, mermaid/tables/footnotes render
