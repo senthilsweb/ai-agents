@@ -1,0 +1,57 @@
+# Wiki site for the ai-agents monorepo, published to GitHub Pages by
+# .github/workflows/job-scout-docs.yml.
+#
+# Currently serves agents/job-scout/docs only. When a second agent gets
+# a docs/ folder, switch to the mkdocs-monorepo plugin (one !include per
+# agent) — page content will not need to change.
+# Spec: agents/job-scout/openspec/changes/job-scout-wiki/design.md (D5)
+site_name: ai-agents · job-scout
+site_url: https://senthilsweb.github.io/ai-agents/
+repo_url: https://github.com/senthilsweb/ai-agents
+repo_name: senthilsweb/ai-agents
+edit_uri: edit/main/agents/job-scout/docs/
+
+docs_dir: agents/job-scout/docs
+site_dir: site
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.footer
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue grey
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue grey
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Installation: installation.md
+  - Configuration: configuration.md
+  - Data & Queries: data-and-queries.md
+  - Dashboards & Reports: dashboards-and-reports.md
+  - Runbook: runbook.md
+  - FAQ & Design Decisions: faq.md
+  - API Match Pipeline (reference): api-match-pipeline.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true

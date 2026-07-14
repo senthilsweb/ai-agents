@@ -88,3 +88,6 @@ session.db.bak
 .env*
 !.env.example
 !agents/*/.env.example
+
+# mkdocs build output (job-scout-docs workflow builds it in CI)
+site/
