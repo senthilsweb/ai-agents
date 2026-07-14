@@ -96,16 +96,27 @@ header{position:relative}
   background:var(--surface);border:1px solid var(--line);color:var(--ink2);cursor:pointer;
   display:flex;align-items:center;justify-content:center}
 .helpbtn:hover{color:var(--accent);border-color:var(--accent)}
-#help{position:fixed;top:0;right:0;bottom:0;width:min(420px,100vw);background:var(--surface);
+#help{position:fixed;top:0;right:0;bottom:0;width:min(480px,100vw);background:var(--surface);
   border-left:1px solid var(--line);z-index:31;transform:translateX(102%);transition:transform .22s ease;
   display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(0,0,0,.18)}
 #help.open{transform:translateX(0)}
 #help .dhead{padding:18px 20px 14px;border-bottom:1px solid var(--line)}
 #help .dhead h3{margin:0;font-size:16px}
-#help .hbody{flex:1;overflow-y:auto;padding:6px 20px 24px;font-size:13px;line-height:1.55;color:var(--ink2)}
-#help h4{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:18px 0 6px}
-#help ul{margin:0;padding-left:18px}
-#help li{margin:3px 0}
+#help .hbody{flex:1;overflow-y:auto;padding:6px 20px 24px;font-size:13px;line-height:1.6;color:var(--ink2)}
+#help h4{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);
+  margin:22px 0 8px;padding-top:14px;border-top:1px solid var(--line)}
+#help h4:first-child{margin-top:8px;padding-top:0;border-top:none}
+#help .aud{font-size:11.5px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:400}
+#help ul{margin:0 0 8px;padding-left:18px}
+#help li{margin:4px 0}
+#help pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;
+  font-size:11.5px;line-height:1.5;overflow-x:auto;margin:8px 0}
+#help code{background:var(--chip);border-radius:4px;padding:1px 5px;font-size:12px;word-break:break-all}
+#help pre code{background:none;padding:0;word-break:normal}
+#help table{font-size:11.5px;margin:8px 0}
+#help td{padding:3px 8px 3px 0;border-bottom:1px solid var(--line);vertical-align:top}
+#help td:first-child{white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink)}
+#help a{color:var(--accent)}
 @media (prefers-reduced-motion: reduce){#help{transition:none}}
 #shade{position:fixed;inset:0;background:var(--shade);opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
 #shade.open{opacity:1;pointer-events:auto}
@@ -219,36 +230,83 @@ Method notes behind the ? icon above. Data: <code>agents/job-scout/data/</code> 
     <h3>How to read this dashboard</h3>
   </div>
   <div class="hbody">
-    <h4>Source</h4>
+    <h4>Reading this dashboard <span class="aud">— for everyone</span></h4>
     <ul>
-      <li>Public ATS JSON APIs (Ashby, Greenhouse, Workday). No page scraping.</li>
+      <li>Every number on this page comes from real job postings, read directly from
+        each company's own job board (Ashby, Greenhouse, or Workday). Nothing is scraped
+        from web pages and nothing is estimated.</li>
+      <li>The filter bar controls the whole page. Type in the search box or pick a
+        category or company, and every chart, count, and table row updates together.</li>
+      <li><strong>Your target roles</strong> counts postings whose title matches each saved
+        role keyword. Words like "senior" or "staff" are ignored, so
+        "Sr. Engineering Manager, Data Platform" still counts as "engineering manager".
+        Click a role to see only those postings.</li>
+      <li>Click any row in the postings table to read the job posting in a side panel.
+        The <strong>Apply</strong> link always opens the company's own page.</li>
+      <li>Salary charts use only pay ranges that companies published themselves, in US
+        dollars. A "band" is the low-to-high range a company lists; the "midpoint" is the
+        middle of that range. Postings with no published pay are left out of salary
+        charts — never guessed.</li>
+      <li>Postings are grouped into nine job categories based on each posting's
+        department (or its title when the board sends no department). Anything that does
+        not match a rule goes to "Other".</li>
+      <li>Some boards do not share posting dates (for example Lime and NVIDIA). Those
+        postings appear everywhere except the weekly chart. Greenhouse dates mean
+        "last updated", not "first posted". Weeks start on Monday (UTC).</li>
+      <li>Job-description text belongs to the hiring companies. It is shown here for
+        personal job-search use{% if jd_mode == 'target' %} and only for postings that
+        match the target keywords{% elif jd_mode == 'none' %} — not included in this
+        build{% endif %}.</li>
     </ul>
-    <h4>Categories</h4>
+
+    <h4>Using the data <span class="aud">— for analysts &amp; data engineers</span></h4>
     <ul>
-      <li>Nine buckets from keyword rules on department; title decides when a feed has no department.</li>
-      <li>Unmatched postings land in "Other", never guessed.</li>
+      <li>The dataset behind this page is a public parquet file, rebuilt every day at
+        11:00 UTC. It holds facts only — titles, companies, locations, pay bands — and
+        never job-description text.</li>
+      <li>Query it straight from DuckDB; no download or account needed:</li>
     </ul>
-    <h4>Salary</h4>
+    <pre><code>SELECT category, count(*) AS jobs
+FROM 'https://raw.githubusercontent.com/senthilsweb/ai-agents/main/agents/job-scout/data/ats_raw_trends.parquet'
+GROUP BY 1 ORDER BY 2 DESC;</code></pre>
     <ul>
-      <li>Published USD base bands only; non-USD excluded, not converted.</li>
-      <li>Stats use band midpoints; no band → excluded from salary views.</li>
+      <li>Need an older day? Replace <code>main</code> in the URL with a date tag such as
+        <code>trends/20260714</code>. One tag is created per daily publish.</li>
+      <li>Column guide (full version with more example queries:
+        <code>agents/job-scout/data/README.md</code> in the repo):</li>
     </ul>
-    <h4>Target matching</h4>
+    <table>
+      <tr><td>company_name</td><td>company that published the posting</td></tr>
+      <tr><td>ats_platform</td><td>job-board system: ashby, greenhouse, or workday</td></tr>
+      <tr><td>req_id</td><td>the posting's id on that board; company + req_id is unique</td></tr>
+      <tr><td>title</td><td>job title, exactly as published</td></tr>
+      <tr><td>department, team</td><td>as published; empty when the board sends none</td></tr>
+      <tr><td>employment_type</td><td>FullTime, Contract… when the board shares it</td></tr>
+      <tr><td>location</td><td>free text, exactly as published</td></tr>
+      <tr><td>work_mode</td><td>remote / hybrid / onsite when the board shares it</td></tr>
+      <tr><td>comp_summary</td><td>the pay text exactly as published, e.g. "$165K – $216K"</td></tr>
+      <tr><td>posted_date</td><td>date from the feed; empty for boards that send none</td></tr>
+      <tr><td>apply_url</td><td>link to the posting</td></tr>
+      <tr><td>fetched_at</td><td>when the pipeline read the posting</td></tr>
+      <tr><td>industry, classification</td><td>company tags from the pipeline's own list; may be empty</td></tr>
+      <tr><td>category</td><td>the nine-bucket grouping used on this page</td></tr>
+      <tr><td>base_min_usd, base_max_usd</td><td>pay band parsed to numbers; USD only, empty otherwise</td></tr>
+    </table>
+
+    <h4>Run it yourself <span class="aud">— for developers</span></h4>
     <ul>
-      <li>Token match; seniority/filler words ignored (senior, staff, lead…).</li>
-      <li>Long keywords tolerate one missing word.</li>
-    </ul>
-    <h4>Caveats</h4>
-    <ul>
-      <li>Locations shown as published (free text).</li>
-      <li>Greenhouse dates are last-updated, not first-posted.</li>
-      <li>Lime and NVIDIA carry no dates; NVIDIA feed capped at 20 postings.</li>
-      <li>Weeks are Monday-start (UTC).</li>
-    </ul>
-    <h4>Job descriptions</h4>
-    <ul>
-      <li>JD text is the hiring company's own posting, for personal job-search use{% if jd_mode == 'target' %} (embedded for target-keyword roles only){% elif jd_mode == 'none' %} (not embedded in this build){% endif %}.</li>
-      <li>The public dataset carries facts only — never JD text.</li>
+      <li>Everything is open source:
+        <a href="https://github.com/senthilsweb/ai-agents/tree/main/agents/job-scout"
+           target="_blank" rel="noopener">github.com/senthilsweb/ai-agents</a>
+        → <code>agents/job-scout</code>.</li>
+      <li>One command runs the whole pipeline (fetch boards → export parquet → build
+        this page): <code>docker run --rm ghcr.io/senthilsweb/job-scout trends</code></li>
+      <li>Put your own role keywords in <code>config.yaml</code> under
+        <code>targets.title_keywords</code> and rebuild — the "Your target roles" panel
+        follows your list.</li>
+      <li>This page is a single self-contained HTML file rendered by
+        <code>tools/build_trends_report.py</code> from the parquet. No server, no
+        external requests.</li>
     </ul>
   </div>
 </aside>

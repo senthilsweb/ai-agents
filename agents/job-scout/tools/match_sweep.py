@@ -68,7 +68,9 @@ DDL = """CREATE TABLE IF NOT EXISTS api_match_result (
 def load_config() -> dict:
     # JOB_SCOUT_CONFIG lets containers point at a mounted config whose
     # absolute paths win over ROOT-relative joins (pathlib semantics).
-    path = Path(os.environ.get("JOB_SCOUT_CONFIG", ROOT / "config.yaml"))
+    # `or` (not a get-default) so an empty env value falls through too —
+    # compose passes all contract vars, unset ones arrive as "".
+    path = Path(os.environ.get("JOB_SCOUT_CONFIG") or ROOT / "config.yaml")
     cfg = yaml.safe_load(path.read_text())
     # Matcher endpoints are env-overridable so a container/.env can point
     # at a different deployment without editing config.yaml.

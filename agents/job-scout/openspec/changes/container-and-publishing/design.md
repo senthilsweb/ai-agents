@@ -81,3 +81,23 @@ Deliberately NOT switched to `container: ghcr.io/...`: the data
 refresh must not fail because an image build broke. Two dependency
 declarations (4 pip packages in the workflow, same 5 in the
 Dockerfile) is an acceptable cost for decoupled failure domains.
+
+## D8 — Audience-first documentation (Bolt 4)
+The first help-drawer draft was compressed method notes — cryptic for
+everyone who is not the author. Rewrite for three named audiences, in
+plain English (owner's standing rule: simple words, no idioms):
+1. *Reading this dashboard* — end users; what the charts mean and how
+   to drive the filters, full sentences, terms defined in place.
+2. *Using the data* — analysts/data engineers; the public parquet URL,
+   a copy-paste DuckDB query, the tag-based history, and a compact
+   column guide.
+3. *Run it yourself* — developers; the docker one-liner, the repo
+   link, where keywords live.
+The column dictionary also ships as `data/README.md` next to the
+parquet (GitHub renders it where the file is found) together with an
+example-query gallery. The dictionary exists in two places (drawer +
+data/README.md) — kept in sync by hand; acceptable for 18 columns.
+Compose services declare their full `environment` list explicitly
+(values interpolated from the shell or `./.env`) so the variable
+contract is visible in the file itself, replacing the opaque
+`env_file` mount.

@@ -20,6 +20,17 @@ via retained files; no prune step exists.
 - **WHEN** DuckDB reads `<raw url>/trends/YYYYMMDD/…/data/ats_raw_trends.parquet`
 - **THEN** it returns that day's snapshot regardless of later publishes
 
+## Requirement: Documented dataset
+`data/README.md` SHALL sit next to the parquet with a plain-English
+data dictionary (every column, one line each), the URL contract
+(main = current, `trends/YYYYMMDD` tag = point in time), the refresh
+schedule, and a gallery of example DuckDB queries.
+
+#### Scenario: Self-serve consumer
+- **WHEN** someone lands on data/ in the GitHub UI
+- **THEN** the rendered README explains every column and gives runnable
+  queries without needing any other document
+
 ## Requirement: Facts-only public parquet (unchanged)
 `data/` SHALL never contain jd_text, resume data, or match scores.
 

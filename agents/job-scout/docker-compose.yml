@@ -7,31 +7,47 @@
 #
 # The checkout is bound over /app: the image supplies Python + deps,
 # the repo supplies code, config.yaml, job_tracker.duckdb, exports/.
-# Secrets come from ./.env (optional; see .env.example) — the trends
-# profile needs none.
+#
+# Environment contract (all optional; the trends profile needs none).
+# Values are interpolated from your shell or from ./.env:
+#   ANTHROPIC_API_KEY     agentic notebook mode
+#   RAINFOCUS_PROFILE_ID  conference sponsor fetch
+#   RAINFOCUS_COOKIE      conference sponsor fetch
+#   JOBMATCH_API_BASE     override config.yaml matcher.api_base (/analyze)
+#   JOBMATCH_AGENT_BASE   override config.yaml matcher.agent_base (/upload)
+#   JOB_SCOUT_CONFIG      path to an alternate config inside the container
+#   RUN_PAID_MATCH        set on the match service below — the paid guard
 #
 # Spec: openspec/changes/container-and-publishing/specs/container-runtime/spec.md
+
+x-job-scout-env: &job-scout-env
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  RAINFOCUS_PROFILE_ID: ${RAINFOCUS_PROFILE_ID:-}
+  RAINFOCUS_COOKIE: ${RAINFOCUS_COOKIE:-}
+  JOBMATCH_API_BASE: ${JOBMATCH_API_BASE:-}
+  JOBMATCH_AGENT_BASE: ${JOBMATCH_AGENT_BASE:-}
+  JOB_SCOUT_CONFIG: ${JOB_SCOUT_CONFIG:-}
 
 x-job-scout: &job-scout
   image: ghcr.io/senthilsweb/job-scout:latest
   build: .
   volumes:
     - .:/app
-  env_file:
-    - path: .env
-      required: false
 
 services:
   trends:
     <<: *job-scout
     profiles: ["trends"]
     command: trends
+    environment:
+      <<: *job-scout-env
 
   match:
     <<: *job-scout
     profiles: ["match"]
     command: match
     environment:
+      <<: *job-scout-env
       # Deliberate, visible opt-in: the match job is PAID (jobmatch API
       # call per selected posting). Remove this line to dry-dock it.
       RUN_PAID_MATCH: "yes"
@@ -42,3 +58,5 @@ services:
     command: bash
     stdin_open: true
     tty: true
+    environment:
+      <<: *job-scout-env

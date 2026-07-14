@@ -91,7 +91,7 @@ def main() -> int:
                                      "(default: input path with trends->full)")
     args = p.parse_args()
 
-    cfg_path = Path(os.environ.get("JOB_SCOUT_CONFIG", ROOT / "config.yaml"))
+    cfg_path = Path(os.environ.get("JOB_SCOUT_CONFIG") or ROOT / "config.yaml")
     cfg = yaml.safe_load(cfg_path.read_text())
     keywords = cfg["targets"]["title_keywords"]
     m = re.search(r"(\d{4})(\d{2})(\d{2})", Path(args.input).name)

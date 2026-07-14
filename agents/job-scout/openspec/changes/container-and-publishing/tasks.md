@@ -17,4 +17,11 @@
 - [x] 3.1 data/: single canonical ats_raw_trends.parquet (git rm dated + latest)
 - [x] 3.2 Workflow: copy to canonical name, drop prune, push lightweight tag trends/YYYYMMDD
 - [x] 3.3 README + dashboard footer: new URL contract (main = current, tag ref = point in time)
-- [ ] 3.4 Verify: DuckDB reads the canonical raw URL (after push — pending commit)
+- [x] 3.4 Verify: DuckDB reads the canonical raw URL and the trends/20260714 tag ref (both return 5,421 rows)
+
+## Bolt 4 — Audience-first docs
+- [x] 4.1 Compose: explicit environment list on every service (pass-through from shell/.env), not env_file
+- [x] 4.2 Help slide-over rewritten in plain English: three audience sections + column guide
+- [x] 4.3 data/README.md: data dictionary + example DuckDB query gallery (all 6 queries tested)
+- [x] 4.4 README: "I want to → run this" quickstart matrix up top
+- [x] 4.5 Rebuild dashboard; republish artifact (same URL)

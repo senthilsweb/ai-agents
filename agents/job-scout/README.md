@@ -8,6 +8,19 @@ with an optional Anthropic agentic layer.
 Spec-driven (OpenSpec), deterministic-first job search pipeline in a marimo
 notebook backed by DuckDB. Optional agentic search via Anthropic API.
 
+## I want to… → run this
+
+| I want to… | Run this |
+|---|---|
+| See current hiring trends | Open the dashboard artifact, or build one: `docker run --rm ghcr.io/senthilsweb/job-scout trends` |
+| Query the public dataset (no clone, no account) | DuckDB against the raw URL — see [`data/README.md`](data/README.md) for the column guide + example queries |
+| Load all job boards into my local DuckDB | `python tools/raw_load.py` (or `docker compose --profile trends up`) |
+| Explore postings before filtering | SQL on `ats_posting_raw` — see "Raw landing table" below |
+| Run the interactive notebook (shortlist + scoring) | `pip install …` then `marimo edit notebook.py` — see "Run" below |
+| Run the paid resume-match sweep | `python tools/daily_match.py` (containerized: `match` job, needs `RUN_PAID_MATCH=yes`) — see "API match pipeline" |
+| Point the matcher at a different deployment | `JOBMATCH_API_BASE` / `JOBMATCH_AGENT_BASE` env vars (defaults in `config.yaml`) |
+| Track my own role keywords instead | Edit `targets.title_keywords` in `config.yaml`, rebuild the dashboard |
+
 ## Discovery — three tiers (per openspec/specs/search-pipeline)
 - **Tier 1 — deterministic ATS APIs (no LLM, no scraping).** The "Fetch
   postings via ATS APIs" button (`tools/ats_fetch.py:fetch_all`) **seeds a
@@ -110,6 +123,10 @@ straight from DuckDB, no clone needed:
 
     -- point in time: swap `main` for a tag ref, e.g. trends/20260714
     FROM 'https://raw.githubusercontent.com/senthilsweb/ai-agents/trends/20260714/agents/job-scout/data/ats_raw_trends.parquet'
+
+Column-by-column data dictionary and more example queries:
+[`data/README.md`](data/README.md) (rendered right next to the parquet
+on GitHub).
 
 Copyright note: `data/` carries **facts only** (titles, companies,
 locations, salary bands, dates, URLs — not copyrightable). Full job
