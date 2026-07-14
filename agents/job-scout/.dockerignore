@@ -1,0 +1,8 @@
+# Only tools/, templates/, config.yaml, docker/ enter the image — but
+# keep the build context clean of state and personal data regardless.
+*
+!tools/
+!templates/
+!config.yaml
+!docker/
+tools/__pycache__/

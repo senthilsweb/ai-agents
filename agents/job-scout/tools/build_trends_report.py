@@ -16,6 +16,7 @@ JD text comes from the sibling full parquet (inferred by replacing
 """
 import argparse
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -90,7 +91,8 @@ def main() -> int:
                                      "(default: input path with trends->full)")
     args = p.parse_args()
 
-    cfg = yaml.safe_load((ROOT / "config.yaml").read_text())
+    cfg_path = Path(os.environ.get("JOB_SCOUT_CONFIG", ROOT / "config.yaml"))
+    cfg = yaml.safe_load(cfg_path.read_text())
     keywords = cfg["targets"]["title_keywords"]
     m = re.search(r"(\d{4})(\d{2})(\d{2})", Path(args.input).name)
     stamp = f"{m.group(1)}-{m.group(2)}-{m.group(3)}" if m else "latest"

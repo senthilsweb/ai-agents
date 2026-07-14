@@ -283,7 +283,8 @@ def export(con, out_dir: Path) -> dict:
             if cur == "USD":
                 bmin, bmax = lo, hi
         out.append(r + (categorize(dept, title), bmin, bmax))
-    con.executemany(f"INSERT INTO _trends VALUES ({','.join('?' * 18)})", out)
+    if out:  # executemany rejects an empty parameter list
+        con.executemany(f"INSERT INTO _trends VALUES ({','.join('?' * 18)})", out)
     trends = out_dir / f"ats_raw_trends_{stamp}.parquet"
     full = out_dir / f"ats_raw_full_{stamp}.parquet"
     con.execute(f"COPY _trends TO '{trends}' (FORMAT PARQUET)")

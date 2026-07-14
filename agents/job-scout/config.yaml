@@ -172,8 +172,8 @@ search:
                                    # snapshot = delta + close open rows gone from the live board
 
 matcher:                           # agent-job-matcher API pipeline (openspec/changes/api-match-report)
-  api_base: "https://jobmatch-api.nathansweb.com"     # POST /analyze, GET /health
-  agent_base: "https://jobmatch-agent.nathansweb.com" # POST /upload (shared uploads volume with api)
+  api_base: "https://jobmatch-api.nathansweb.com"     # POST /analyze, GET /health (env override: JOBMATCH_API_BASE)
+  agent_base: "https://jobmatch-agent.nathansweb.com" # POST /upload (env override: JOBMATCH_AGENT_BASE)
   resume_path: "./inputs/sk-resume-june-2026.md"      # placeholder — point to your resume (PDF/DOCX/TXT/MD) for real runs
   batch_size: 3                    # jobs per /analyze request (matches server JOB_FANOUT_CONCURRENCY)
   export_dir: "./exports"          # dated run dirs land under here: jobmatch-YYYYMMDD/

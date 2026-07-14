@@ -91,21 +91,32 @@ td a:hover{text-decoration:underline}
 .mini{width:100%;font-size:13px}
 .mini td{border-bottom:1px solid var(--line);padding:5px 6px}
 .mini td.num{white-space:nowrap}
-details.method{margin-top:20px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px 18px}
-details.method summary{cursor:pointer;font-weight:600;font-size:14px;padding:12px 0}
-details.method .body{font-size:13.5px;color:var(--ink2);line-height:1.65;padding-bottom:14px}
-details.method dt{font-weight:600;color:var(--ink);margin-top:10px}
-details.method dd{margin:2px 0 0}
+header{position:relative}
+.helpbtn{position:absolute;top:0;right:0;width:34px;height:34px;border-radius:9px;
+  background:var(--surface);border:1px solid var(--line);color:var(--ink2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center}
+.helpbtn:hover{color:var(--accent);border-color:var(--accent)}
+#help{position:fixed;top:0;right:0;bottom:0;width:min(420px,100vw);background:var(--surface);
+  border-left:1px solid var(--line);z-index:31;transform:translateX(102%);transition:transform .22s ease;
+  display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(0,0,0,.18)}
+#help.open{transform:translateX(0)}
+#help .dhead{padding:18px 20px 14px;border-bottom:1px solid var(--line)}
+#help .dhead h3{margin:0;font-size:16px}
+#help .hbody{flex:1;overflow-y:auto;padding:6px 20px 24px;font-size:13px;line-height:1.55;color:var(--ink2)}
+#help h4{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:18px 0 6px}
+#help ul{margin:0;padding-left:18px}
+#help li{margin:3px 0}
+@media (prefers-reduced-motion: reduce){#help{transition:none}}
 #shade{position:fixed;inset:0;background:var(--shade);opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
 #shade.open{opacity:1;pointer-events:auto}
 #drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100vw);background:var(--surface);
   border-left:1px solid var(--line);z-index:31;transform:translateX(102%);transition:transform .22s ease;
   display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(0,0,0,.18)}
 #drawer.open{transform:translateX(0)}
-#drawer .dhead{padding:18px 20px 14px;border-bottom:1px solid var(--line)}
+#drawer .dhead,#help .dhead{padding:18px 20px 14px;border-bottom:1px solid var(--line)}
 #drawer .dhead h3{margin:0 0 2px;font-size:17px;line-height:1.35;text-wrap:balance;padding-right:36px}
 #drawer .dhead .co{color:var(--ink2);font-size:13.5px}
-#drawer .close{position:absolute;top:12px;right:12px;background:var(--chip);border:none;color:var(--ink);
+#drawer .close,#help .close{position:absolute;top:12px;right:12px;background:var(--chip);border:none;color:var(--ink);
   width:30px;height:30px;border-radius:8px;font-size:15px;cursor:pointer}
 #drawer .meta{display:flex;flex-wrap:wrap;gap:8px;padding:12px 20px;border-bottom:1px solid var(--line)}
 #drawer .meta .pill{font-size:12px}
@@ -122,6 +133,11 @@ details.method dd{margin:2px 0 0}
   <div class="eyebrow">job-scout · ats_posting_raw snapshot · {{ stamp }}</div>
   <h1>{{ heading }}</h1>
   <p>{{ meta_line }} Filters slice every chart and table below.</p>
+  <button class="helpbtn" id="helpbtn" aria-label="How to read this dashboard" title="How to read this dashboard">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/>
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+  </button>
 </header>
 
 <div class="tiles" id="tiles"></div>
@@ -193,38 +209,49 @@ details.method dd{margin:2px 0 0}
   </div>
 </div>
 
-<details class="method">
-  <summary>Method &amp; normalizations</summary>
-  <div class="body"><dl>
-    <dt>Source</dt><dd>Public ATS JSON APIs of each company's job board (Ashby, Greenhouse,
-    Workday) — the same endpoints the boards' own pages call. No page scraping.</dd>
-    <dt>Categories</dt><dd>Nine buckets derived by keyword rules on each posting's department
-    ("GTM", "Go To Market" and "Revenue" all → Sales &amp; GTM); when a feed carries no
-    department, the title decides ("engineer", "developer", "architect"… → Engineering &amp; Tech).
-    Everything unmatched lands in "Other" rather than being guessed.</dd>
-    <dt>Salary</dt><dd>Published base-pay bands parsed from formatted strings
-    ("$165,000 – $216,562", "$264K – $379.5K") into USD min/max. Non-USD bands are excluded,
-    not converted. Charts use band midpoints; medians and percentiles are computed over
-    midpoints. Postings without a published band are excluded from salary views, never estimated.</dd>
-    <dt>Target-role matching</dt><dd>The pipeline's token matcher: seniority and filler words
-    (senior, sr, staff, principal, lead, of…) are ignored; 1–2 significant tokens must all
-    appear in the title, longer keywords allow one missing token.</dd>
-    <dt>Weeks</dt><dd>Posting dates bucketed to Monday-start weeks (UTC).</dd>
-    <dt>Not normalized</dt><dd>Locations stay as published (free text). Multi-location postings
-    appear once per board entry, exactly as companies list them. Greenhouse dates are
-    last-updated rather than first-posted; Lime and NVIDIA feeds carry no dates (rows count
-    everywhere except the weekly trend). NVIDIA is capped at 20 postings by its paginated feed.</dd>
-    <dt>Job descriptions</dt><dd>JD text shown in the side panel is the hiring company's own
-    posting text, embedded for personal job-search use{{ '' }}{% if jd_mode == 'target' %} for
-    postings matching the target keywords only{% elif jd_mode == 'none' %} — disabled in this
-    build{% endif %}. The public trends dataset contains facts only, never JD text.</dd>
-  </dl></div>
-</details>
-
-<p class="note"><strong>Reading notes.</strong> Salary figures are published base-pay bands (USD only); postings without a
-band are excluded from salary views, never guessed. Full method above. Data: dated parquet snapshots under
-<code>agents/job-scout/data/</code> in the repo, queryable directly from DuckDB.</p>
+<p class="note">Salary figures are published base-pay bands, USD only — never guessed.
+Method notes behind the ? icon above. Data: <code>agents/job-scout/data/</code> in the repo, queryable directly from DuckDB.</p>
 </div>
+
+<aside id="help" role="dialog" aria-modal="true" aria-label="How to read this dashboard">
+  <div class="dhead">
+    <button class="close" id="hclose" aria-label="Close">✕</button>
+    <h3>How to read this dashboard</h3>
+  </div>
+  <div class="hbody">
+    <h4>Source</h4>
+    <ul>
+      <li>Public ATS JSON APIs (Ashby, Greenhouse, Workday). No page scraping.</li>
+    </ul>
+    <h4>Categories</h4>
+    <ul>
+      <li>Nine buckets from keyword rules on department; title decides when a feed has no department.</li>
+      <li>Unmatched postings land in "Other", never guessed.</li>
+    </ul>
+    <h4>Salary</h4>
+    <ul>
+      <li>Published USD base bands only; non-USD excluded, not converted.</li>
+      <li>Stats use band midpoints; no band → excluded from salary views.</li>
+    </ul>
+    <h4>Target matching</h4>
+    <ul>
+      <li>Token match; seniority/filler words ignored (senior, staff, lead…).</li>
+      <li>Long keywords tolerate one missing word.</li>
+    </ul>
+    <h4>Caveats</h4>
+    <ul>
+      <li>Locations shown as published (free text).</li>
+      <li>Greenhouse dates are last-updated, not first-posted.</li>
+      <li>Lime and NVIDIA carry no dates; NVIDIA feed capped at 20 postings.</li>
+      <li>Weeks are Monday-start (UTC).</li>
+    </ul>
+    <h4>Job descriptions</h4>
+    <ul>
+      <li>JD text is the hiring company's own posting, for personal job-search use{% if jd_mode == 'target' %} (embedded for target-keyword roles only){% elif jd_mode == 'none' %} (not embedded in this build){% endif %}.</li>
+      <li>The public dataset carries facts only — never JD text.</li>
+    </ul>
+  </div>
+</aside>
 
 <div id="shade"></div>
 <aside id="drawer" role="dialog" aria-modal="true" aria-label="Job details">
@@ -432,11 +459,13 @@ function openDrawer(i){
       ? "JD text not embedded for this posting (this build embeds JDs for target-keyword roles only — rebuild with --jd all for everything). Use Apply to read it on the company's board."
       : "JD text not embedded in this build. Use Apply to read it on the company's board."; }
   el.scrollTop=0;
+  closePanels();
   $("drawer").classList.add("open"); $("shade").classList.add("open");
 }
-function closeDrawer(){ $("drawer").classList.remove("open"); $("shade").classList.remove("open"); }
-$("dclose").onclick=closeDrawer; $("shade").onclick=closeDrawer;
-document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeDrawer(); });
+function closePanels(){ ["drawer","help","shade"].forEach(id=>$(id).classList.remove("open")); }
+$("dclose").onclick=closePanels; $("hclose").onclick=closePanels; $("shade").onclick=closePanels;
+$("helpbtn").onclick=()=>{ closePanels(); $("help").classList.add("open"); $("shade").classList.add("open"); };
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closePanels(); });
 
 function render(){
   const rows=filtered();

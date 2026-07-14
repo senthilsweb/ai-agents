@@ -1,0 +1,44 @@
+# job-scout pipeline jobs, containerized. Every service is behind a
+# profile so a bare `docker compose up` starts nothing by accident.
+#
+#   docker compose --profile trends up          # boards -> parquet -> dashboard
+#   docker compose --profile match up           # PAID match (needs .env)
+#   docker compose --profile shell run --rm shell
+#
+# The checkout is bound over /app: the image supplies Python + deps,
+# the repo supplies code, config.yaml, job_tracker.duckdb, exports/.
+# Secrets come from ./.env (optional; see .env.example) — the trends
+# profile needs none.
+#
+# Spec: openspec/changes/container-and-publishing/specs/container-runtime/spec.md
+
+x-job-scout: &job-scout
+  image: ghcr.io/senthilsweb/job-scout:latest
+  build: .
+  volumes:
+    - .:/app
+  env_file:
+    - path: .env
+      required: false
+
+services:
+  trends:
+    <<: *job-scout
+    profiles: ["trends"]
+    command: trends
+
+  match:
+    <<: *job-scout
+    profiles: ["match"]
+    command: match
+    environment:
+      # Deliberate, visible opt-in: the match job is PAID (jobmatch API
+      # call per selected posting). Remove this line to dry-dock it.
+      RUN_PAID_MATCH: "yes"
+
+  shell:
+    <<: *job-scout
+    profiles: ["shell"]
+    command: bash
+    stdin_open: true
+    tty: true

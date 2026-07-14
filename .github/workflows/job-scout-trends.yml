@@ -2,8 +2,10 @@
 # Spec: agents/job-scout/openspec/changes/trends-dashboard/specs/data-publication/spec.md
 #
 # Fetches every configured ATS board (public JSON APIs, no scraping, no
-# secrets), exports the facts-only trends parquet, and commits it under
-# agents/job-scout/data/ as a dated snapshot + a stable "latest" file.
+# secrets), exports the facts-only trends parquet, and overwrites the
+# single canonical agents/job-scout/data/ats_raw_trends.parquet. Each
+# publish gets a lightweight tag trends/YYYYMMDD, so any day's snapshot
+# stays fetchable via the tag ref (container-and-publishing D6).
 # JD text NEVER lands in data/ (copyright boundary — design D3).
 name: job-scout daily trends
 
@@ -41,20 +43,13 @@ jobs:
       - name: Export trends parquet
         run: python tools/raw_load.py --export
 
-      - name: Publish to data/ (dated + latest, prune > 90 days)
+      - name: Publish to data/ (single canonical file)
         run: |
           mkdir -p data
-          stamp=$(date -u +%Y%m%d)
-          cp "exports/ats_raw_trends_${stamp}.parquet" data/
-          cp "exports/ats_raw_trends_${stamp}.parquet" data/ats_raw_trends_latest.parquet
-          cutoff=$(date -u -d '90 days ago' +%Y%m%d)
-          for f in data/ats_raw_trends_2*.parquet; do
-            d=$(basename "$f" | grep -oE '[0-9]{8}' || true)
-            if [ -n "$d" ] && [ "$d" -lt "$cutoff" ]; then rm "$f"; fi
-          done
+          cp "exports/ats_raw_trends_$(date -u +%Y%m%d).parquet" data/ats_raw_trends.parquet
           ls -lh data/
 
-      - name: Commit snapshot
+      - name: Commit + tag trends/YYYYMMDD
         run: |
           cd "$GITHUB_WORKSPACE"
           git config user.name "github-actions[bot]"
@@ -65,4 +60,14 @@ jobs:
           else
             git commit -m "data(job-scout): daily trends parquet $(date -u +%F)"
             git push
+          fi
+          # Tag HEAD regardless of whether data changed — the tag means
+          # "this is the snapshot as of this date". Skip if it exists
+          # (manual re-dispatch on the same day).
+          tag="trends/$(date -u +%Y%m%d)"
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "tag $tag already exists — skipping"
+          else
+            git tag "$tag"
+            git push origin "$tag"
           fi

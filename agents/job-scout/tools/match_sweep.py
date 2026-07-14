@@ -24,6 +24,7 @@ import json
 from html import unescape
 import logging
 import mimetypes
+import os
 import re
 import ssl
 import sys
@@ -65,7 +66,17 @@ DDL = """CREATE TABLE IF NOT EXISTS api_match_result (
 
 # ── config / db ──────────────────────────────────────────────────────
 def load_config() -> dict:
-    return yaml.safe_load((ROOT / "config.yaml").read_text())
+    # JOB_SCOUT_CONFIG lets containers point at a mounted config whose
+    # absolute paths win over ROOT-relative joins (pathlib semantics).
+    path = Path(os.environ.get("JOB_SCOUT_CONFIG", ROOT / "config.yaml"))
+    cfg = yaml.safe_load(path.read_text())
+    # Matcher endpoints are env-overridable so a container/.env can point
+    # at a different deployment without editing config.yaml.
+    m = cfg.get("matcher")
+    if m:
+        m["api_base"] = os.environ.get("JOBMATCH_API_BASE") or m.get("api_base")
+        m["agent_base"] = os.environ.get("JOBMATCH_AGENT_BASE") or m.get("agent_base")
+    return cfg
 
 
 def connect(cfg: dict):

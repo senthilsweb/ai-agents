@@ -98,13 +98,18 @@ builds the lean page. A "JD panel" toggle on the page controls whether
 clicking a row opens the side panel.
 
 **Public data:** a GitHub Action (`.github/workflows/job-scout-trends.yml`)
-refreshes `data/` daily — `ats_raw_trends_YYYYMMDD.parquet` snapshots
-(pruned after 90 days) plus a stable `ats_raw_trends_latest.parquet`.
-Query it straight from DuckDB, no clone needed:
+overwrites the single canonical `data/ats_raw_trends.parquet` daily and
+tags each publish `trends/YYYYMMDD` — current data lives at one stable
+URL, history is a ref, no `latest` duplicates, nothing to prune. Query
+straight from DuckDB, no clone needed:
 
+    -- current snapshot (main)
     SELECT category, COUNT(*), ROUND(MEDIAN((base_min_usd+base_max_usd)/2)) AS mid
-    FROM 'https://raw.githubusercontent.com/senthilsweb/ai-agents/main/agents/job-scout/data/ats_raw_trends_latest.parquet'
+    FROM 'https://raw.githubusercontent.com/senthilsweb/ai-agents/main/agents/job-scout/data/ats_raw_trends.parquet'
     GROUP BY 1 ORDER BY 2 DESC;
+
+    -- point in time: swap `main` for a tag ref, e.g. trends/20260714
+    FROM 'https://raw.githubusercontent.com/senthilsweb/ai-agents/trends/20260714/agents/job-scout/data/ats_raw_trends.parquet'
 
 Copyright note: `data/` carries **facts only** (titles, companies,
 locations, salary bands, dates, URLs — not copyrightable). Full job
@@ -168,6 +173,34 @@ one point (step 9) — running one does **not** automatically trigger the other.
 
 Tune everything in `config.yaml`. For agentic mode: copy `.env.example` to
 `.env`, add `ANTHROPIC_API_KEY`, set `agentic.enabled: true`.
+
+### Docker — run the pipeline without installing anything
+A public image (`ghcr.io/senthilsweb/job-scout`, amd64+arm64) carries the
+tools, templates, and a default config; it is rebuilt by
+`.github/workflows/job-scout-image.yml` on every push that touches the
+agent. Named jobs: `load`, `export`, `report`, `trends` (all three),
+`match` (paid — refuses without `RUN_PAID_MATCH=yes`); anything else is
+passed through verbatim (`bash`, `python tools/... `).
+
+    # checkout-less, self-contained (state stays in the container)
+    docker run --rm ghcr.io/senthilsweb/job-scout trends
+
+    # against this checkout: image = deps, repo = code/config/DB/exports
+    docker compose --profile trends up
+    docker compose --profile match up          # paid; reads ./.env
+    docker compose --profile shell run --rm shell
+
+Every compose service is profile-gated, so a bare `docker compose up`
+starts nothing. For a server with its own state, mount a config whose
+paths are absolute and point `JOB_SCOUT_CONFIG` at it:
+
+    docker run --rm -v /srv/js:/state -e JOB_SCOUT_CONFIG=/state/config.yaml \
+        ghcr.io/senthilsweb/job-scout trends
+
+One-time setup: GHCR packages start private — flip
+`ghcr.io/senthilsweb/job-scout` to public in GitHub package settings
+after the first workflow push. Note the marimo notebook is not in the
+image (interactive, local-only).
 
 ### Quickstart — empty DB to a shortlisted, ranked board
 1. Launch the notebook (`marimo edit notebook.py`). The schema is created
