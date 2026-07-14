@@ -20,8 +20,17 @@ rules — other repos link here instead of copying it.
 
 - Organize by **task**, not by module. The standard page set: Home,
   Getting Started, Installation, Configuration, one or two
-  subject-deep pages (data, API, surfaces…), Runbook, FAQ & Design
-  Decisions.
+  subject-deep pages (data, API, surfaces…), Runbook, FAQ.
+- Some pages are not optional:
+    - **Runbook** — every project has one, however small (minimum:
+      what runs automatically, how to check it, failures seen so far).
+    - **Configuration** — required whenever the product has any form
+      of config file or `.env`.
+    - **FAQ** — always present and titled exactly "FAQ" (design
+      decisions live inside it, linked to specs).
+    - **CI/CD** — required when a project has more than one workflow:
+      a left-to-right mermaid diagram of the chain (triggers →
+      workflows → outputs) plus a short write-up per workflow.
 - Every task page opens with one sentence of the form *"At the end you
   will have/know …"*.
 - Every page ends with a `Next:` link to the natural following page.

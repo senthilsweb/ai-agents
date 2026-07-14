@@ -3,10 +3,21 @@
 Three paths in. Each takes about five minutes. Pick the one that
 matches what you want; none of them requires the others.
 
-## Path 1 — See the hiring-trends dashboard (needs only Docker)
+## Path 1 — See the hiring-trends dashboard (nothing to install)
 
-At the end you will have an interactive HTML dashboard built from
-today's live postings.
+The public dashboard is rebuilt every day and hosted on this site:
+
+**<https://senthilsweb.github.io/ai-agents/trends/>**
+
+Open it, filter, click a table row for posting details. The **?** icon
+at the top right explains every chart in plain words. To track your
+own role keywords, add them to the URL —
+`…/trends/?roles=ai engineer,engineering manager` — and the page shows
+a live tracker for exactly those roles (the public build embeds no
+keywords of its own).
+
+To build your own copy from today's live postings, with full job
+descriptions embedded (Docker only):
 
 ```bash
 docker run --rm -v "$PWD/out:/app/exports" ghcr.io/senthilsweb/job-scout trends
@@ -14,12 +25,8 @@ open out/hiring-trends-*.html
 ```
 
 The `trends` job fetches every configured job board (a few minutes),
-exports a parquet snapshot, and renders the dashboard. The `-v` mount
-puts the results in an `out/` folder on your machine.
-
-The dashboard is one file with no server behind it — open it, filter,
-click a table row to read a job description. The **?** icon at the top
-right explains every chart in plain words.
+exports a parquet snapshot, and renders the dashboard into the mounted
+`out/` folder.
 
 ## Path 2 — Query the public dataset (needs only DuckDB)
 
@@ -36,9 +43,9 @@ GROUP BY 1 ORDER BY 2 DESC;
 The file is refreshed every day at 11:00 UTC. Column meanings and more
 example queries:
 [data/README.md](https://github.com/senthilsweb/ai-agents/blob/main/agents/job-scout/data/README.md).
-Prefer a browser? The repo ships a single-file SQL console:
-[utils/duckdb-s3-console.html](https://github.com/senthilsweb/ai-agents/blob/main/utils/duckdb-s3-console.html)
-— its default query reads this dataset.
+Prefer a browser? The hosted SQL console at
+<https://senthilsweb.github.io/ai-agents/console/> runs DuckDB in your
+browser — its default query already reads this dataset.
 
 ## Path 3 — Run the notebook locally (full pipeline)
 

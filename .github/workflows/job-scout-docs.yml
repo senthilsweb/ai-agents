@@ -1,7 +1,11 @@
-# Build the wiki (MkDocs Material) and deploy it to GitHub Pages.
-# Spec: agents/job-scout/openspec/changes/job-scout-wiki/design.md (D5)
+# Build the wiki (MkDocs Material) + the live pages (/console/, /trends/)
+# and deploy everything to GitHub Pages.
+# Specs: agents/job-scout/openspec/changes/job-scout-wiki/design.md (D5),
+#        agents/job-scout/openspec/changes/wiki-live-pages/design.md
 #
-# One-time repo setup: Settings -> Pages -> Source = "GitHub Actions".
+# The 11:45 UTC cron refreshes /trends/ daily, 45 min after the trends
+# data workflow (11:00) commits the new parquet. A push-based chain is
+# impossible: GITHUB_TOKEN bot commits never trigger on:push workflows.
 name: job-scout docs
 
 on:
@@ -9,8 +13,13 @@ on:
     branches: [main]
     paths:
       - "agents/job-scout/docs/**"
+      - "agents/job-scout/templates/trends_dashboard.html.j2"
+      - "agents/job-scout/tools/build_trends_report.py"
+      - "utils/duckdb-s3-console.html"
       - "mkdocs.yml"
       - ".github/workflows/job-scout-docs.yml"
+  schedule:
+    - cron: "45 11 * * *"
   workflow_dispatch:
 
 permissions:
@@ -38,6 +47,23 @@ jobs:
         run: |
           pip install --quiet "mkdocs-material==9.*" "mkdocs<2"
           mkdocs build --strict
+
+      - name: Build live pages (/console/ + daily /trends/)
+        # Both are CI artifacts only — never committed (wiki-live-pages D1).
+        # /trends/ is the PUBLIC build: --jd none (no JD text, copyright
+        # boundary D3) and --no-targets (no role keywords; visitors can
+        # pass ?roles=a,b,c). Dated copy so the page stamp shows today.
+        run: |
+          pip install --quiet duckdb pyyaml jinja2 certifi
+          mkdir -p site/console site/trends
+          cp utils/duckdb-s3-console.html site/console/index.html
+          stamped="/tmp/ats_raw_trends_$(date -u +%Y%m%d).parquet"
+          cp agents/job-scout/data/ats_raw_trends.parquet "$stamped"
+          python agents/job-scout/tools/build_trends_report.py \
+            --input "$stamped" --out site/trends/index.html \
+            --jd none --no-targets
+          grep -q 'let KEYWORDS = \[\];' site/trends/index.html
+          ls -lh site/trends/ site/console/
 
       - uses: actions/upload-pages-artifact@v3
         with:

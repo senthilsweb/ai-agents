@@ -40,7 +40,7 @@ job_posting  ──►  match sweep ──► paid matcher API ──► ranked 
 | Writing SQL against the data | [Data & Queries](data-and-queries.md) |
 | Building or sharing reports | [Dashboards & Reports](dashboards-and-reports.md) |
 | Operating it day to day | [Runbook](runbook.md) |
-| Wondering why it works this way | [FAQ & Design Decisions](faq.md) |
+| Wondering why it works this way | [FAQ](faq.md) |
 
 ## Pages
 
@@ -50,5 +50,6 @@ job_posting  ──►  match sweep ──► paid matcher API ──► ranked 
 - [Data & Queries](data-and-queries.md) — the tables, the public dataset, and a query cookbook.
 - [Dashboards & Reports](dashboards-and-reports.md) — building and sharing the HTML pages.
 - [Runbook](runbook.md) — daily operations and what to do when something fails.
-- [FAQ & Design Decisions](faq.md) — the reasoning, with links to the specs.
+- [CI/CD](ci-cd.md) — the automated pipelines and how they chain.
+- [FAQ](faq.md) — the reasoning, with links to the specs.
 - [API match pipeline reference](api-match-pipeline.md) — deep reference for the paid matcher tools.

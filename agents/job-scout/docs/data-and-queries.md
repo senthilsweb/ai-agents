@@ -89,10 +89,13 @@ Column-by-column guide and six ready-made queries:
   `duckdb job_tracker.duckdb -readonly` — use `-readonly` whenever the
   pipeline might run, because DuckDB allows only one writer (see
   [Runbook](runbook.md#database-is-locked)).
-- **The browser console** —
-  [utils/duckdb-s3-console.html](https://github.com/senthilsweb/ai-agents/blob/main/utils/duckdb-s3-console.html)
-  runs DuckDB in the browser against any https parquet URL or S3/MinIO
-  bucket. Its default query reads this project's public dataset.
+- **The browser console** — hosted at
+  <https://senthilsweb.github.io/ai-agents/console/> — runs DuckDB in
+  the browser against any https parquet URL; its default query reads
+  this project's public dataset. (Source:
+  [utils/duckdb-s3-console.html](https://github.com/senthilsweb/ai-agents/blob/main/utils/duckdb-s3-console.html);
+  for plain-http MinIO endpoints, serve it locally instead — a hosted
+  https page cannot call http.)
 - **The marimo notebook** for the interactive ranked board.
 
 ## How the tables get populated

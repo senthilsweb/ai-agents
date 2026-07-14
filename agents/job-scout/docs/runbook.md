@@ -133,4 +133,4 @@ Every tool run writes `logs/run_YYYYMMDD_HHMMSS.log` (plan counts,
 skips, exports, agentic calls). Directory and level are set in
 `config.yaml` under `logging`. The `logs/` folder is git-ignored.
 
-Next: [FAQ & Design Decisions](faq.md).
+Next: [CI/CD](ci-cd.md).

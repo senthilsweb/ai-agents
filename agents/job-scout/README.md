@@ -36,7 +36,8 @@ The wiki lives in [docs/](docs/) and is published at
 - [Data & Queries](docs/data-and-queries.md) — tables, public dataset, query cookbook, sponsors
 - [Dashboards & Reports](docs/dashboards-and-reports.md) — building and sharing the HTML pages
 - [Runbook](docs/runbook.md) — schedules, the paid-match procedure, failures + fixes
-- [FAQ & Design Decisions](docs/faq.md) — the reasoning, linked to specs
+- [CI/CD](docs/ci-cd.md) — the automated pipelines and how they chain
+- [FAQ](docs/faq.md) — the reasoning, linked to specs
 - [API match pipeline](docs/api-match-pipeline.md) — deep reference for the matcher tools
 
 Two boundaries worth knowing before anything else: the public dataset

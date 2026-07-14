@@ -89,11 +89,14 @@ def main() -> int:
     p.add_argument("--jd", choices=["target", "all", "none"], default="target")
     p.add_argument("--jd-from", help="full parquet with jd_text "
                                      "(default: input path with trends->full)")
+    p.add_argument("--no-targets", action="store_true",
+                   help="embed no role keywords (public builds); the page "
+                        "then reads ?roles=a,b,c from its URL instead")
     args = p.parse_args()
 
     cfg_path = Path(os.environ.get("JOB_SCOUT_CONFIG") or ROOT / "config.yaml")
     cfg = yaml.safe_load(cfg_path.read_text())
-    keywords = cfg["targets"]["title_keywords"]
+    keywords = [] if args.no_targets else cfg["targets"]["title_keywords"]
     m = re.search(r"(\d{4})(\d{2})(\d{2})", Path(args.input).name)
     stamp = f"{m.group(1)}-{m.group(2)}-{m.group(3)}" if m else "latest"
 

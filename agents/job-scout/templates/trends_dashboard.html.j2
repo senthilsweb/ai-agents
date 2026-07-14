@@ -163,9 +163,9 @@ header{position:relative}
   <button class="reset" id="reset">Reset</button>
 </div>
 
-<div class="card">
+<div class="card" id="targetscard">
   <h2>Your target roles</h2>
-  <p class="sub">Counts per <code>config.yaml</code> keyword, matched with the pipeline's own token matcher
+  <p class="sub">Counts per tracked role keyword, matched with the pipeline's own token matcher
   (seniority words ignored — "Sr. Engineering Manager, Data Platform" counts as "engineering manager").
   Click a row to slice everything below to that role family.</p>
   <div class="two-col" id="targets"></div>
@@ -325,12 +325,19 @@ GROUP BY 1 ORDER BY 2 DESC;</code></pre>
 
 <script>
 const RAW = {{ data_json }};
-const KEYWORDS = {{ keywords_json }};
+let KEYWORDS = {{ keywords_json }};
 const JD = {{ jd_json }};
 const JD_MODE = "{{ jd_mode }}";
 {% raw %}
 const F = {CO:0,PLAT:1,TITLE:2,CAT:3,DEPT:4,LOC:5,REMOTE:6,LO:7,HI:8,POSTED:9,URL:10,IDX:11};
 const $ = id => document.getElementById(id);
+// Target-free builds (--no-targets) embed no keywords; the tracker can
+// still be driven per-visitor via ?roles=a,b,c in the URL.
+if(!KEYWORDS.length){
+  const rp = new URLSearchParams(location.search).get("roles");
+  if(rp) KEYWORDS = rp.split(",").map(s=>s.trim()).filter(Boolean);
+}
+if(!KEYWORDS.length) $("targetscard").style.display = "none";
 const tt = $("tooltip");
 const state = {q:"",cat:"",co:"",kw:"",remote:false,salary:false,jd:true,
                sortK:9,sortDir:-1,page:0,psize:25};
@@ -527,7 +534,8 @@ document.addEventListener("keydown",e=>{ if(e.key==="Escape") closePanels(); });
 
 function render(){
   const rows=filtered();
-  tiles(rows); targets(); trend(rows); catBars(rows); salary(rows); landscape(rows); table(rows);
+  tiles(rows); if(KEYWORDS.length) targets();
+  trend(rows); catBars(rows); salary(rows); landscape(rows); table(rows);
 }
 ["q","fcat","fco","fremote","fsalary","fjd"].forEach(id=>{
   $(id).addEventListener(id==="q"?"input":"change",()=>{

@@ -36,12 +36,27 @@ automatically by replacing `trends` with `full` in the input name). If
 the full parquet is missing, the build falls back to `none` with a
 warning.
 
-### Sharing
+### The public copy
+
+A public build is rebuilt daily in CI and hosted at
+<https://senthilsweb.github.io/ai-agents/trends/>. It differs from a
+personal build in two enforced ways:
+
+- `--jd none` — zero job-description text (companies' content — see
+  [FAQ](faq.md#why-does-the-public-dataset-exclude-job-descriptions)).
+- `--no-targets` — zero embedded role keywords. Visitors bring their
+  own via the URL: `…/trends/?roles=ai engineer,platform engineer`
+  renders the target tracker for exactly those keywords, computed in
+  the browser. Without the parameter, the tracker stays hidden.
+
+The public page is never committed to git — the docs workflow builds
+it from the committed parquet on every deploy (daily at 11:45 UTC).
+
+### Sharing your own build
 
 The dashboard is a single file — host it anywhere or attach it as a
 web artifact. Before sharing outside personal use, rebuild with
-`--jd none`: job-description text is the hiring companies' content
-(see [FAQ](faq.md#why-does-the-public-dataset-exclude-job-descriptions)).
+`--jd none`: job-description text is the hiring companies' content.
 The facts — titles, companies, locations, salary bands — are fine to
 share in any mode.
 

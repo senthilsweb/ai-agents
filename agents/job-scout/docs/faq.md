@@ -1,4 +1,4 @@
-# FAQ & Design Decisions
+# FAQ
 
 Short answers first, then the spec that records the full reasoning.
 Specs live under

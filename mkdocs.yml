@@ -46,7 +46,8 @@ nav:
   - Data & Queries: data-and-queries.md
   - Dashboards & Reports: dashboards-and-reports.md
   - Runbook: runbook.md
-  - FAQ & Design Decisions: faq.md
+  - CI/CD: ci-cd.md
+  - FAQ: faq.md
   - API Match Pipeline (reference): api-match-pipeline.md
   - Documentation Style Guide: style-guide.md
 
@@ -54,5 +55,18 @@ markdown_extensions:
   - admonition
   - attr_list
   - tables
+  - footnotes
   - toc:
       permalink: true
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+extra_javascript:
+  - https://unpkg.com/tablesort@5.3.0/dist/tablesort.min.js
+  - javascripts/tablesort.js
