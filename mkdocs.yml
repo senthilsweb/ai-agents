@@ -48,6 +48,7 @@ nav:
   - Runbook: runbook.md
   - FAQ & Design Decisions: faq.md
   - API Match Pipeline (reference): api-match-pipeline.md
+  - Documentation Style Guide: style-guide.md
 
 markdown_extensions:
   - admonition
