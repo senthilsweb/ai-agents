@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DuckDB · Parquet Console</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.21/lib/codemirror.css" />
+<style>
+  :root{
+    --ink:#1a1e24;          /* darkest chrome */
+    --ink-2:#222933;        /* panels on ink */
+    --ink-line:#313a45;     /* borders on ink */
+    --slate:#5b6573;        /* muted text on ink */
+    --paper:#ffffff;        /* results surface */
+    --bg:#eef1f4;           /* app background */
+    --line:#d7dde4;         /* light borders */
+    --line-2:#e7ecf1;       /* faint rules */
+    --text:#1c222b;         /* body text */
+    --text-soft:#5a6573;    /* secondary text */
+    --amber:#f3b13b;        /* signature accent */
+    --amber-deep:#d9931a;
+    --amber-ink:#3a2c08;    /* text on amber */
+    --blue:#2f6df0;         /* focus / links */
+    --green:#1f9d5b;
+    --red:#d84747;
+    --red-bg:#fdecec;
+    --null:#9aa6b2;
+    --radius:7px;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --shadow:0 18px 50px -18px rgba(15,22,33,.45);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;font-family:var(--sans);color:var(--text);background:var(--bg);
+    display:flex;flex-direction:column;height:100vh;overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- Header (slim single bar) ---------- */
+  header{
+    flex:0 0 auto;display:flex;align-items:center;gap:14px;
+    background:var(--ink);color:#eef2f6;padding:0 14px;height:42px;
+    border-bottom:1px solid #000;
+  }
+  .brand{display:flex;align-items:center;gap:8px;font-weight:600}
+  .brand .mark{
+    font-family:var(--mono);font-size:11px;font-weight:700;color:var(--ink);
+    background:var(--amber);padding:2px 6px;border-radius:4px;letter-spacing:.04em;
+  }
+  .brand .name{font-size:12.5px;color:#cdd5de}
+  .spacer{flex:1}
+  .status{
+    display:flex;align-items:center;gap:7px;font-size:12px;color:#c4ccd6;
+    background:var(--ink-2);border:1px solid var(--ink-line);
+    padding:4px 10px;border-radius:99px;
+  }
+  .lamp{width:8px;height:8px;border-radius:50%;background:var(--slate);flex:0 0 auto}
+  .lamp.busy{background:var(--amber);animation:pulse 1.1s ease-in-out infinite}
+  .lamp.ok{background:var(--green)}
+  .lamp.err{background:var(--red)}
+  @keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
+  .gear{
+    display:inline-flex;align-items:center;gap:6px;cursor:pointer;
+    background:var(--ink-2);color:#dce3ea;border:1px solid var(--ink-line);
+    padding:5px 10px;border-radius:6px;font-size:12px;font-weight:500;
+  }
+  .gear:hover{border-color:var(--slate);color:#fff}
+  .gear svg{width:14px;height:14px}
+
+  /* ---------- Editor (CodeMirror + drag gutter) ---------- */
+  .editor-shell{
+    flex:0 0 auto;background:#191e25;overflow:hidden;height:200px;position:relative;
+  }
+  .CodeMirror{
+    height:100%;background:#191e25;color:#e9edf2;
+    font-family:var(--mono);font-size:13.5px;line-height:1.65;
+  }
+  .CodeMirror-gutters{background:#15191f;border-right:1px solid #2c343d}
+  .CodeMirror-linenumber{color:#566070;padding:0 8px 0 6px}
+  .CodeMirror-cursor{border-left:1.6px solid var(--amber)}
+  .CodeMirror-selected{background:rgba(243,177,59,.20)!important}
+  .CodeMirror-focused .CodeMirror-selected{background:rgba(243,177,59,.28)!important}
+  .CodeMirror-activeline-background{background:rgba(255,255,255,.025)}
+  .cm-s-default .cm-keyword{color:var(--amber);font-weight:600}
+  .cm-s-default .cm-string,.cm-s-default .cm-string-2{color:#9ece6a}
+  .cm-s-default .cm-number{color:#7aa2f7}
+  .cm-s-default .cm-comment{color:#6b7686;font-style:italic}
+  .cm-s-default .cm-operator{color:#c4ccd6}
+  .cm-s-default .cm-variable,.cm-s-default .cm-variable-2{color:#e9edf2}
+  .cm-s-default .cm-builtin,.cm-s-default .cm-type,.cm-s-default .cm-atom{color:#7dcfff}
+  .cm-s-default .cm-punctuation,.cm-s-default .cm-bracket{color:#aab4c0}
+  .CodeMirror-matchingbracket{color:var(--amber)!important;font-weight:700;text-decoration:underline}
+
+  /* drag gutter */
+  .gutter{
+    flex:0 0 auto;height:11px;background:var(--ink-2);cursor:ns-resize;
+    display:flex;align-items:center;justify-content:center;
+    border-bottom:1px solid var(--line);border-top:1px solid var(--ink-line);
+    user-select:none;touch-action:none;
+  }
+  .gutter:hover,.gutter.dragging{background:#2b333d}
+  .gutter .grip{width:34px;height:3px;border-radius:99px;background:#4a5563}
+  .gutter:hover .grip,.gutter.dragging .grip{background:var(--amber)}
+  body.resizing-v{cursor:ns-resize;user-select:none}
+
+  /* ---------- Toolbar ---------- */
+  .toolbar{
+    flex:0 0 auto;display:flex;align-items:center;gap:12px;
+    background:var(--paper);border-bottom:1px solid var(--line);padding:9px 16px;
+  }
+  .btn{
+    font-family:var(--sans);font-size:13px;font-weight:600;border-radius:6px;
+    border:1px solid var(--line);background:#fff;color:var(--text);
+    padding:8px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;
+  }
+  .btn:hover{border-color:#bcc6d1}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn.run{
+    background:var(--amber);border-color:var(--amber-deep);color:var(--amber-ink);
+    box-shadow:0 1px 0 var(--amber-deep);
+  }
+  .btn.run:hover:not(:disabled){background:#f6bd54}
+  .btn.ghost{background:transparent;border-color:transparent;color:var(--text-soft)}
+  .btn.ghost:hover{background:var(--line-2);border-color:transparent}
+  .btn svg{width:14px;height:14px}
+  .tool-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .meta{font-size:12.5px;color:var(--text-soft);font-variant-numeric:tabular-nums}
+  .meta b{color:var(--text);font-weight:600}
+  .selwrap{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-soft)}
+  select{
+    font-family:var(--sans);font-size:13px;border:1px solid var(--line);border-radius:6px;
+    padding:6px 8px;background:#fff;color:var(--text);cursor:pointer;
+  }
+  .runhint{font-size:11.5px;color:#9aa6b2;display:flex;align-items:center;gap:5px}
+  .runhint kbd{
+    font-family:var(--mono);background:#f1f4f7;border:1px solid var(--line);
+    border-radius:4px;padding:1px 5px;color:#5a6573;font-size:11px;
+  }
+
+  /* ---------- Results ---------- */
+  .results{flex:1 1 auto;overflow:auto;background:var(--paper);position:relative}
+  table{border-collapse:separate;border-spacing:0;width:100%;font-size:13px}
+  thead th{
+    position:sticky;top:0;z-index:2;background:#f7f9fb;text-align:left;
+    font-weight:600;color:#3a4350;white-space:nowrap;
+    padding:9px 14px;border-bottom:1px solid var(--line);
+    border-right:1px solid var(--line-2);font-size:12px;letter-spacing:.01em;
+  }
+  thead th .ix{color:var(--null);font-weight:500;margin-right:6px;font-family:var(--mono);font-size:11px}
+  thead th.rownum{width:54px;color:var(--null);text-align:right}
+  tbody td{
+    padding:8px 14px;border-bottom:1px solid var(--line-2);border-right:1px solid var(--line-2);
+    white-space:nowrap;max-width:420px;overflow:hidden;text-overflow:ellipsis;
+    font-family:var(--mono);font-size:12.5px;color:#283040;
+  }
+  tbody td.rownum{
+    text-align:right;color:var(--null);font-size:11.5px;background:#fafbfc;
+    position:sticky;left:0;
+  }
+  tbody tr{cursor:pointer}
+  tbody tr:hover td{background:#fff8ea}
+  tbody tr:hover td.rownum{background:#fdf0d3}
+  td .null{color:var(--null);font-style:italic}
+
+  /* states */
+  .state{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:12px;color:var(--text-soft);text-align:center;padding:30px;
+  }
+  .state .big{font-size:15px;font-weight:600;color:var(--text)}
+  .state .sm{font-size:13px;max-width:440px;line-height:1.55}
+  .state svg{width:40px;height:40px;color:#c4ccd6}
+  .err-banner{
+    margin:14px 16px;border:1px solid #f1c6c6;background:var(--red-bg);color:#9a2b2b;
+    border-radius:var(--radius);padding:12px 14px;font-size:13px;line-height:1.55;
+    font-family:var(--mono);white-space:pre-wrap;
+  }
+
+  /* ---------- Pagination ---------- */
+  .pager{
+    flex:0 0 auto;display:flex;align-items:center;gap:12px;
+    background:var(--paper);border-top:1px solid var(--line);padding:8px 16px;
+  }
+  .pager .info{font-size:12.5px;color:var(--text-soft);font-variant-numeric:tabular-nums}
+  .pager .info b{color:var(--text);font-weight:600}
+  .pg-btn{
+    width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;
+    border:1px solid var(--line);border-radius:6px;background:#fff;cursor:pointer;color:var(--text);
+  }
+  .pg-btn:hover:not(:disabled){border-color:#bcc6d1}
+  .pg-btn:disabled{opacity:.4;cursor:not-allowed}
+  .pg-btn svg{width:15px;height:15px}
+  .pager .right{margin-left:auto;display:flex;align-items:center;gap:10px}
+
+  /* ---------- Drawers ---------- */
+  .scrim{
+    position:fixed;inset:0;background:rgba(20,26,33,.42);opacity:0;visibility:hidden;
+    transition:opacity .18s ease;z-index:40;
+  }
+  .scrim.show{opacity:1;visibility:visible}
+  .drawer{
+    position:fixed;top:0;right:0;height:100%;width:min(480px,92vw);background:var(--paper);
+    box-shadow:var(--shadow);transform:translateX(100%);transition:transform .22s ease;
+    z-index:50;display:flex;flex-direction:column;
+  }
+  .drawer.show{transform:translateX(0)}
+  .drawer-head{
+    flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:16px 20px;
+    border-bottom:1px solid var(--line);
+  }
+  .drawer-head h2{margin:0;font-size:15px;font-weight:600}
+  .drawer-head .tag{font-family:var(--mono);font-size:11px;color:var(--text-soft);margin-left:2px}
+  .x{margin-left:auto;border:0;background:transparent;cursor:pointer;color:var(--text-soft);
+     width:30px;height:30px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center}
+  .x:hover{background:var(--line-2);color:var(--text)}
+  .x svg{width:18px;height:18px}
+  .drawer-body{flex:1 1 auto;overflow:auto;padding:18px 20px}
+
+  /* settings form */
+  .field{margin-bottom:15px}
+  .field label{display:block;font-size:12px;font-weight:600;color:#3a4350;margin-bottom:5px;letter-spacing:.01em}
+  .field .desc{font-size:11.5px;color:var(--text-soft);margin:-2px 0 6px;font-weight:400}
+  .field input[type=text],.field input[type=password]{
+    width:100%;font-family:var(--mono);font-size:13px;border:1px solid var(--line);
+    border-radius:6px;padding:9px 11px;background:#fff;color:var(--text);
+  }
+  .field input:focus{outline:2px solid rgba(47,109,240,.35);outline-offset:1px;border-color:var(--blue)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .toggle{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text)}
+  .toggle input{width:16px;height:16px;accent-color:var(--blue)}
+  .sql-preview{
+    background:#191e25;color:#cfd7e0;font-family:var(--mono);font-size:11.5px;line-height:1.6;
+    border-radius:var(--radius);padding:12px 13px;white-space:pre;overflow:auto;margin-top:4px;
+    border:1px solid var(--ink-line);
+  }
+  .drawer-foot{
+    flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:14px 20px;border-top:1px solid var(--line);
+  }
+  .apply-msg{font-size:12px;margin-left:auto;font-variant-numeric:tabular-nums}
+  .apply-msg.ok{color:var(--green)}
+  .apply-msg.err{color:var(--red)}
+  .apply-msg.busy{color:var(--text-soft)}
+  .note{
+    font-size:12px;color:var(--text-soft);line-height:1.6;background:#f7f9fb;
+    border:1px solid var(--line-2);border-radius:var(--radius);padding:11px 13px;margin-top:6px;
+  }
+  .note b{color:var(--text)}
+  .note code{font-family:var(--mono);background:#eef1f4;padding:1px 5px;border-radius:4px;font-size:11.5px}
+
+  /* row inspector */
+  .insp-field{border:1px solid var(--line-2);border-radius:var(--radius);margin-bottom:10px;overflow:hidden}
+  .insp-field .k{
+    display:flex;align-items:center;gap:8px;background:#f7f9fb;padding:7px 11px;
+    border-bottom:1px solid var(--line-2);
+  }
+  .insp-field .k .name{font-size:11.5px;font-weight:600;color:#3a4350;letter-spacing:.02em}
+  .insp-field .k .type{font-family:var(--mono);font-size:10.5px;color:var(--null);margin-left:auto;
+     text-transform:uppercase;letter-spacing:.04em}
+  .insp-field .copy{border:0;background:transparent;cursor:pointer;color:var(--text-soft);
+     padding:2px;border-radius:4px;display:inline-flex}
+  .insp-field .copy:hover{background:#e7ecf1;color:var(--text)}
+  .insp-field .copy svg{width:13px;height:13px}
+  .insp-field .v{
+    font-family:var(--mono);font-size:12.5px;color:#283040;padding:9px 11px;
+    white-space:pre-wrap;word-break:break-word;line-height:1.55;background:#fff;
+    max-height:240px;overflow:auto;
+  }
+  .insp-field .v.null{color:var(--null);font-style:italic}
+
+  @media (prefers-reduced-motion:reduce){
+    .scrim,.drawer,.lamp.busy{transition:none;animation:none}
+  }
+  @media (max-width:560px){
+    .brand .sub{display:none}
+    .grid2{grid-template-columns:1fr}
+    .tool-right{gap:10px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="mark">DuckDB</span>
+    <span class="name">Parquet Console</span>
+  </div>
+  <div class="spacer"></div>
+  <div class="status" id="status">
+    <span class="lamp busy" id="lamp"></span>
+    <span id="statusText">Starting engine…</span>
+  </div>
+  <button class="gear" id="openSettings" aria-label="Open connection settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Settings
+  </button>
+</header>
+
+<div class="editor-shell" id="editorShell">
+  <textarea id="sql" spellcheck="false">LOAD httpfs;
+
+-- Works out of the box: any public parquet over https, no credentials.
+-- (Example: the job-scout tech-hiring dataset — see agents/job-scout/data/README.md)
+SELECT company_name, title, location, base_min_usd, base_max_usd, posted_date
+FROM 'https://raw.githubusercontent.com/senthilsweb/ai-agents/main/agents/job-scout/data/ats_raw_trends.parquet'
+WHERE base_max_usd IS NOT NULL
+ORDER BY base_max_usd DESC;
+
+-- For S3 / MinIO, uncomment and fill in (or use Settings, top right).
+-- These SET variables (not CREATE SECRET) are what DuckDB-WASM
+-- honors for a custom, non-AWS endpoint like MinIO.
+-- SET s3_region='us-east-1';
+-- SET s3_url_style='path';
+-- SET s3_endpoint='localhost:9000';   -- host:port only, no http://
+-- SET s3_use_ssl=false;
+-- SET s3_access_key_id='minioadmin';
+-- SET s3_secret_access_key='';
+-- SELECT * FROM read_parquet('s3://my-bucket/path/**/*.parquet',
+--     hive_partitioning = true, union_by_name = true);</textarea>
+</div>
+<div class="gutter" id="gutter" title="Drag to resize · double-click to cycle height"><span class="grip"></span></div>
+
+<div class="toolbar">
+  <button class="btn run" id="run" disabled>
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    Run query
+  </button>
+  <button class="btn ghost" id="clear">Clear</button>
+  <span class="runhint"><kbd>⌘/Ctrl</kbd>+<kbd>↵</kbd> to run</span>
+  <div class="tool-right">
+    <span class="meta" id="timing"></span>
+    <div class="selwrap">
+      Rows / page
+      <select id="pageSize">
+        <option>25</option>
+        <option selected>50</option>
+        <option>100</option>
+        <option>200</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="results" id="results">
+  <div class="state" id="emptyState">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.66 3.58 3 8 3s8-1.34 8-3V6"/><path d="M4 12v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"/></svg>
+    <div class="big">No results yet</div>
+    <div class="sm">Configure your S3 / MinIO credentials in <b>Settings</b>, then run a query. Each row is clickable to open the column inspector.</div>
+  </div>
+</div>
+
+<div class="pager" id="pager" style="display:none">
+  <button class="pg-btn" id="first" title="First page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg></button>
+  <button class="pg-btn" id="prev" title="Previous page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+  <span class="info" id="pageInfo">—</span>
+  <button class="pg-btn" id="next" title="Next page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+  <div class="right">
+    <button class="btn ghost" id="countBtn" style="font-weight:500">Count total rows</button>
+  </div>
+</div>
+
+<!-- Settings drawer -->
+<div class="scrim" id="settingsScrim"></div>
+<aside class="drawer" id="settingsDrawer" aria-hidden="true">
+  <div class="drawer-head">
+    <h2>S3 / MinIO connection</h2>
+    <button class="x" data-close="settings" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="drawer-body">
+    <div class="field">
+      <label for="f_endpoint">Endpoint</label>
+      <div class="desc">Host and port only — no <code>http://</code>, no trailing slash.</div>
+      <input type="text" id="f_endpoint" value="localhost:9000" />
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label for="f_key">Access key (KEY_ID)</label>
+        <input type="text" id="f_key" value="minioadmin" />
+      </div>
+      <div class="field">
+        <label for="f_secret">Secret key</label>
+        <input type="password" id="f_secret" value="" />
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label for="f_region">Region</label>
+        <input type="text" id="f_region" value="us-east-1" />
+      </div>
+      <div class="field">
+        <label for="f_style">URL style</label>
+        <select id="f_style" style="width:100%">
+          <option value="path" selected>path</option>
+          <option value="vhost">vhost</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label class="toggle"><input type="checkbox" id="f_ssl" /> Use SSL (HTTPS endpoint)</label>
+      <div class="desc" style="margin-top:6px">Leave off for plain-HTTP MinIO. See the serving note below.</div>
+    </div>
+    <div class="field">
+      <label class="toggle"><input type="checkbox" id="f_remember" checked /> Remember settings in this browser</label>
+    </div>
+
+    <div class="field" style="margin-top:18px">
+      <label>Generated setup SQL</label>
+      <div class="desc">This runs against DuckDB when you apply.</div>
+      <pre class="sql-preview" id="sqlPreview"></pre>
+    </div>
+
+    <div class="note">
+      <b>If queries resolve to <code>amazonaws.com</code></b>, the endpoint wasn't applied — this console now uses <code>SET s3_endpoint</code> / <code>SET s3_url_style='path'</code> instead of <code>CREATE SECRET</code>, which the wasm build honors reliably for MinIO.<br/><br/>
+      <b>Serve over http, not file://.</b> A <code>file://</code> page sends <code>Origin: null</code>, which MinIO CORS won't match. Put this file in a folder and run <code>python3 -m http.server 8000</code>, then open <code>http://localhost:8000/duckdb-s3-console.html</code>. http→http also avoids mixed-content blocking.<br/><br/>
+      <b>Enable CORS on MinIO.</b> The browser fetches parquet directly, so set <code>MINIO_API_CORS_ALLOW_ORIGIN="http://localhost:8000"</code> (or <code>*</code>) on the MinIO server and restart it.
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button class="btn run" id="applyBtn">Test &amp; apply</button>
+    <button class="btn ghost" data-close="settings">Close</button>
+    <span class="apply-msg" id="applyMsg"></span>
+  </div>
+</aside>
+
+<!-- Row inspector drawer -->
+<div class="scrim" id="rowScrim"></div>
+<aside class="drawer" id="rowDrawer" aria-hidden="true">
+  <div class="drawer-head">
+    <h2>Row</h2><span class="tag" id="rowTag"></span>
+    <button class="x" data-close="row" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="drawer-body" id="rowBody"></div>
+</aside>
+
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.21/lib/codemirror.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.21/mode/sql/sql.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.21/addon/edit/matchbrackets.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.21/addon/selection/active-line.js"></script>
+<script type="module">
+import * as duckdb from "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.32.0/+esm";
+
+/* ------------------------------------------------------------------ *
+ * CodeMirror editor + resizable drag gutter
+ * ------------------------------------------------------------------ */
+const HKEY = 'duckdb_s3_console_editor_h';
+const shell = document.getElementById('editorShell');
+const gutter = document.getElementById('gutter');
+
+const editor = CodeMirror.fromTextArea(document.getElementById('sql'), {
+  mode:'text/x-sql', lineNumbers:true, matchBrackets:true, styleActiveLine:true,
+  lineWrapping:true, tabSize:2, indentWithTabs:false, autofocus:true,
+  extraKeys:{ 'Cmd-Enter':()=>runQuery(), 'Ctrl-Enter':()=>runQuery() }
+});
+const getSQL = ()=>editor.getValue();
+
+function clampH(h){ return Math.max(90, Math.min(Math.round(window.innerHeight*0.7), h)); }
+function setEditorHeight(h, persist){
+  h = clampH(h);
+  shell.style.height = h+'px';
+  editor.setSize('100%','100%'); editor.refresh();
+  if(persist){ try{ localStorage.setItem(HKEY, String(h)); }catch(_){} }
+}
+let savedH = parseInt((()=>{ try{return localStorage.getItem(HKEY);}catch(_){return '';} })()||'',10);
+setEditorHeight(Number.isFinite(savedH)&&savedH ? savedH : 200, false);
+
+/* drag to resize */
+let drag=null;
+const ptrY = e => (e.touches&&e.touches[0]) ? e.touches[0].clientY : e.clientY;
+function onMove(e){ if(drag){ setEditorHeight(drag.h + (ptrY(e)-drag.y), false); if(e.cancelable)e.preventDefault(); } }
+function onUp(){
+  if(!drag) return; drag=null;
+  gutter.classList.remove('dragging'); document.body.classList.remove('resizing-v');
+  try{ localStorage.setItem(HKEY, String(shell.offsetHeight)); }catch(_){}
+  window.removeEventListener('mousemove',onMove); window.removeEventListener('mouseup',onUp);
+  window.removeEventListener('touchmove',onMove); window.removeEventListener('touchend',onUp);
+}
+function onDown(e){
+  drag={ y:ptrY(e), h:shell.offsetHeight };
+  gutter.classList.add('dragging'); document.body.classList.add('resizing-v');
+  window.addEventListener('mousemove',onMove); window.addEventListener('mouseup',onUp);
+  window.addEventListener('touchmove',onMove,{passive:false}); window.addEventListener('touchend',onUp);
+  if(e.cancelable) e.preventDefault();
+}
+gutter.addEventListener('mousedown',onDown);
+gutter.addEventListener('touchstart',onDown,{passive:false});
+
+/* double-click cycles preset heights */
+let presetIdx=-1;
+gutter.addEventListener('dblclick',()=>{
+  const presets=[150,280,Math.round(window.innerHeight*0.6)];
+  presetIdx=(presetIdx+1)%presets.length;
+  setEditorHeight(presets[presetIdx], true);
+});
+window.addEventListener('resize',()=>editor.refresh());
+
+/* ------------------------------------------------------------------ *
+ * DuckDB-WASM boot
+ * ------------------------------------------------------------------ */
+const lamp = document.getElementById('lamp');
+const statusText = document.getElementById('statusText');
+const runBtn = document.getElementById('run');
+
+function setStatus(kind, msg){
+  lamp.className = 'lamp ' + ({busy:'busy',ok:'ok',err:'err',idle:''}[kind] || '');
+  statusText.textContent = msg;
+}
+
+let db, conn;
+let schemaTypes = {};   // column -> sql type for current page
+
+async function boot(){
+  try{
+    setStatus('busy','Starting engine…');
+    const bundles = duckdb.getJsDelivrBundles();
+    const bundle = await duckdb.selectBundle(bundles);
+    const workerURL = URL.createObjectURL(
+      new Blob([`importScripts("${bundle.mainWorker}");`], {type:'text/javascript'})
+    );
+    const worker = new Worker(workerURL);
+    db = new duckdb.AsyncDuckDB(new duckdb.ConsoleLogger(), worker);
+    await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
+    URL.revokeObjectURL(workerURL);
+    conn = await db.connect();
+    try { await conn.query("LOAD httpfs;"); } catch(_) { /* autoloads on use */ }
+    runBtn.disabled = false;
+    setStatus('idle','Engine ready — configure S3 in Settings');
+    // auto-apply saved creds
+    if (loadSaved()) await applySecret(true);
+  }catch(e){
+    setStatus('err','Engine failed to start');
+    console.error(e);
+  }
+}
+boot();
+
+/* ------------------------------------------------------------------ *
+ * Settings: build SQL, apply secret, persist
+ * ------------------------------------------------------------------ */
+const STORAGE_KEY = 'duckdb_s3_console_v1';
+const f = id => document.getElementById(id);
+const fields = ['f_endpoint','f_key','f_secret','f_region','f_style'];
+
+function currentSettings(){
+  return {
+    endpoint:f('f_endpoint').value.trim(),
+    key:f('f_key').value,
+    secret:f('f_secret').value,
+    region:f('f_region').value.trim() || 'us-east-1',
+    style:f('f_style').value,
+    ssl:f('f_ssl').checked,
+    remember:f('f_remember').checked,
+  };
+}
+
+function esc(v){ return String(v).replace(/'/g,"''"); }
+
+function buildSetupSQL(s){
+  // The SET s3_* variables are what DuckDB-WASM reliably honors for a custom
+  // (non-AWS) endpoint. CREATE SECRET's ENDPOINT/URL_STYLE/USE_SSL are often
+  // ignored by the wasm build, which then defaults to https + AWS vhost.
+  return [
+    `LOAD httpfs;`,
+    `SET s3_region='${esc(s.region)}';`,
+    `SET s3_url_style='${s.style}';`,
+    `SET s3_endpoint='${esc(s.endpoint)}';`,
+    `SET s3_use_ssl=${s.ssl ? 'true' : 'false'};`,
+    `SET s3_access_key_id='${esc(s.key)}';`,
+    `SET s3_secret_access_key='${esc(s.secret)}';`
+  ].join('\n');
+}
+
+function refreshPreview(){ f('sqlPreview').textContent = buildSetupSQL(currentSettings()); }
+[...fields].forEach(id=>f(id).addEventListener('input',refreshPreview));
+f('f_ssl').addEventListener('change',refreshPreview);
+f('f_style').addEventListener('change',refreshPreview);
+refreshPreview();
+
+function persist(s){
+  if(!s.remember){ try{localStorage.removeItem(STORAGE_KEY);}catch(_){} return; }
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }catch(_){}
+}
+function loadSaved(){
+  let s; try{ s = JSON.parse(localStorage.getItem(STORAGE_KEY)||'null'); }catch(_){ return false; }
+  if(!s) return false;
+  f('f_endpoint').value=s.endpoint??'';
+  f('f_key').value=s.key??''; f('f_secret').value=s.secret??'';
+  f('f_region').value=s.region??'us-east-1'; f('f_style').value=s.style??'path';
+  f('f_ssl').checked=!!s.ssl; f('f_remember').checked=true;
+  refreshPreview(); return true;
+}
+
+const applyMsg = f('applyMsg');
+async function applySecret(silent){
+  if(!conn) return;
+  const s = currentSettings();
+  const statements = buildSetupSQL(s).split(';').map(x=>x.trim()).filter(Boolean);
+  applyMsg.className='apply-msg busy'; applyMsg.textContent='Applying…';
+  setStatus('busy','Configuring S3…');
+  try{
+    for(const st of statements){ await conn.query(st); }
+    persist(s);
+    applyMsg.className='apply-msg ok'; applyMsg.textContent='Applied ✓';
+    setStatus('ok',`S3 configured · ${s.endpoint}`);
+  }catch(e){
+    applyMsg.className='apply-msg err'; applyMsg.textContent='Failed';
+    setStatus('err','S3 config failed');
+    if(!silent) alert('Could not apply S3 settings:\n\n'+(e.message||e));
+    console.error(e);
+  }
+}
+f('applyBtn').addEventListener('click',()=>applySecret(false));
+
+/* ------------------------------------------------------------------ *
+ * Drawers
+ * ------------------------------------------------------------------ */
+function openDrawer(which){
+  const d = which==='settings'?'settingsDrawer':'rowDrawer';
+  const sc = which==='settings'?'settingsScrim':'rowScrim';
+  f(d).classList.add('show'); f(d).setAttribute('aria-hidden','false'); f(sc).classList.add('show');
+}
+function closeDrawer(which){
+  const d = which==='settings'?'settingsDrawer':'rowDrawer';
+  const sc = which==='settings'?'settingsScrim':'rowScrim';
+  f(d).classList.remove('show'); f(d).setAttribute('aria-hidden','true'); f(sc).classList.remove('show');
+}
+f('openSettings').addEventListener('click',()=>openDrawer('settings'));
+f('settingsScrim').addEventListener('click',()=>closeDrawer('settings'));
+f('rowScrim').addEventListener('click',()=>closeDrawer('row'));
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeDrawer(b.dataset.close)));
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeDrawer('settings');closeDrawer('row');} });
+
+/* ------------------------------------------------------------------ *
+ * Value formatting
+ * ------------------------------------------------------------------ */
+function jsonReplacer(_k,v){ return typeof v==='bigint' ? v.toString() : v; }
+function formatValue(v){
+  if(v===null||v===undefined) return {text:'NULL', isNull:true};
+  const t = typeof v;
+  if(t==='bigint') return {text:v.toString()};
+  if(t==='number'||t==='boolean'||t==='string') return {text:String(v)};
+  if(v instanceof Date) return {text:v.toISOString()};
+  try{ return {text: JSON.stringify(v, jsonReplacer)}; }
+  catch(_){ return {text:String(v)}; }
+}
+
+/* ------------------------------------------------------------------ *
+ * Query + pagination
+ * ------------------------------------------------------------------ */
+const results = document.getElementById('results');
+const pager = document.getElementById('pager');
+const pageInfo = document.getElementById('pageInfo');
+const timing = document.getElementById('timing');
+
+let st = { base:'', offset:0, pageSize:50, hasMore:false, total:null, cols:[], rows:[], mode:'server' };
+
+f('pageSize').addEventListener('change',e=>{ st.pageSize=parseInt(e.target.value,10); if(st.base){ st.offset=0; loadPage(); }});
+
+function showEmpty(html){
+  results.innerHTML = `<div class="state">${html}</div>`;
+  pager.style.display='none';
+}
+function showError(msg){
+  results.innerHTML = `<div class="err-banner">${escapeHtml(msg)}</div>`;
+  pager.style.display='none';
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* split a script into top-level statements, respecting strings + comments */
+function splitStatements(sql){
+  const out=[]; let cur=''; let i=0; const n=sql.length;
+  let inS=false,inD=false,inLine=false,inBlock=false;
+  while(i<n){
+    const c=sql[i], c2=sql[i+1];
+    if(inLine){ cur+=c; if(c==='\n') inLine=false; i++; continue; }
+    if(inBlock){ cur+=c; if(c==='*'&&c2==='/'){ cur+=c2; i+=2; inBlock=false; continue; } i++; continue; }
+    if(inS){ cur+=c; if(c==="'"){ if(c2==="'"){ cur+=c2; i+=2; continue; } inS=false; } i++; continue; }
+    if(inD){ cur+=c; if(c==='"'){ if(c2==='"'){ cur+=c2; i+=2; continue; } inD=false; } i++; continue; }
+    if(c==='-'&&c2==='-'){ inLine=true; cur+=c; i++; continue; }
+    if(c==='/'&&c2==='*'){ inBlock=true; cur+=c; i++; continue; }
+    if(c==="'"){ inS=true; cur+=c; i++; continue; }
+    if(c==='"'){ inD=true; cur+=c; i++; continue; }
+    if(c===';'){ out.push(cur); cur=''; i++; continue; }
+    cur+=c; i++;
+  }
+  if(cur) out.push(cur);
+  return out.map(s=>s.trim()).filter(s=>stripComments(s).length>0);
+}
+function stripComments(s){ return s.replace(/--[^\n]*/g,'').replace(/\/\*[\s\S]*?\*\//g,'').trim(); }
+function firstKeyword(s){ return (stripComments(s).split(/\s+/)[0]||'').toUpperCase(); }
+function isPageable(s){ return ['SELECT','WITH','FROM','TABLE','VALUES'].includes(firstKeyword(s)); }
+
+async function runQuery(){
+  if(!conn) return;
+  const stmts = splitStatements(getSQL());
+  if(stmts.length===0){ showEmpty('<div class="big">Empty query</div>'); return; }
+
+  const setup = stmts.slice(0,-1);
+  const finalSql = stmts[stmts.length-1];
+
+  // Run setup statements (INSTALL/LOAD/DROP/CREATE SECRET …) directly.
+  if(setup.length){
+    results.innerHTML = `<div class="state"><div class="big">Preparing…</div><div class="sm">Running ${setup.length} setup statement${setup.length>1?'s':''}</div></div>`;
+    pager.style.display='none';
+    for(const stmt of setup){
+      try{ await conn.query(stmt); }
+      catch(e){
+        // INSTALL is a no-op in WASM (extensions are bundled/autoloaded) — tolerate it
+        if(firstKeyword(stmt)==='INSTALL'){ console.warn('INSTALL skipped in WASM:', e.message); continue; }
+        showError(`Error in statement:\n${stmt}\n\n${e.message||e}`);
+        return;
+      }
+    }
+    if(setup.some(s=>/^(CREATE\s+SECRET|SET\s+s3_endpoint)/i.test(stripComments(s))))
+      setStatus('ok','S3 configured (from editor)');
+  }
+
+  if(isPageable(finalSql)){
+    st.base = finalSql; st.offset = 0; st.total = null; st.mode = 'server';
+    await loadPage();
+  }else{
+    // Not a pageable SELECT (e.g. PRAGMA/DESCRIBE/CALL or a DDL statement) — run once.
+    st.base = null; st.mode = 'raw';
+    const t0 = performance.now();
+    let table;
+    try{ table = await conn.query(finalSql); }
+    catch(e){ showError(e.message||String(e)); timing.textContent=''; return; }
+    const ms = Math.round(performance.now()-t0);
+    const rows = materialize(table);
+    if(rows.length===0){
+      showEmpty('<div class="big">Statements executed</div><div class="sm">No result set to display.</div>');
+      timing.textContent = `done · ${ms} ms`; pager.style.display='none'; return;
+    }
+    st.offset = 0; st.hasMore = false; st.rows = rows;
+    renderTable();
+    pager.style.display='none';
+    timing.textContent = `${rows.length} rows · ${ms} ms`;
+  }
+}
+
+/* Convert an Arrow result into plain JS rows + capture column types */
+function materialize(table){
+  const fieldsArr = table.schema.fields;
+  st.cols = fieldsArr.map(fd=>fd.name);
+  schemaTypes = {};
+  fieldsArr.forEach(fd=>{ schemaTypes[fd.name] = String(fd.type); });
+  return table.toArray().map(r=>{ const o={}; for(const c of st.cols) o[c]=r[c]; return o; });
+}
+
+async function loadPage(){
+  results.innerHTML = `<div class="state"><div class="big">Running…</div><div class="sm">Reading parquet from S3</div></div>`;
+  pager.style.display='none';
+  const lim = st.pageSize + 1;
+  const sql = `SELECT * FROM (\n${st.base}\n) AS _q LIMIT ${lim} OFFSET ${st.offset}`;
+  const t0 = performance.now();
+  let table;
+  try{
+    table = await conn.query(sql);
+  }catch(e){
+    showError((e.message||String(e)));
+    timing.textContent='';
+    return;
+  }
+  const ms = Math.round(performance.now()-t0);
+
+  const all = materialize(table);
+  st.hasMore = all.length > st.pageSize;
+  st.rows = st.hasMore ? all.slice(0, st.pageSize) : all;
+
+  renderTable();
+  renderPager(ms);
+}
+
+function renderTable(){
+  if(st.rows.length===0 && st.offset===0){
+    showEmpty('<div class="big">No rows returned</div><div class="sm">The query ran successfully but matched no data.</div>');
+    timing.textContent = `0 rows`;
+    return;
+  }
+  let html = '<table><thead><tr><th class="rownum">#</th>';
+  st.cols.forEach((c,i)=>{ html += `<th><span class="ix">${i+1}</span>${escapeHtml(c)}</th>`; });
+  html += '</tr></thead><tbody>';
+  st.rows.forEach((row,ri)=>{
+    const gi = st.offset + ri + 1;
+    html += `<tr data-ri="${ri}"><td class="rownum">${gi}</td>`;
+    st.cols.forEach(c=>{
+      const fv = formatValue(row[c]);
+      const cls = fv.isNull ? 'null' : '';
+      const disp = fv.isNull ? 'NULL' : escapeHtml(fv.text);
+      html += `<td title="${escapeHtml(fv.text)}"><span class="${cls}">${disp}</span></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  results.innerHTML = html;
+  results.querySelectorAll('tbody tr').forEach(tr=>{
+    tr.addEventListener('click',()=>openRow(parseInt(tr.dataset.ri,10)));
+  });
+  results.scrollTop = 0;
+}
+
+function renderPager(ms){
+  pager.style.display='flex';
+  const start = st.offset + 1;
+  const end = st.offset + st.rows.length;
+  let info = `<b>${start.toLocaleString()}</b>–<b>${end.toLocaleString()}</b>`;
+  if(st.total!=null) info += ` of <b>${st.total.toLocaleString()}</b>`;
+  pageInfo.innerHTML = st.rows.length ? info : 'No rows';
+  f('first').disabled = st.offset===0;
+  f('prev').disabled  = st.offset===0;
+  f('next').disabled  = !st.hasMore;
+  timing.textContent = `${st.rows.length} rows · ${ms} ms`;
+}
+
+f('first').addEventListener('click',()=>{ st.offset=0; loadPage(); });
+f('prev').addEventListener('click',()=>{ st.offset=Math.max(0,st.offset-st.pageSize); loadPage(); });
+f('next').addEventListener('click',()=>{ if(st.hasMore){ st.offset+=st.pageSize; loadPage(); }});
+
+f('countBtn').addEventListener('click',async()=>{
+  if(!st.base) return;
+  f('countBtn').disabled=true; f('countBtn').textContent='Counting…';
+  try{
+    const r = await conn.query(`SELECT count(*) AS n FROM (\n${st.base}\n) AS _q`);
+    const n = r.toArray()[0].n;
+    st.total = typeof n==='bigint' ? Number(n) : n;
+    renderPager(0);
+    f('countBtn').textContent='Counted ✓';
+  }catch(e){
+    f('countBtn').textContent='Count failed';
+    console.error(e);
+  }finally{
+    setTimeout(()=>{ f('countBtn').disabled=false; f('countBtn').textContent='Count total rows'; },1500);
+  }
+});
+
+/* ------------------------------------------------------------------ *
+ * Row inspector
+ * ------------------------------------------------------------------ */
+function openRow(ri){
+  const row = st.rows[ri];
+  if(!row) return;
+  f('rowTag').textContent = `#${st.offset + ri + 1}`;
+  const body = f('rowBody');
+  body.innerHTML = '';
+  st.cols.forEach(c=>{
+    const fv = formatValue(row[c]);
+    const wrap = document.createElement('div');
+    wrap.className = 'insp-field';
+    const type = (schemaTypes[c]||'').toString();
+    wrap.innerHTML =
+      `<div class="k">
+         <span class="name">${escapeHtml(c)}</span>
+         <span class="type">${escapeHtml(type)}</span>
+         <button class="copy" title="Copy value">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+         </button>
+       </div>
+       <div class="v ${fv.isNull?'null':''}">${fv.isNull?'NULL':escapeHtml(fv.text)}</div>`;
+    wrap.querySelector('.copy').addEventListener('click',(ev)=>{
+      ev.stopPropagation();
+      navigator.clipboard?.writeText(fv.isNull?'':fv.text);
+      const btn=ev.currentTarget; const old=btn.innerHTML;
+      btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+      setTimeout(()=>btn.innerHTML=old,900);
+    });
+    body.appendChild(wrap);
+  });
+  openDrawer('row');
+}
+
+/* ------------------------------------------------------------------ *
+ * Wiring
+ * ------------------------------------------------------------------ */
+runBtn.addEventListener('click',runQuery);
+document.getElementById('clear').addEventListener('click',()=>{ editor.setValue(''); editor.focus(); });
+</script>
+</body>
+</html>
