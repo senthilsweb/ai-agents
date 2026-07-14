@@ -65,7 +65,9 @@ def main() -> int:
         else:
             inserted = fetch_all(con, cfg["targets"]["title_keywords"],
                                  cfg["search"].get("ats_org_slugs_by_company"),
-                                 verify=cfg["search"].get("verify_before_insert", False))
+                                 verify=cfg["search"].get("verify_before_insert", False),
+                                 max_age_days=cfg["search"].get("max_posting_age_days"),
+                                 snapshot=cfg["search"].get("refresh_mode") == "snapshot")
             log.info("fetch: %d new postings", inserted)
 
         # 2. sweep — only new/changed open postings reach the API

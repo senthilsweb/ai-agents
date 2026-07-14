@@ -27,6 +27,8 @@ targets:
     - "forward deployed engineer"
     - "engineering manager"
     - "product manager"
+    - "ai transformation"
+    - "applied ai"
   preferred_locations: ["NY", "NJ", "Remote US"]
   domains_boost: ["healthcare", "life sciences"]
 
@@ -54,10 +56,109 @@ search:
     - "{company} careers {keyword} salary remote 2026"
     - "site:{ats_domain} {keyword}"
   ats_org_slugs_by_company:      # Tier 1 deterministic fetch targets
+    # Value forms: bare string = Ashby slug; "tenant/site" = Workday;
+    # dict {slug: ..., platform: greenhouse|lever} for those platforms.
+    # Slugs are passed to the ATS API verbatim (case/spaces/dots matter).
     Snowflake: "snowflake"                          # Ashby board slug
     "Monte Carlo": "montecarlodata"                 # Ashby board slug
     NVIDIA: "nvidia/NVIDIAExternalCareerSite"       # Workday tenant/site (host wd5)
     "Grow Therapy": "grow-therapy"                  # Ashby board slug
+    # ── verified Ashby boards, added 2026-07-13 (see scratch map_verify) ──
+    OpenAI: "openai"
+    UiPath: "uipath"
+    Xero: "xero"
+    Ramp: "ramp"
+    Notion: "notion"
+    Cursor: "cursor"
+    Linear: "linear"
+    Vanta: "vanta"
+    Replit: "replit"
+    Harvey: "harvey"
+    Sierra: "sierra"
+    Plaid: "plaid"
+    Zapier: "zapier"
+    Deliveroo: "deliveroo"
+    Lime: "lime"                                    # posting API disabled -> GraphQL fallback (no posted dates)
+    Ironclad: "ironcladhq"
+    Confluent: "confluent"
+    Kong: "kong"
+    "Eight Sleep": "eightsleep"
+    HackerOne: "hackerone"
+    PostHog: "posthog"
+    Lemonade: "Lemonade"
+    Clay: "claylabs"
+    Cohere: "cohere"
+    Quora: "quora"
+    Trainline: "trainline"
+    "Help Scout": "helpscout"
+    Sanity: "sanity"
+    Nivoda: "nivoda"
+    "Lightspeed Commerce": "lightspeed"
+    "1Password": "1password"
+    Scribe: "scribe"
+    "Rad AI": "radai"
+    "Axion Ray": "axion"
+    Nango: "Nango"
+    GameChanger: "gamechanger"
+    Andela: "andela"
+    Semperis: "semperis"
+    CoinTracker: "cointracker"
+    "Solana Foundation": "Solana Foundation"
+    Oyster: "oyster"
+    "Juniper Square": "junipersquare"
+    Away: "away"
+    Flock: "Flock Safety"
+    NETGEAR: "netgear"
+    Multiverse: "multiverse"
+    Brightline: "hellobrightline"
+    Alan: "alan"
+    amo: "amo"
+    January: "january"
+    "Infinite Lambda": "Infinite Lambda"
+    Brigit: "brigit"
+    Zello: "zello"
+    hyperexponential: "hyperexponential"
+    Leapsome: "leapsome"
+    Hiya: "hiya"
+    Altura: "altura"
+    "Aurora Solar": "aurorasolar"
+    Coder: "coder"
+    Dave: "dave"
+    FullStory: "fullstory"
+    "Form Energy": "formenergy"
+    "Modern Treasury": "moderntreasury"
+    Stytch: "stytch"
+    Cryptio: "cryptio"
+    Hopper: "hopper"
+    Cognition: "cognition"
+    Lovable: "lovable"
+    Modal: "modal"
+    "Liquid AI": "liquid-ai"
+    "Julius AI": "julius"
+    XBOW: "xbowcareers"
+    Kraken: "kraken.com"
+    Scribd: "ScribdInc"
+    "Super.com": "super.com"
+    Benepass: "benepass"
+    Socure: "socure"
+    PLAUD: "Plaud"
+    Sesame: "sesame"
+    Baseten: "baseten"
+    Writer: "writer"
+    "Basis AI": "basis-ai"
+    Cleric: "cleric"
+    "Kepler AI": "kepler-ai"
+    "Manus AI": "manusai"
+    AtoB: "atob"
+    Highbeam: "highbeam"
+    Hadrian: "hadrian-automation"
+    "Rivian and Volkswagen Group Technologies": "rivianvw.tech"
+    # ── Greenhouse boards (explicit platform) ──
+    Machinify: {slug: "machinifyinc", platform: "greenhouse"}
+    Calm: {slug: "calm", platform: "greenhouse"}
+    # Not loadable (checked 2026-07-13): Shopify/Boomi (own ATS), Retool
+    # (Greenhouse public board API disabled), Reddit/Mercury/Deel/
+    # Convictional/"Luma AI" (dormant Ashby boards, zero postings).
   ats_domains:
     workday: "myworkdayjobs.com"
     ashby: "jobs.ashbyhq.com"
@@ -66,6 +167,9 @@ search:
   max_results_per_company: 5
   verify_before_insert: true       # fetch posting to confirm open + extract req_id
   recrawl_ttl_days: 7              # skip queries crawled within this window (crawl_log)
+  max_posting_age_days: 30         # skip feed postings older than this (undated feeds kept)
+  refresh_mode: "delta"            # delta = insert new reqs only (default)
+                                   # snapshot = delta + close open rows gone from the live board
 
 matcher:                           # agent-job-matcher API pipeline (openspec/changes/api-match-report)
   api_base: "https://jobmatch-api.nathansweb.com"     # POST /analyze, GET /health

@@ -22,7 +22,9 @@ import re
 import ssl
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
+from datetime import date
 
 try:
     import certifi
@@ -52,6 +54,7 @@ def fetch_greenhouse(org: str) -> list[dict]:
         "req_id": str(j["id"]),
         "req_id_type": "greenhouse_id",
         "location": (j.get("location") or {}).get("name"),
+        "department": ((j.get("departments") or [{}])[0] or {}).get("name"),
         "apply_url": j["absolute_url"],
         "posted_date": j.get("updated_at", "")[:10],
     } for j in d.get("jobs", [])]
@@ -65,14 +68,53 @@ def fetch_lever(org: str) -> list[dict]:
         "req_id": j["id"],
         "req_id_type": "lever_uuid",
         "location": (j.get("categories") or {}).get("location"),
+        "department": (j.get("categories") or {}).get("department"),
+        "team": (j.get("categories") or {}).get("team"),
+        "employment_type": (j.get("categories") or {}).get("commitment"),
         "apply_url": j["hostedUrl"],
         "posted_date": None,
     } for j in d]
 
 
+def _ashby_graphql(org: str) -> list[dict]:
+    """Fallback for boards that disable the public posting API (e.g. Lime):
+    the same GraphQL endpoint the hosted job-board page uses. This type has
+    no publishedAt field, so posted_date is None — age filters keep undated
+    rows rather than guessing."""
+    q = ("query ApiJobBoardWithTeams($organizationHostedJobsPageName: String!) "
+         "{ jobBoard: jobBoardWithTeams(organizationHostedJobsPageName: "
+         "$organizationHostedJobsPageName) { jobPostings { id title locationName "
+         "employmentType compensationTierSummary } } }")
+    d = _get("https://jobs.ashbyhq.com/api/non-user-graphql?op=ApiJobBoardWithTeams",
+             {"operationName": "ApiJobBoardWithTeams",
+              "variables": {"organizationHostedJobsPageName": org}, "query": q})
+    jb = (d.get("data") or {}).get("jobBoard") or {}
+    return [{
+        "title": j["title"],
+        "req_id": j["id"],
+        "req_id_type": "ashby_uuid",
+        "location": j.get("locationName"),
+        "employment_type": j.get("employmentType"),
+        "apply_url": f"https://jobs.ashbyhq.com/{urllib.parse.quote(org)}/{j['id']}",
+        "comp_notes": j.get("compensationTierSummary"),
+        "posted_date": None,
+    } for j in jb.get("jobPostings", [])]
+
+
 def fetch_ashby(org: str) -> list[dict]:
-    """Ashby public posting API — UUIDs are the referral req IDs."""
-    d = _get(f"https://api.ashbyhq.com/posting-api/job-board/{org}?includeCompensation=true")
+    """Ashby public posting API — UUIDs are the referral req IDs. Slugs may
+    contain spaces/dots/case ('Flock Safety', 'super.com') so the org is
+    URL-encoded verbatim, never normalized. Falls back to the job-board
+    GraphQL when the posting API 404s or returns an empty board."""
+    try:
+        d = _get(f"https://api.ashbyhq.com/posting-api/job-board/"
+                 f"{urllib.parse.quote(org)}?includeCompensation=true")
+    except urllib.error.HTTPError as e:
+        if e.code != 404:
+            raise
+        d = {"jobs": []}
+    if not d.get("jobs"):
+        return _ashby_graphql(org)
     out = []
     for j in d.get("jobs", []):
         comp = (j.get("compensation") or {}).get("compensationTierSummary")
@@ -81,6 +123,9 @@ def fetch_ashby(org: str) -> list[dict]:
             "req_id": j["id"],
             "req_id_type": "ashby_uuid",
             "location": j.get("location"),
+            "department": j.get("department"),
+            "team": j.get("team"),
+            "employment_type": j.get("employmentType"),
             "work_mode": "remote" if j.get("isRemote") else None,
             "apply_url": j.get("jobUrl") or j.get("applyUrl"),
             "comp_notes": comp,
@@ -241,8 +286,20 @@ def verify_open(url: str | None) -> bool | None:
     return not any(sig in body for sig in _CLOSED_SIGNALS)
 
 
+def _too_old(posted: str | None, max_age_days: int | None) -> bool:
+    """True when a posting's date is known AND older than the window.
+    Undated postings (Lever, Workday, Ashby-GraphQL) are always kept."""
+    if not max_age_days or not posted:
+        return False
+    try:
+        return (date.today() - date.fromisoformat(str(posted)[:10])).days > max_age_days
+    except ValueError:
+        return False
+
+
 def fetch_all(con, keywords: list[str] | None = None,
-              slug_overrides: dict | None = None, verify: bool = False) -> int:
+              slug_overrides: dict | None = None, verify: bool = False,
+              max_age_days: int | None = None, snapshot: bool = False) -> int:
     """Seed companies from config, then pull postings for every company with a
     known ATS + org slug.
 
@@ -252,6 +309,11 @@ def fetch_all(con, keywords: list[str] | None = None,
     verify=True each posting's apply_url is checked (status='open'|'closed');
     otherwise status='open'. Persists a compensation row when the payload
     carries comp data. Returns number of new rows.
+
+    max_age_days skips postings whose feed date is older than the window
+    (undated feeds are kept). snapshot=True additionally marks previously
+    open rows 'closed' when their req_id has left the company's live board —
+    skipped for Workday (its feed is paginated, absence proves nothing).
     """
     resolved = _resolve_slugs(slug_overrides)
     seed_companies(con, resolved)
@@ -275,6 +337,8 @@ def fetch_all(con, keywords: list[str] | None = None,
             continue
         for j in jobs:
             if not _title_matches(j["title"], keywords):
+                continue
+            if _too_old(j.get("posted_date"), max_age_days):
                 continue
             dup = con.execute("SELECT 1 FROM job_posting WHERE company_id=? AND req_id=?",
                               [cid, j.get("req_id")]).fetchone()
@@ -306,6 +370,20 @@ def fetch_all(con, keywords: list[str] | None = None,
                     [nid, cur, bmin if cur == "USD" else None,
                      bmax if cur == "USD" else None, comp])
             inserted += 1
+        if snapshot and ats != "workday":
+            live = [r for r in (j.get("req_id") for j in jobs) if r]
+            if live:
+                ph = ",".join("?" * len(live))
+                gone = con.execute(
+                    f"SELECT COUNT(*) FROM job_posting WHERE company_id=? "
+                    f"AND status='open' AND req_id NOT IN ({ph})",
+                    [cid, *live]).fetchone()[0]
+                if gone:
+                    con.execute(
+                        f"UPDATE job_posting SET status='closed', last_verified=current_date "
+                        f"WHERE company_id=? AND status='open' AND req_id NOT IN ({ph})",
+                        [cid, *live])
+                    log.info("%s: snapshot closed %d postings gone from board", name, gone)
         log.info("%s: %d postings fetched via %s API", name, len(jobs), ats)
     return inserted
 

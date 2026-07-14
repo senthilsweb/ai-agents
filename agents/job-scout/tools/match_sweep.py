@@ -21,12 +21,14 @@ Usage:
 import argparse
 import hashlib
 import json
+from html import unescape
 import logging
 import mimetypes
 import re
 import ssl
 import sys
 import time
+import urllib.parse
 import urllib.request
 import uuid
 from datetime import date
@@ -73,9 +75,11 @@ def connect(cfg: dict):
 
 
 # ── JD harvest (same text format the 2026-07-13 run hashed) ─────────
-def _get_json(url: str) -> dict:
-    with urllib.request.urlopen(urllib.request.Request(url, headers=UA),
-                                timeout=30, context=_SSL_CTX) as r:
+def _get_json(url: str, payload: dict | None = None) -> dict:
+    req = urllib.request.Request(
+        url, data=json.dumps(payload).encode() if payload else None,
+        headers={**UA, "Content-Type": "application/json"} if payload else UA)
+    with urllib.request.urlopen(req, timeout=30, context=_SSL_CTX) as r:
         return json.load(r)
 
 
@@ -96,14 +100,52 @@ def _ashby_descriptions(slug_overrides: dict) -> dict:
         if platform != "ashby":
             continue
         try:
-            d = _get_json(f"https://api.ashbyhq.com/posting-api/job-board/{slug}"
-                          "?includeCompensation=true")
+            d = _get_json("https://api.ashbyhq.com/posting-api/job-board/"
+                          f"{urllib.parse.quote(slug)}?includeCompensation=true")
         except Exception as e:
             log.error("ashby board fetch failed for %s: %s", slug, e)
             continue
         for j in d.get("jobs", []):
             comp = (j.get("compensation") or {}).get("compensationTierSummary") or ""
             out[j["id"]] = (j, comp)
+    return out
+
+
+def _ashby_job_graphql(slug: str, req_id: str) -> tuple[str | None, str]:
+    """Per-job fallback for boards that disable the public posting API
+    (e.g. Lime): the job-board page's own GraphQL. Returns (body, comp)."""
+    q = ("query ApiJobPosting($organizationHostedJobsPageName: String!, "
+         "$jobPostingId: String!) { jobPosting(organizationHostedJobsPageName: "
+         "$organizationHostedJobsPageName, jobPostingId: $jobPostingId) "
+         "{ id title descriptionHtml compensationTierSummary } }")
+    d = _get_json("https://jobs.ashbyhq.com/api/non-user-graphql?op=ApiJobPosting",
+                  {"operationName": "ApiJobPosting",
+                   "variables": {"organizationHostedJobsPageName": slug,
+                                 "jobPostingId": req_id}, "query": q})
+    jp = (d.get("data") or {}).get("jobPosting")
+    if not jp:
+        return None, ""
+    return html_to_text(jp.get("descriptionHtml") or ""), \
+        jp.get("compensationTierSummary") or ""
+
+
+def _greenhouse_descriptions(slug_overrides: dict) -> dict:
+    """One board call per configured Greenhouse org (content=true returns the
+    full JD as escaped HTML): req_id (numeric string) -> (body_text, comp)."""
+    from tools.ats_fetch import _resolve_slugs
+    out = {}
+    for _name, (platform, slug) in _resolve_slugs(slug_overrides).items():
+        if platform != "greenhouse":
+            continue
+        try:
+            d = _get_json(f"https://boards-api.greenhouse.io/v1/boards/{slug}"
+                          "/jobs?content=true")
+        except Exception as e:
+            log.error("greenhouse board fetch failed for %s: %s", slug, e)
+            continue
+        for j in d.get("jobs", []):
+            # content arrives HTML-escaped (&lt;p&gt;...) — unescape first
+            out[str(j["id"])] = (html_to_text(unescape(j.get("content") or "")), "")
     return out
 
 
@@ -129,7 +171,11 @@ def harvest_jds(con, cfg: dict) -> tuple[list[dict], list[tuple]]:
                jp.req_id, jp.apply_url
         FROM job_posting jp JOIN company co USING(company_id)
         WHERE jp.status = 'open' ORDER BY jp.job_id""").fetchall()
-    ashby = _ashby_descriptions(cfg["search"].get("ats_org_slugs_by_company") or {})
+    from tools.ats_fetch import _resolve_slugs
+    slug_cfg = cfg["search"].get("ats_org_slugs_by_company") or {}
+    slugs = _resolve_slugs(slug_cfg)
+    ashby = _ashby_descriptions(slug_cfg)
+    greenhouse = _greenhouse_descriptions(slug_cfg)
     harvested, missing = [], []
     for job_id, company, ats, title, location, req_id, apply_url in rows:
         body, comp = None, ""
@@ -140,6 +186,11 @@ def harvest_jds(con, cfg: dict) -> tuple[list[dict], list[tuple]]:
                     j, comp = hit
                     body = html_to_text(j.get("descriptionHtml") or "") or \
                         (j.get("descriptionPlain") or "")
+                elif company in slugs:
+                    # board hides from the posting API (e.g. Lime) — per-job GraphQL
+                    body, comp = _ashby_job_graphql(slugs[company][1], req_id)
+            elif ats == "greenhouse":
+                body, comp = greenhouse.get(req_id, (None, ""))
             elif ats == "workday":
                 body = _workday_description(apply_url)
         except Exception as e:

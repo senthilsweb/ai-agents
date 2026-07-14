@@ -134,3 +134,25 @@ Table crawl_log {
   crawled_at  timestamp     // TTL window vs recrawl_ttl_days
   result_note varchar
 }
+
+Table ats_posting_raw {
+  // Unfiltered landing table: full board state of every configured company
+  // (tools/raw_load.py). Snapshot per company: a successful fetch replaces
+  // that company's rows; failed fetches keep previous rows. The matcher
+  // NEVER reads this table — rows reach the paid /analyze API only after
+  // promotion into job_posting (raw_load.py --promote, dedup company+req_id).
+  company_name    varchar   // config key in search.ats_org_slugs_by_company
+  ats_platform    varchar   // ashby | greenhouse | lever | workday
+  req_id          varchar
+  req_id_type     varchar
+  title           varchar
+  department      varchar   // ashby/greenhouse/lever only
+  team            varchar   // ashby/lever only
+  employment_type varchar   // FullTime | Contract | ... (feed-dependent)
+  location        varchar
+  work_mode       varchar   // 'remote' when the feed flags it
+  comp_summary    varchar   // ashby compensationTierSummary text
+  posted_date     date      // null for undated feeds (lever, workday, ashby-graphql)
+  apply_url       varchar
+  fetched_at      timestamp // load time of this snapshot
+}

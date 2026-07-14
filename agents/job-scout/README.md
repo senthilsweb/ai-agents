@@ -20,6 +20,71 @@ notebook backed by DuckDB. Optional agentic search via Anthropic API.
 - **Tier 2 — search plan.** Config-driven query list for manual/agentic execution.
 - **Tier 3 — agentic fallback** for JS-only career sites (empty templates).
 
+### Adding companies
+Add one line per company under `search.ats_org_slugs_by_company` in
+`config.yaml`. The value form tells the fetcher which ATS to call:
+
+    Acme: "acme"                                    # bare string = Ashby slug
+    BigCo: "bigco/BigCoExternalSite"                # tenant/site = Workday
+    Startup: {slug: "startupinc", platform: "greenhouse"}   # explicit form
+                                                             # (greenhouse or lever)
+
+Slugs are sent to the ATS verbatim — case, spaces, and dots matter
+(`"Flock Safety"`, `"super.com"`, `"kraken.com"` are all real slugs). To
+find a slug, open the company's job board and copy the path segment, e.g.
+`jobs.ashbyhq.com/claylabs` → `claylabs`. Test it with one request:
+
+    curl https://api.ashbyhq.com/posting-api/job-board/<slug>
+
+A 404 means a wrong slug (or the company left that ATS); a 200 with an
+empty `jobs` list usually means a dormant board. Some Ashby boards
+disable this public API but still publish jobs (e.g. Lime) — the fetcher
+falls back to Ashby's job-board GraphQL automatically; those postings
+carry no posted date.
+
+### Raw landing table — explore before you filter
+When you don't yet know what titles companies use, load **everything**
+(no keyword filter) into a separate table and explore it with SQL:
+
+    python tools/raw_load.py            # snapshot ALL postings -> ats_posting_raw
+    python tools/raw_load.py --stats    # rows, top companies, top departments
+    python tools/raw_load.py --test "machine learning engineer"
+                                        # preview a candidate keyword: total
+                                        # matches + what's NEW vs config
+
+`ats_posting_raw` keeps fields the curated table drops — department,
+team, employment type — so you can study the role landscape:
+
+    -- what do AI roles get called across companies?
+    SELECT company_name, title FROM ats_posting_raw
+    WHERE department = 'Engineering' AND title ILIKE '%ai%';
+
+The matcher never reads this table, so it can hold thousands of rows at
+zero LLM cost. When you know what you want, **promote** rows into
+`job_posting` (dedup on company+req_id makes re-promoting free):
+
+    python tools/raw_load.py --promote --days 30 --dry-run   # preview first
+    python tools/raw_load.py --promote --days 30             # config title_keywords
+    python tools/raw_load.py --promote --where "title ILIKE '%governance%'"
+
+`--where` takes any SQL predicate over ats_posting_raw columns and
+replaces the keyword filter. Each load refreshes a company's rows only
+when its board fetch succeeded, so one flaky board never wipes its data.
+
+### Delta vs snapshot refresh
+Two `config.yaml` knobs under `search` control what a fetch loads:
+
+- `max_posting_age_days: 30` — postings whose feed date is older than
+  this are skipped at fetch time. Feeds without dates (Lever, Workday,
+  Ashby-GraphQL) are always kept rather than guessed at.
+- `refresh_mode: "delta"` — every fetch is naturally a delta: rows dedup
+  on company+req_id, so re-running only inserts postings that are new.
+  Set `refresh_mode: "snapshot"` to *also* mark previously open rows
+  `closed` when their req_id has disappeared from the company's live
+  board. Snapshot closing is skipped for Workday companies (that feed is
+  paginated, so absence proves nothing). Closed rows are kept, never
+  deleted — they simply stop being picked up by the match sweep.
+
 ## How the database gets populated (concrete flow)
 Two independent pipelines write into `job_tracker.duckdb`. They only meet at
 one point (step 9) — running one does **not** automatically trigger the other.
