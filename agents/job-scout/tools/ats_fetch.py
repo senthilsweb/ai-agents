@@ -57,6 +57,7 @@ def fetch_greenhouse(org: str) -> list[dict]:
         "department": ((j.get("departments") or [{}])[0] or {}).get("name"),
         "apply_url": j["absolute_url"],
         "posted_date": j.get("updated_at", "")[:10],
+        "description_html": j.get("content"),   # HTML-escaped; unescape before use
     } for j in d.get("jobs", [])]
 
 
@@ -73,6 +74,9 @@ def fetch_lever(org: str) -> list[dict]:
         "employment_type": (j.get("categories") or {}).get("commitment"),
         "apply_url": j["hostedUrl"],
         "posted_date": None,
+        "description_html": (j.get("description") or "") + "".join(
+            f"<h3>{s.get('text', '')}</h3>{s.get('content', '')}"
+            for s in (j.get("lists") or [])) + (j.get("additional") or ""),
     } for j in d]
 
 
@@ -130,6 +134,7 @@ def fetch_ashby(org: str) -> list[dict]:
             "apply_url": j.get("jobUrl") or j.get("applyUrl"),
             "comp_notes": comp,
             "posted_date": (j.get("publishedAt") or "")[:10],
+            "description_html": j.get("descriptionHtml") or j.get("descriptionPlain"),
         })
     return out
 

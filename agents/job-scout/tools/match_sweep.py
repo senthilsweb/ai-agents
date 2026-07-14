@@ -174,27 +174,46 @@ def harvest_jds(con, cfg: dict) -> tuple[list[dict], list[tuple]]:
     from tools.ats_fetch import _resolve_slugs
     slug_cfg = cfg["search"].get("ats_org_slugs_by_company") or {}
     slugs = _resolve_slugs(slug_cfg)
-    ashby = _ashby_descriptions(slug_cfg)
-    greenhouse = _greenhouse_descriptions(slug_cfg)
+    # raw-first: ats_posting_raw stores the same html_to_text output the live
+    # paths produce, so hashes stay identical and boards are only fetched for
+    # jobs the raw snapshot doesn't cover (e.g. loaded before jd_text existed,
+    # or postings already off the board).
+    raw = {}
+    try:
+        raw = {(c, r): (t, cs or "") for c, r, t, cs in con.execute(
+            """SELECT company_name, req_id, jd_text, comp_summary
+               FROM ats_posting_raw WHERE jd_text IS NOT NULL""").fetchall()}
+    except Exception:
+        pass                                   # no raw table — live fetch only
+    covered = {(r[1], r[5]) for r in rows} & set(raw)
+    need = [r for r in rows if (r[1], r[5]) not in covered]
+    ashby = _ashby_descriptions(slug_cfg) \
+        if any(r[2] == "ashby" for r in need) else {}
+    greenhouse = _greenhouse_descriptions(slug_cfg) \
+        if any(r[2] == "greenhouse" for r in need) else {}
     harvested, missing = [], []
     for job_id, company, ats, title, location, req_id, apply_url in rows:
         body, comp = None, ""
-        try:
-            if ats == "ashby":
-                hit = ashby.get(req_id)
-                if hit:
-                    j, comp = hit
-                    body = html_to_text(j.get("descriptionHtml") or "") or \
-                        (j.get("descriptionPlain") or "")
-                elif company in slugs:
-                    # board hides from the posting API (e.g. Lime) — per-job GraphQL
-                    body, comp = _ashby_job_graphql(slugs[company][1], req_id)
-            elif ats == "greenhouse":
-                body, comp = greenhouse.get(req_id, (None, ""))
-            elif ats == "workday":
-                body = _workday_description(apply_url)
-        except Exception as e:
-            log.warning("harvest failed job_id=%d (%s): %s", job_id, title, e)
+        hit = raw.get((company, req_id))
+        if hit and len(hit[0].split()) >= 60:
+            body, comp = hit
+        else:
+            try:
+                if ats == "ashby":
+                    bhit = ashby.get(req_id)
+                    if bhit:
+                        j, comp = bhit
+                        body = html_to_text(j.get("descriptionHtml") or "") or \
+                            (j.get("descriptionPlain") or "")
+                    elif company in slugs:
+                        # board hides from the posting API (e.g. Lime)
+                        body, comp = _ashby_job_graphql(slugs[company][1], req_id)
+                elif ats == "greenhouse":
+                    body, comp = greenhouse.get(req_id, (None, ""))
+                elif ats == "workday":
+                    body = _workday_description(apply_url)
+            except Exception as e:
+                log.warning("harvest failed job_id=%d (%s): %s", job_id, title, e)
         if not body or len(body.split()) < 60:
             missing.append((job_id, company, title))
             continue

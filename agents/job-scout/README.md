@@ -53,7 +53,17 @@ When you don't yet know what titles companies use, load **everything**
                                         # matches + what's NEW vs config
 
 `ats_posting_raw` keeps fields the curated table drops — department,
-team, employment type — so you can study the role landscape:
+team, employment type, and the **full job description** (`jd_text`, with
+a `jd_sha256` fingerprint). The match sweep reads JD text from this
+table first and only calls the ATS boards for postings the snapshot
+doesn't cover — so analysis needs no re-scraping, and you can search
+descriptions in SQL:
+
+    -- find governance work hiding behind other titles
+    SELECT company_name, title FROM ats_posting_raw
+    WHERE jd_text ILIKE '%data governance%' AND title NOT ILIKE '%governance%';
+
+Study the role landscape the same way:
 
     -- what do AI roles get called across companies?
     SELECT company_name, title FROM ats_posting_raw

@@ -155,4 +155,7 @@ Table ats_posting_raw {
   posted_date     date      // null for undated feeds (lever, workday, ashby-graphql)
   apply_url       varchar
   fetched_at      timestamp // load time of this snapshot
+  jd_text         varchar   // full JD as plain text (same html_to_text output the
+                            // sweep hashes, so harvest reads raw-first, no re-fetch)
+  jd_sha256       varchar   // sha256(jd_text) for raw-level change detection
 }

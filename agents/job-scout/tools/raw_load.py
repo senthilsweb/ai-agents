@@ -23,10 +23,12 @@ within N days or unknown. Promotion dedups on (company_id, req_id), so
 re-promoting is free and never duplicates.
 """
 import argparse
+import hashlib
 import logging
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime
+from html import unescape
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -35,6 +37,8 @@ sys.path.insert(0, str(ROOT))
 from tools import match_sweep
 from tools.ats_fetch import (FETCHERS, _parse_comp_range, _resolve_slugs,
                              _title_matches, fetch_workday, seed_companies)
+from tools.match_sweep import (_ashby_job_graphql, _workday_description,
+                               html_to_text)
 
 log = logging.getLogger("raw_load")
 
@@ -52,12 +56,25 @@ DDL = """CREATE TABLE IF NOT EXISTS ats_posting_raw (
     comp_summary VARCHAR,
     posted_date DATE,
     apply_url VARCHAR,
-    fetched_at TIMESTAMP
+    fetched_at TIMESTAMP,
+    jd_text VARCHAR,
+    jd_sha256 VARCHAR
 )"""
+
+# columns added after the first release — migrate older tables in place
+MIGRATIONS = ("ALTER TABLE ats_posting_raw ADD COLUMN IF NOT EXISTS jd_text VARCHAR",
+              "ALTER TABLE ats_posting_raw ADD COLUMN IF NOT EXISTS jd_sha256 VARCHAR")
 
 COLS = ("company_name", "ats_platform", "req_id", "req_id_type", "title",
         "department", "team", "employment_type", "location", "work_mode",
-        "comp_summary", "posted_date", "apply_url", "fetched_at")
+        "comp_summary", "posted_date", "apply_url", "fetched_at",
+        "jd_text", "jd_sha256")
+
+
+def _ensure_table(con) -> None:
+    con.execute(DDL)
+    for m in MIGRATIONS:
+        con.execute(m)
 
 
 def _to_date(v) -> date | None:
@@ -82,27 +99,53 @@ def _fetch_one(item):
         return name, platform, None
 
 
+def _jd_text(platform: str, slug: str, j: dict) -> str | None:
+    """Full JD as plain text. Ashby/Greenhouse/Lever ship it in the board
+    payload; Workday and GraphQL-fallback Ashby boards need one extra
+    per-job request."""
+    desc = j.get("description_html")
+    if desc:
+        if platform == "greenhouse":       # arrives HTML-escaped
+            desc = unescape(desc)
+        return html_to_text(desc) or None
+    try:
+        if platform == "workday":
+            return _workday_description(j.get("apply_url")) or None
+        if platform == "ashby":            # board hides from the posting API
+            body, _comp = _ashby_job_graphql(slug, j.get("req_id"))
+            return body or None
+    except Exception as e:
+        log.warning("jd fetch failed %s %s: %s", slug, j.get("title"), e)
+    return None
+
+
 def load(cfg: dict, con) -> dict:
     """Snapshot-load every configured board into ats_posting_raw."""
-    con.execute(DDL)
+    _ensure_table(con)
     resolved = _resolve_slugs(cfg["search"].get("ats_org_slugs_by_company"))
     now = datetime.now()
     with ThreadPoolExecutor(max_workers=8) as ex:
         results = list(ex.map(_fetch_one, resolved.items()))
-    loaded, failed, rows = 0, [], []
-    for name, platform, jobs in results:
-        if jobs is None:
-            failed.append(name)
-            continue
-        con.execute("DELETE FROM ats_posting_raw WHERE company_name = ?", [name])
-        for j in jobs:
-            rows.append((name, platform, j.get("req_id"), j.get("req_id_type"),
-                         j.get("title"), j.get("department"), j.get("team"),
-                         j.get("employment_type"), j.get("location"),
-                         j.get("work_mode"), j.get("comp_notes"),
-                         _to_date(j.get("posted_date")), j.get("apply_url"), now))
-        loaded += 1
-        log.info("%s: %d postings (raw)", name, len(jobs))
+
+        loaded, failed, rows = 0, [], []
+        for name, platform, jobs in results:
+            if jobs is None:
+                failed.append(name)
+                continue
+            slug = resolved[name][1]
+            texts = list(ex.map(lambda j: _jd_text(platform, slug, j), jobs))
+            con.execute("DELETE FROM ats_posting_raw WHERE company_name = ?", [name])
+            for j, text in zip(jobs, texts):
+                sha = hashlib.sha256(text.encode()).hexdigest() if text else None
+                rows.append((name, platform, j.get("req_id"), j.get("req_id_type"),
+                             j.get("title"), j.get("department"), j.get("team"),
+                             j.get("employment_type"), j.get("location"),
+                             j.get("work_mode"), j.get("comp_notes"),
+                             _to_date(j.get("posted_date")), j.get("apply_url"),
+                             now, text, sha))
+            loaded += 1
+            log.info("%s: %d postings (raw), %d with JD text",
+                     name, len(jobs), sum(1 for t in texts if t))
     if rows:
         ph = ",".join("?" * len(COLS))
         con.executemany(
@@ -117,7 +160,7 @@ def promote(cfg: dict, con, where: str | None = None, days: int | None = None,
     """Copy selected raw rows into job_posting (dedup on company+req_id).
     Default selection = config targets.title_keywords via the forgiving
     token matcher; --where replaces that with a SQL predicate."""
-    con.execute(DDL)
+    _ensure_table(con)
     resolved = _resolve_slugs(cfg["search"].get("ats_org_slugs_by_company"))
     seed_companies(con, resolved)
     sql = ("SELECT company_name, title, department, location, work_mode, req_id,"
@@ -170,7 +213,7 @@ def promote(cfg: dict, con, where: str | None = None, days: int | None = None,
 def test_keyword(cfg: dict, con, keyword: str) -> None:
     """Show what a candidate keyword would match in ats_posting_raw, and how
     much of that is NEW versus the current config title_keywords."""
-    con.execute(DDL)
+    _ensure_table(con)
     rows = con.execute(
         "SELECT company_name, title FROM ats_posting_raw").fetchall()
     current = cfg["targets"]["title_keywords"]
@@ -185,7 +228,7 @@ def test_keyword(cfg: dict, con, keyword: str) -> None:
 
 
 def stats(con) -> None:
-    con.execute(DDL)
+    _ensure_table(con)
     total, comps, dated = con.execute(
         """SELECT COUNT(*), COUNT(DISTINCT company_name),
            COUNT(posted_date) FROM ats_posting_raw""").fetchone()
