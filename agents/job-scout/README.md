@@ -118,6 +118,53 @@ pull it from your browser's network traffic:
    id is specific to that event's microsite build and typically rotates
    between events/years, so re-extract it per conference.
 
+## API match pipeline (agent-job-matcher)
+
+Scores every open posting against your resume using the deployed
+[agent-job-matcher](https://github.com/senthilsweb/agent-job-matcher)
+API, and writes a ranked HTML report. Spec:
+`openspec/changes/api-match-report/`. Full reference (flags, input
+contract, table schema, troubleshooting):
+[docs/api-match-pipeline.md](docs/api-match-pipeline.md). Three tools:
+
+    python tools/match_sweep.py --dry-run     # show what would be analyzed
+    python tools/match_sweep.py               # analyze new/changed postings
+    python tools/build_match_report.py --input <results.json> --out <report.html>
+    python tools/daily_match.py               # fetch -> sweep -> render, one command
+
+How it works, in plain terms:
+
+1. Job pages on Ashby/Workday need JavaScript, so the API cannot read
+   them from the URL. The sweep gets the full job description from the
+   ATS JSON APIs instead, saves it as a text file, uploads it through
+   the agent-service `/upload` endpoint, and sends the returned
+   server path to `POST /analyze` together with your resume
+   (`matcher.resume_path` in `config.yaml`).
+2. Each job's JD text gets a SHA-256 hash, stored in the
+   `api_match_result` table. A job is analyzed only when it is new or
+   its JD text changed — running the sweep twice in a row makes zero
+   API calls the second time. You never pay twice for the same JD.
+3. Results are saved twice: one JSON file per job under
+   `exports/jobmatch-YYYYMMDD/reports/` and one row per job in
+   `api_match_result` (scores, match band, hash, dates).
+4. The report renderer reads a results JSON file (or, in the daily
+   pipeline, every analyzed job in the table) and writes one
+   self-contained HTML page: ranked by score, filterable by company
+   and match band, each row expandable to strengths / gaps / resume
+   improvements / missing ATS keywords, with the full cover letter in
+   a collapsed section inside each row. Jobs first analyzed today get
+   a NEW badge in the daily report.
+
+To adopt an old run without paying for it again (for example the
+2026-07-13 session run):
+
+    python tools/match_sweep.py --backfill exports/jobmatch-20260713/all_reports.json
+
+Daily schedule (cron example — email delivery is not built yet, the
+report is written to `exports/`):
+
+    0 7 * * * cd /path/to/job-scout && python3 tools/daily_match.py >> logs/cron.out 2>&1
+
 ## Resume context
 Convert your resume once, deterministically (no LLM):
 
@@ -130,8 +177,11 @@ Every run writes a timestamped file to logs/run_YYYYMMDD_HHMMSS.log
 (plan counts, skips, exports, agentic calls). Directory and level in config.yaml.
 
 ## Layout
-    config.yaml            all tunable parameters (search, thresholds, weights)
+    config.yaml            all tunable parameters (search, thresholds, weights, matcher API)
     .env.example           secrets template (API key only)
     notebook.py            marimo app: schema → sliders → ranked view → exports → search plan → agentic
+    tools/                 CLI tools: ATS fetch, sponsor load, match sweep, report render, daily pipeline
+    templates/             Jinja2 template for the match report HTML
+    docs/                  reference docs (api-match-pipeline.md)
     openspec/              project.md + specs (data-model, scoring, search-pipeline)
-    exports/               generated CSV/Parquet
+    exports/               generated CSV/Parquet + dated jobmatch-YYYYMMDD/ run dirs

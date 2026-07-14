@@ -23,6 +23,10 @@ targets:
     - "data platform architect"
     - "principal solutions architect"
     - "ai governance"
+    - "ai engineer"
+    - "forward deployed engineer"
+    - "engineering manager"
+    - "product manager"
   preferred_locations: ["NY", "NJ", "Remote US"]
   domains_boost: ["healthcare", "life sciences"]
 
@@ -53,6 +57,7 @@ search:
     Snowflake: "snowflake"                          # Ashby board slug
     "Monte Carlo": "montecarlodata"                 # Ashby board slug
     NVIDIA: "nvidia/NVIDIAExternalCareerSite"       # Workday tenant/site (host wd5)
+    "Grow Therapy": "grow-therapy"                  # Ashby board slug
   ats_domains:
     workday: "myworkdayjobs.com"
     ashby: "jobs.ashbyhq.com"
@@ -61,6 +66,13 @@ search:
   max_results_per_company: 5
   verify_before_insert: true       # fetch posting to confirm open + extract req_id
   recrawl_ttl_days: 7              # skip queries crawled within this window (crawl_log)
+
+matcher:                           # agent-job-matcher API pipeline (openspec/changes/api-match-report)
+  api_base: "https://jobmatch-api.nathansweb.com"     # POST /analyze, GET /health
+  agent_base: "https://jobmatch-agent.nathansweb.com" # POST /upload (shared uploads volume with api)
+  resume_path: "./inputs/sk-resume-june-2026.md"      # placeholder — point to your resume (PDF/DOCX/TXT/MD) for real runs
+  batch_size: 3                    # jobs per /analyze request (matches server JOB_FANOUT_CONCURRENCY)
+  export_dir: "./exports"          # dated run dirs land under here: jobmatch-YYYYMMDD/
 
 agentic:
   enabled: false                   # flip on when ANTHROPIC_API_KEY set in .env

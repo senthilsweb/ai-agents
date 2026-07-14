@@ -64,6 +64,26 @@ Table fit_assessment {
   location_fit    boolean
 }
 
+// External analyzer results (openspec/changes/api-match-report).
+// Candidate-specific, like fit_assessment — but a different scoring
+// model (agent-job-matcher's deterministic 100-point rubric), so the
+// two never share a table. Upserted on re-analysis; jd_sha256 drives
+// the never-re-pay-an-unchanged-job selection in tools/match_sweep.py.
+Table api_match_result {
+  job_id                 integer [pk, ref: - job_posting.job_id]
+  total_score            integer  // 0-100
+  required_skills_score  integer  // 0-60 (60 when preferred budget reallocates)
+  preferred_skills_score integer  // 0-20
+  experience_score       integer  // 0-20
+  domain_score           integer  // 0-20
+  match_status           varchar  // strong_match|good_match|moderate_match|weak_match|no_match
+  run_id                 varchar  // API run id, for traceability
+  jd_sha256              varchar  // hash of harvested JD text (header+body)
+  first_analyzed         date     // preserved across upserts — drives NEW badge
+  last_analyzed          date
+  report_json_path       varchar  // persisted JobReport JSON on disk
+}
+
 Table conference {
   conference_id integer [pk]
   name          varchar [not null]

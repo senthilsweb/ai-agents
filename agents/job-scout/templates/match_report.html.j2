@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title>
+<style>
+:root {
+  --page:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --ring:rgba(11,11,11,.10);
+  --req:#2a78d6; --pref:#1baf7a; --exp:#eda100; --dom:#008300;
+  --st-good:#0ca30c; --st-mid:#0a7d5f; --st-warn:#fab219; --st-serious:#ec835a; --st-crit:#d03b3b;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --page:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --ring:rgba(255,255,255,.10);
+  --req:#3987e5; --pref:#199e70; --exp:#c98500; --dom:#008300;
+} }
+:root[data-theme="light"] {
+  --page:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --ring:rgba(11,11,11,.10);
+  --req:#2a78d6; --pref:#1baf7a; --exp:#eda100; --dom:#008300;
+}
+:root[data-theme="dark"] {
+  --page:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --ring:rgba(255,255,255,.10);
+  --req:#3987e5; --pref:#199e70; --exp:#c98500; --dom:#008300;
+}
+* { box-sizing:border-box }
+body { background:var(--page); color:var(--ink);
+  font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif; margin:0; padding:32px 20px 80px; }
+main { max-width:1060px; margin:0 auto }
+header h1 { font-size:26px; font-weight:700; letter-spacing:-.01em; margin:0 0 6px; text-wrap:balance }
+header .sub { color:var(--ink-2); font-size:14px; margin:0 }
+.tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin:26px 0 18px }
+.tile { background:var(--surface); border:1px solid var(--ring); border-radius:8px; padding:14px 16px }
+.tile .v { font-size:30px; font-weight:700; line-height:1.1 }
+.tile .l { font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-top:4px }
+.toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:0 0 10px }
+.toolbar .lbl { font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-right:2px }
+.chip { background:var(--surface); color:var(--ink-2); border:1px solid var(--grid); border-radius:999px;
+  padding:4px 12px; font:inherit; font-size:13px; cursor:pointer }
+.chip b { color:var(--muted); font-weight:600 }
+.chip.on { border-color:var(--ink); color:var(--ink) }
+.chip:focus-visible, .apply:focus-visible, summary:focus-visible { outline:2px solid var(--req); outline-offset:2px }
+.legend { display:flex; flex-wrap:wrap; gap:16px; font-size:12.5px; color:var(--ink-2); margin:6px 0 14px }
+.legend span { display:inline-flex; align-items:center; gap:6px }
+.dot { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px }
+.legend .dot { margin:0 }
+.seg-req { background:var(--req) } .seg-pref { background:var(--pref) }
+.seg-exp { background:var(--exp) } .seg-dom { background:var(--dom) }
+.job { background:var(--surface); border:1px solid var(--ring); border-radius:8px; margin-bottom:8px }
+.job[hidden] { display:none }
+summary { display:grid; grid-template-columns:34px 44px 120px 1fr auto auto; gap:12px; align-items:center;
+  padding:11px 14px; cursor:pointer; list-style:none }
+summary::-webkit-details-marker { display:none }
+.rank { color:var(--muted); font-size:12.5px; font-variant-numeric:tabular-nums }
+.score { font-size:19px; font-weight:700; font-variant-numeric:tabular-nums }
+.bar { display:flex; gap:2px; height:10px }
+.seg { height:10px }
+.seg:first-child { border-radius:3px 0 0 3px } .seg:last-child { border-radius:0 3px 3px 0 }
+.who { min-width:0 }
+.title { display:block; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.meta { display:block; color:var(--ink-2); font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.badge-new { background:var(--req); color:var(--page); font-size:10.5px; font-weight:700;
+  border-radius:4px; padding:1px 6px; margin-left:6px; vertical-align:2px; letter-spacing:.04em }
+.pill { font-size:11.5px; font-weight:600; padding:3px 10px; border-radius:999px; white-space:nowrap;
+  color:var(--page) }
+.band-strong { background:var(--st-good) } .band-good { background:var(--st-mid) }
+.band-moderate { background:var(--st-warn); color:#0b0b0b }
+.band-weak { background:var(--st-serious); color:#0b0b0b } .band-none { background:var(--st-crit) }
+.apply { font-size:13px; color:var(--req); text-decoration:none; white-space:nowrap }
+.apply:hover { text-decoration:underline }
+.body { border-top:1px solid var(--grid); padding:14px 16px 18px; font-size:14px }
+.body h4 { font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:16px 0 6px }
+.body ul { margin:0; padding-left:18px }
+.body li { margin:3px 0 }
+.summary { margin:2px 0 8px; max-width:72ch }
+.rec { color:var(--ink-2); margin:0 0 4px; max-width:72ch }
+.cols { display:grid; grid-template-columns:1fr 1fr; gap:0 28px }
+@media (max-width:760px) {
+  .cols { grid-template-columns:1fr }
+  summary { grid-template-columns:30px 40px 1fr auto }
+  .bar,.apply { display:none }
+}
+table.detail { border-collapse:collapse; font-variant-numeric:tabular-nums }
+table.detail td { padding:2px 14px 2px 0; border:0 }
+table.detail td:last-child { text-align:right }
+table.detail .tot td { border-top:1px solid var(--grid); font-weight:700 }
+.ctx { color:var(--ink-2); font-size:13px; max-width:60ch }
+.kws { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 }
+.kw { border:1px solid var(--grid); color:var(--ink-2); border-radius:999px;
+  padding:2px 10px; font-size:12.5px }
+details.letter { border:1px solid var(--grid); border-radius:6px; margin-top:8px }
+details.letter > summary { display:flex; justify-content:space-between; padding:8px 12px;
+  font-size:13px; font-weight:600; color:var(--ink-2) }
+details.letter[open] > summary { border-bottom:1px solid var(--grid) }
+.letter-body { padding:10px 14px; position:relative }
+.letter-body pre { white-space:pre-wrap; font:inherit; margin:0; max-width:78ch }
+.copy { position:absolute; top:8px; right:10px; font:inherit; font-size:12px; cursor:pointer;
+  background:var(--surface); color:var(--ink-2); border:1px solid var(--grid); border-radius:6px; padding:2px 10px }
+.failures { margin-top:28px }
+.failures h2 { font-size:16px; margin:0 0 8px }
+.fail { background:var(--surface); border:1px solid var(--ring); border-radius:8px;
+  padding:10px 14px; margin-bottom:6px; font-size:13.5px }
+.fail .why { color:var(--ink-2) }
+footer { color:var(--muted); font-size:12.5px; margin-top:26px }
+</style>
+</head>
+<body>
+<main>
+<header>
+ <h1>{{ title }}</h1>
+ <p class="sub">{{ subtitle }}</p>
+</header>
+
+<div class="tiles">
+ <div class="tile"><div class="v">{{ jobs|length }}</div><div class="l">Jobs analyzed</div></div>
+ {%- for band in bands if band.count %}
+ <div class="tile"><div class="v">{{ band.count }}</div><div class="l">{{ band.label }}{{ 'es' if band.key == 'strong_match' else 's' }}</div></div>
+ {%- endfor %}
+ <div class="tile"><div class="v">{{ top_score }}</div><div class="l">Top score</div></div>
+</div>
+
+<div class="toolbar"><span class="lbl">Company</span>
+ {%- for c in companies %}
+ <button class="chip" data-filter="company" data-value="{{ c.name }}">{{ c.name }} <b>{{ c.count }}</b></button>
+ {%- endfor %}
+</div>
+<div class="toolbar"><span class="lbl">Match</span>
+ {%- for band in bands if band.count %}
+ <button class="chip" data-filter="band" data-value="{{ band.key }}">{{ band.label }} <b>{{ band.count }}</b></button>
+ {%- endfor %}
+</div>
+<div class="legend">
+ <span><span class="dot seg-req"></span>Required skills (40&ndash;60)</span>
+ <span><span class="dot seg-pref"></span>Preferred skills (0&ndash;20)</span>
+ <span><span class="dot seg-exp"></span>Experience (0&ndash;20)</span>
+ <span><span class="dot seg-dom"></span>Domain (0&ndash;20)</span>
+</div>
+
+{%- for j in jobs %}
+<details class="job" data-company="{{ j.company }}" data-band="{{ j.band_key }}">
+ <summary>
+  <span class="rank">{{ loop.index }}</span>
+  <span class="score">{{ j.total }}</span>
+  <span class="bar" role="img" aria-label="score {{ j.total }} of 100">
+   {%- for seg in j.segments if seg.value > 0 -%}
+   <span class="seg {{ seg.cls }}" style="width:{{ seg.value }}%" title="{{ seg.label }}: {{ seg.value }}"></span>
+   {%- endfor -%}
+  </span>
+  <span class="who">
+   <span class="title">{{ j.title }}{% if j.is_new %}<span class="badge-new">NEW</span>{% endif %}</span>
+   <span class="meta">{{ j.company }} &middot; {{ j.location }} &middot; {{ j.salary }}</span>
+  </span>
+  <span class="pill {{ j.band_cls }}">{{ j.band_label }}</span>
+  {%- if j.apply_url %}
+  <a class="apply" href="{{ j.apply_url }}" target="_blank" rel="noopener" title="Open posting">Apply&nbsp;&#8599;</a>
+  {%- endif %}
+ </summary>
+ <div class="body">
+  <p class="summary">{{ j.summary }}</p>
+  <p class="rec"><strong>Recommendation:</strong> {{ j.recommendation }}</p>
+  <div class="cols">
+   <div><h4>Strengths</h4><ul>{% for s in j.strengths %}<li>{{ s }}</li>{% endfor %}</ul></div>
+   <div><h4>Gaps</h4><ul>{% for g in j.gaps %}<li>{{ g }}</li>{% endfor %}</ul></div>
+  </div>
+  <div class="cols">
+   <div><h4>Resume improvements</h4><ul>{% for s in j.resume_improvements %}<li>{{ s }}</li>{% endfor %}</ul></div>
+   <div><h4>Score detail</h4>
+    <table class="detail"><tbody>
+     {%- for seg in j.segments %}
+     <tr><td><span class="dot {{ seg.cls }}"></span>{{ seg.label }}</td><td>{{ seg.value }}</td></tr>
+     {%- endfor %}
+     <tr class="tot"><td>Total</td><td>{{ j.total }}</td></tr>
+    </tbody></table>
+    <p class="ctx">{{ j.experience_years_context }}</p></div>
+  </div>
+  {%- if j.ats_keywords_missing %}
+  <h4>Missing ATS keywords</h4>
+  <p class="kws">{% for k in j.ats_keywords_missing %}<span class="kw">{{ k }}</span>{% endfor %}</p>
+  {%- endif %}
+  <h4>Cover letter angle</h4><p>{{ j.cover_letter_angle }}</p>
+  {%- if j.cover_letter_text %}
+  <details class="letter">
+   <summary><span>Cover letter</span><span aria-hidden="true">&#9662;</span></summary>
+   <div class="letter-body">
+    <button class="copy" type="button">Copy</button>
+    <pre>{{ j.cover_letter_text }}</pre>
+   </div>
+  </details>
+  {%- endif %}
+ </div>
+</details>
+{%- endfor %}
+
+{%- if failures %}
+<section class="failures">
+ <h2>Not analyzed ({{ failures|length }})</h2>
+ {%- for f in failures %}
+ <div class="fail"><strong>{{ f.name }}</strong> &mdash; <span class="why">{{ f.reason }}</span></div>
+ {%- endfor %}
+</section>
+{%- endif %}
+
+<footer>{{ footer }}</footer>
+</main>
+<script>
+const active = { company: null, band: null };
+document.querySelectorAll('.chip').forEach(ch => ch.addEventListener('click', () => {
+  const kind = ch.dataset.filter, val = ch.dataset.value;
+  active[kind] = active[kind] === val ? null : val;
+  document.querySelectorAll(`.chip[data-filter="${kind}"]`)
+    .forEach(c => c.classList.toggle('on', active[kind] === c.dataset.value));
+  document.querySelectorAll('.job').forEach(j => {
+    j.hidden = !((!active.company || j.dataset.company === active.company)
+              && (!active.band || j.dataset.band === active.band));
+  });
+}));
+document.querySelectorAll('.apply').forEach(a => a.addEventListener('click', ev => ev.stopPropagation()));
+document.querySelectorAll('.copy').forEach(b => b.addEventListener('click', () => {
+  navigator.clipboard.writeText(b.nextElementSibling.textContent).then(() => {
+    b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1500);
+  });
+}));
+</script>
+</body>
+</html>
