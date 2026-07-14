@@ -1,0 +1,68 @@
+# Daily hiring-trends snapshot for agents/job-scout.
+# Spec: agents/job-scout/openspec/changes/trends-dashboard/specs/data-publication/spec.md
+#
+# Fetches every configured ATS board (public JSON APIs, no scraping, no
+# secrets), exports the facts-only trends parquet, and commits it under
+# agents/job-scout/data/ as a dated snapshot + a stable "latest" file.
+# JD text NEVER lands in data/ (copyright boundary — design D3).
+name: job-scout daily trends
+
+on:
+  schedule:
+    - cron: "0 11 * * *"   # 11:00 UTC ≈ 07:00 US Eastern
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: job-scout-trends
+  cancel-in-progress: false
+
+jobs:
+  trends:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agents/job-scout
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install --quiet duckdb pyyaml certifi jinja2
+
+      - name: Load all boards (fresh DuckDB, ats_posting_raw only)
+        run: python tools/raw_load.py
+
+      - name: Export trends parquet
+        run: python tools/raw_load.py --export
+
+      - name: Publish to data/ (dated + latest, prune > 90 days)
+        run: |
+          mkdir -p data
+          stamp=$(date -u +%Y%m%d)
+          cp "exports/ats_raw_trends_${stamp}.parquet" data/
+          cp "exports/ats_raw_trends_${stamp}.parquet" data/ats_raw_trends_latest.parquet
+          cutoff=$(date -u -d '90 days ago' +%Y%m%d)
+          for f in data/ats_raw_trends_2*.parquet; do
+            d=$(basename "$f" | grep -oE '[0-9]{8}' || true)
+            if [ -n "$d" ] && [ "$d" -lt "$cutoff" ]; then rm "$f"; fi
+          done
+          ls -lh data/
+
+      - name: Commit snapshot
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add agents/job-scout/data
+          if git diff --cached --quiet; then
+            echo "no data changes today"
+          else
+            git commit -m "data(job-scout): daily trends parquet $(date -u +%F)"
+            git push
+          fi

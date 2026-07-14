@@ -81,6 +81,37 @@ zero LLM cost. When you know what you want, **promote** rows into
 replaces the keyword filter. Each load refreshes a company's rows only
 when its board fetch succeeded, so one flaky board never wipes its data.
 
+### Trends dashboard + public data (openspec: trends-dashboard)
+`--export` writes two dated parquet snapshots to `exports/`; the trends
+one (facts only, no JD text) renders into a self-contained interactive
+dashboard — stat tiles, target-role tracker, weekly trend, salary
+ranges, paginated explorer with a click-to-read JD side panel:
+
+    python tools/raw_load.py --export
+    python tools/build_trends_report.py \
+        --input exports/ats_raw_trends_20260714.parquet \
+        --out exports/hiring-trends-20260714.html
+
+`--jd target` (default) embeds JD text only for postings matching your
+config keywords; `--jd all` embeds everything (local use); `--jd none`
+builds the lean page. A "JD panel" toggle on the page controls whether
+clicking a row opens the side panel.
+
+**Public data:** a GitHub Action (`.github/workflows/job-scout-trends.yml`)
+refreshes `data/` daily — `ats_raw_trends_YYYYMMDD.parquet` snapshots
+(pruned after 90 days) plus a stable `ats_raw_trends_latest.parquet`.
+Query it straight from DuckDB, no clone needed:
+
+    SELECT category, COUNT(*), ROUND(MEDIAN((base_min_usd+base_max_usd)/2)) AS mid
+    FROM 'https://raw.githubusercontent.com/senthilsweb/ai-agents/main/agents/job-scout/data/ats_raw_trends_latest.parquet'
+    GROUP BY 1 ORDER BY 2 DESC;
+
+Copyright note: `data/` carries **facts only** (titles, companies,
+locations, salary bands, dates, URLs — not copyrightable). Full job
+description text is the hiring companies' content: it stays in local
+exports and, when embedded in your own dashboard build, is for personal
+job-search use — don't republish JD text.
+
 ### Delta vs snapshot refresh
 Two `config.yaml` knobs under `search` control what a fetch loads:
 

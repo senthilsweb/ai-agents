@@ -1,0 +1,467 @@
+<title>{{ title }}</title>
+{% raw %}<style>
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --ink:#1b2430; --ink2:#4a5568; --muted:#8a94a3;
+  --line:#e3e7ec; --accent:#2a78d6; --accent2:#1baf7a; --warn:#eda100;
+  --chip:#eef2f7; --row:#fafbfc; --shade:rgba(15,20,26,.45);
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#10141a; --surface:#1a2029; --ink:#e8ecf2; --ink2:#aab6c5; --muted:#6d7a8b;
+  --line:#2a3441; --accent:#5b9be0; --accent2:#34c896; --warn:#f2b53d;
+  --chip:#242d39; --row:#1e252f; --shade:rgba(0,0,0,.55);
+}}
+:root[data-theme="dark"]{
+  --bg:#10141a; --surface:#1a2029; --ink:#e8ecf2; --ink2:#aab6c5; --muted:#6d7a8b;
+  --line:#2a3441; --accent:#5b9be0; --accent2:#34c896; --warn:#f2b53d;
+  --chip:#242d39; --row:#1e252f; --shade:rgba(0,0,0,.55);
+}
+:root[data-theme="light"]{
+  --bg:#f6f7f9; --surface:#ffffff; --ink:#1b2430; --ink2:#4a5568; --muted:#8a94a3;
+  --line:#e3e7ec; --accent:#2a78d6; --accent2:#1baf7a; --warn:#eda100;
+  --chip:#eef2f7; --row:#fafbfc; --shade:rgba(15,20,26,.45);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
+header h1{font-size:26px;margin:0 0 4px;letter-spacing:-.02em;text-wrap:balance}
+header p{margin:0;color:var(--ink2)}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:22px 0}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.tile .v{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.tile .l{font-size:12px;color:var(--ink2);margin-top:2px}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:8px 0 20px;
+  position:sticky;top:8px;z-index:5}
+.filters input[type=search],.filters select{background:var(--bg);color:var(--ink);
+  border:1px solid var(--line);border-radius:7px;padding:7px 10px;font:inherit;font-size:13.5px}
+.filters input[type=search]{min-width:200px;flex:1}
+.filters label.cb{font-size:13px;color:var(--ink2);display:flex;gap:6px;align-items:center;white-space:nowrap}
+.filters .reset{background:none;border:none;color:var(--accent);cursor:pointer;font:inherit;font-size:13px}
+.filters input:focus-visible,.filters select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:860px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px}
+.card h2{font-size:15.5px;margin:0 0 2px}
+.card .sub{font-size:12.5px;color:var(--muted);margin:0 0 14px}
+.legend{display:flex;gap:16px;font-size:12.5px;color:var(--ink2);margin-bottom:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+svg text{fill:var(--ink2);font-size:11px}
+svg .axis line{stroke:var(--line)}
+.bar-row{display:grid;grid-template-columns:150px 1fr 52px;align-items:center;gap:10px;
+  padding:4px 0;font-size:13px;cursor:pointer;border-radius:6px}
+.bar-row:hover{background:var(--row)}
+.bar-row.on .name{color:var(--accent);font-weight:600}
+.bar-row .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink2)}
+.bar-row .track{height:16px;position:relative}
+.bar-row .fill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:0 4px 4px 0}
+.bar-row .num{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink)}
+.range-row{display:grid;grid-template-columns:150px 1fr 130px;align-items:center;gap:10px;padding:5px 0;font-size:13px}
+.range-row .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink2)}
+.range-row .track{height:18px;position:relative;background:var(--row);border-radius:4px}
+.range-row .band{position:absolute;top:3px;bottom:3px;background:var(--accent2);opacity:.85;border-radius:3px}
+.range-row .med{position:absolute;top:0;bottom:0;width:2px;background:var(--ink)}
+.range-row .num{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);font-size:12.5px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+  text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap}
+th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
+td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--row)}
+td a{color:var(--accent);text-decoration:none}
+td a:hover{text-decoration:underline}
+.pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--ink2);white-space:nowrap}
+.pill.remote{background:color-mix(in srgb,var(--accent2) 18%,transparent);color:var(--accent2)}
+.tablewrap{overflow-x:auto}
+.pager{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap;
+  padding-top:12px;font-size:13px;color:var(--ink2)}
+.pager button{background:var(--chip);color:var(--ink);border:1px solid var(--line);
+  border-radius:7px;padding:5px 12px;font:inherit;font-size:13px;cursor:pointer}
+.pager button:disabled{opacity:.4;cursor:default}
+.pager select{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:4px 8px;font:inherit;font-size:13px}
+.note{font-size:12.5px;color:var(--muted);margin-top:24px;line-height:1.6}
+.count{font-size:12.5px;color:var(--muted)}
+#tooltip{position:fixed;pointer-events:none;background:var(--surface);border:1px solid var(--line);
+  border-radius:8px;padding:8px 10px;font-size:12.5px;box-shadow:0 4px 14px rgba(0,0,0,.15);
+  display:none;z-index:20;max-width:260px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media(max-width:700px){.two-col{grid-template-columns:1fr}}
+.mini{width:100%;font-size:13px}
+.mini td{border-bottom:1px solid var(--line);padding:5px 6px}
+.mini td.num{white-space:nowrap}
+details.method{margin-top:20px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px 18px}
+details.method summary{cursor:pointer;font-weight:600;font-size:14px;padding:12px 0}
+details.method .body{font-size:13.5px;color:var(--ink2);line-height:1.65;padding-bottom:14px}
+details.method dt{font-weight:600;color:var(--ink);margin-top:10px}
+details.method dd{margin:2px 0 0}
+#shade{position:fixed;inset:0;background:var(--shade);opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
+#shade.open{opacity:1;pointer-events:auto}
+#drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100vw);background:var(--surface);
+  border-left:1px solid var(--line);z-index:31;transform:translateX(102%);transition:transform .22s ease;
+  display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(0,0,0,.18)}
+#drawer.open{transform:translateX(0)}
+#drawer .dhead{padding:18px 20px 14px;border-bottom:1px solid var(--line)}
+#drawer .dhead h3{margin:0 0 2px;font-size:17px;line-height:1.35;text-wrap:balance;padding-right:36px}
+#drawer .dhead .co{color:var(--ink2);font-size:13.5px}
+#drawer .close{position:absolute;top:12px;right:12px;background:var(--chip);border:none;color:var(--ink);
+  width:30px;height:30px;border-radius:8px;font-size:15px;cursor:pointer}
+#drawer .meta{display:flex;flex-wrap:wrap;gap:8px;padding:12px 20px;border-bottom:1px solid var(--line)}
+#drawer .meta .pill{font-size:12px}
+#drawer .apply{margin-left:auto;font-size:13px;font-weight:600;color:var(--accent);text-decoration:none;
+  border:1px solid var(--accent);border-radius:7px;padding:4px 12px}
+#drawer .jd{flex:1;overflow-y:auto;padding:16px 20px;font-size:13.5px;line-height:1.6;
+  white-space:pre-wrap;color:var(--ink2)}
+#drawer .jd.empty{color:var(--muted);font-style:italic}
+@media (prefers-reduced-motion: reduce){#drawer,#shade{transition:none}}
+</style>{% endraw %}
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">job-scout · ats_posting_raw snapshot · {{ stamp }}</div>
+  <h1>{{ heading }}</h1>
+  <p>{{ meta_line }} Filters slice every chart and table below.</p>
+</header>
+
+<div class="tiles" id="tiles"></div>
+
+<div class="filters">
+  <input type="search" id="q" placeholder="Search title, company, location…" aria-label="Search">
+  <select id="fcat" aria-label="Category"><option value="">All categories</option></select>
+  <select id="fco" aria-label="Company"><option value="">All companies</option></select>
+  <label class="cb"><input type="checkbox" id="fremote"> Remote only</label>
+  <label class="cb"><input type="checkbox" id="fsalary"> Has salary</label>
+  <label class="cb"><input type="checkbox" id="fjd" checked> JD panel</label>
+  <button class="reset" id="reset">Reset</button>
+</div>
+
+<div class="card">
+  <h2>Your target roles</h2>
+  <p class="sub">Counts per <code>config.yaml</code> keyword, matched with the pipeline's own token matcher
+  (seniority words ignored — "Sr. Engineering Manager, Data Platform" counts as "engineering manager").
+  Click a row to slice everything below to that role family.</p>
+  <div class="two-col" id="targets"></div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h2>Postings by week</h2>
+    <p class="sub">By posting date · last 16 weeks · undated postings excluded</p>
+    <div class="legend"><span><i style="background:var(--accent)"></i>All categories</span>
+      <span><i style="background:var(--accent2)"></i>Engineering &amp; Tech</span></div>
+    <div id="trend"></div>
+  </div>
+  <div class="card">
+    <h2>Job categories</h2>
+    <p class="sub">Departments normalized to nine buckets · click a bar to filter</p>
+    <div id="cats"></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Base salary by category</h2>
+  <p class="sub">USD postings with a published band · box = 25th–75th percentile of band midpoints · line = median · categories with ≥ 15 salary postings</p>
+  <div id="salary"></div>
+</div>
+
+<div class="card">
+  <h2>Role landscape</h2>
+  <p class="sub">Most common titles and top hirers within the current filter</p>
+  <div class="two-col">
+    <div><div class="eyebrow">Top titles</div><table class="mini"><tbody id="toptitles"></tbody></table></div>
+    <div><div class="eyebrow">Top companies</div><table class="mini"><tbody id="topcos"></tbody></table></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Postings explorer</h2>
+  <p class="sub" id="tablecount"></p>
+  <div class="tablewrap"><table>
+    <thead><tr>
+      <th data-k="2">Title</th><th data-k="0">Company</th><th data-k="3">Category</th>
+      <th data-k="5">Location</th><th class="num" data-k="8">Base max</th><th data-k="9">Posted</th>
+    </tr></thead>
+    <tbody id="tbody"></tbody>
+  </table></div>
+  <div class="pager">
+    <span id="pageinfo"></span>
+    <select id="psize" aria-label="Rows per page">
+      <option>25</option><option>50</option><option>100</option>
+    </select>
+    <button id="prev">‹ Prev</button><button id="next">Next ›</button>
+  </div>
+</div>
+
+<details class="method">
+  <summary>Method &amp; normalizations</summary>
+  <div class="body"><dl>
+    <dt>Source</dt><dd>Public ATS JSON APIs of each company's job board (Ashby, Greenhouse,
+    Workday) — the same endpoints the boards' own pages call. No page scraping.</dd>
+    <dt>Categories</dt><dd>Nine buckets derived by keyword rules on each posting's department
+    ("GTM", "Go To Market" and "Revenue" all → Sales &amp; GTM); when a feed carries no
+    department, the title decides ("engineer", "developer", "architect"… → Engineering &amp; Tech).
+    Everything unmatched lands in "Other" rather than being guessed.</dd>
+    <dt>Salary</dt><dd>Published base-pay bands parsed from formatted strings
+    ("$165,000 – $216,562", "$264K – $379.5K") into USD min/max. Non-USD bands are excluded,
+    not converted. Charts use band midpoints; medians and percentiles are computed over
+    midpoints. Postings without a published band are excluded from salary views, never estimated.</dd>
+    <dt>Target-role matching</dt><dd>The pipeline's token matcher: seniority and filler words
+    (senior, sr, staff, principal, lead, of…) are ignored; 1–2 significant tokens must all
+    appear in the title, longer keywords allow one missing token.</dd>
+    <dt>Weeks</dt><dd>Posting dates bucketed to Monday-start weeks (UTC).</dd>
+    <dt>Not normalized</dt><dd>Locations stay as published (free text). Multi-location postings
+    appear once per board entry, exactly as companies list them. Greenhouse dates are
+    last-updated rather than first-posted; Lime and NVIDIA feeds carry no dates (rows count
+    everywhere except the weekly trend). NVIDIA is capped at 20 postings by its paginated feed.</dd>
+    <dt>Job descriptions</dt><dd>JD text shown in the side panel is the hiring company's own
+    posting text, embedded for personal job-search use{{ '' }}{% if jd_mode == 'target' %} for
+    postings matching the target keywords only{% elif jd_mode == 'none' %} — disabled in this
+    build{% endif %}. The public trends dataset contains facts only, never JD text.</dd>
+  </dl></div>
+</details>
+
+<p class="note"><strong>Reading notes.</strong> Salary figures are published base-pay bands (USD only); postings without a
+band are excluded from salary views, never guessed. Full method above. Data: dated parquet snapshots under
+<code>agents/job-scout/data/</code> in the repo, queryable directly from DuckDB.</p>
+</div>
+
+<div id="shade"></div>
+<aside id="drawer" role="dialog" aria-modal="true" aria-label="Job details">
+  <div class="dhead">
+    <button class="close" id="dclose" aria-label="Close">✕</button>
+    <h3 id="dtitle"></h3>
+    <div class="co" id="dco"></div>
+  </div>
+  <div class="meta" id="dmeta"></div>
+  <div class="jd" id="djd"></div>
+</aside>
+<div id="tooltip" role="status"></div>
+
+<script>
+const RAW = {{ data_json }};
+const KEYWORDS = {{ keywords_json }};
+const JD = {{ jd_json }};
+const JD_MODE = "{{ jd_mode }}";
+{% raw %}
+const F = {CO:0,PLAT:1,TITLE:2,CAT:3,DEPT:4,LOC:5,REMOTE:6,LO:7,HI:8,POSTED:9,URL:10,IDX:11};
+const $ = id => document.getElementById(id);
+const tt = $("tooltip");
+const state = {q:"",cat:"",co:"",kw:"",remote:false,salary:false,jd:true,
+               sortK:9,sortDir:-1,page:0,psize:25};
+const fmt = n => n==null ? "" : "$"+Math.round(n/1000)+"k";
+const esc = s => String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// same forgiving token matcher as tools/ats_fetch._title_matches
+const SEN = new Set(["senior","sr","jr","junior","principal","staff","lead","of","and","the","a","ii","iii"]);
+function kwMatch(title, kw){
+  const tset = new Set((title.toLowerCase().match(/[a-z0-9]+/g)) || []);
+  const sig = ((kw.toLowerCase().match(/[a-z0-9]+/g)) || []).filter(t => !SEN.has(t));
+  if(!sig.length) return false;
+  const hits = sig.filter(t => tset.has(t)).length;
+  return hits >= (sig.length <= 2 ? sig.length : sig.length - 1);
+}
+
+const cats = [...new Set(RAW.map(r=>r[F.CAT]))].sort();
+cats.forEach(c=>$("fcat").append(new Option(c,c)));
+const coCounts = {};
+RAW.forEach(r=>coCounts[r[F.CO]]=(coCounts[r[F.CO]]||0)+1);
+Object.keys(coCounts).sort((a,b)=>coCounts[b]-coCounts[a])
+  .forEach(c=>$("fco").append(new Option(`${c} (${coCounts[c]})`,c)));
+
+function filtered(){
+  const q = state.q.toLowerCase();
+  return RAW.filter(r =>
+    (!state.cat || r[F.CAT]===state.cat) &&
+    (!state.co || r[F.CO]===state.co) &&
+    (!state.kw || kwMatch(r[F.TITLE], state.kw)) &&
+    (!state.remote || r[F.REMOTE]===1) &&
+    (!state.salary || r[F.HI]!=null) &&
+    (!q || (r[F.TITLE]+" "+r[F.CO]+" "+r[F.LOC]+" "+r[F.DEPT]).toLowerCase().includes(q)));
+}
+const median = a => { if(!a.length) return null; const s=[...a].sort((x,y)=>x-y); const m=s.length>>1;
+  return s.length%2 ? s[m] : (s[m-1]+s[m])/2; };
+const quant = (a,p) => { const s=[...a].sort((x,y)=>x-y); return s[Math.min(s.length-1,Math.floor(p*s.length))]; };
+
+function tiles(rows){
+  const titles = new Set(rows.map(r=>r[F.TITLE].toLowerCase()));
+  const eng = rows.filter(r=>r[F.CAT]==="Engineering & Tech");
+  const mids = rows.filter(r=>r[F.LO]!=null&&r[F.HI]!=null).map(r=>(r[F.LO]+r[F.HI])/2);
+  const med = median(mids);
+  const t = [
+    [rows.length.toLocaleString(),"postings"],
+    [new Set(rows.map(r=>r[F.CO])).size,"companies"],
+    [titles.size.toLocaleString(),"unique titles"],
+    [rows.length?Math.round(100*eng.length/rows.length)+"%":"–","engineering & tech"],
+    [rows.length?Math.round(100*rows.filter(r=>r[F.REMOTE]).length/rows.length)+"%":"–","remote-flagged"],
+    [med?fmt(med):"–","median base (mid)"],
+  ];
+  $("tiles").innerHTML = t.map(([v,l])=>`<div class="tile"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("");
+}
+
+function weekKey(d){ const dt=new Date(d+"T00:00:00Z"); const day=(dt.getUTCDay()+6)%7;
+  dt.setUTCDate(dt.getUTCDate()-day); return dt.toISOString().slice(0,10); }
+
+function trend(rows){
+  const dated = rows.filter(r=>r[F.POSTED]);
+  const wAll={}, wEng={};
+  dated.forEach(r=>{ const w=weekKey(r[F.POSTED]); wAll[w]=(wAll[w]||0)+1;
+    if(r[F.CAT]==="Engineering & Tech") wEng[w]=(wEng[w]||0)+1; });
+  const weeks = Object.keys(wAll).sort().slice(-16);
+  if(weeks.length<2){ $("trend").innerHTML='<p class="count">Not enough dated postings in this filter.</p>'; return; }
+  const W=520,H=200,P={l:34,r:14,t:12,b:26};
+  const max = Math.max(...weeks.map(w=>wAll[w]||0),1);
+  const x = i => P.l+(W-P.l-P.r)*i/(weeks.length-1);
+  const y = v => H-P.b-(H-P.t-P.b)*v/max;
+  const line = src => weeks.map((w,i)=>`${i?"L":"M"}${x(i).toFixed(1)},${y(src[w]||0).toFixed(1)}`).join("");
+  let g = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Weekly posting counts">`;
+  g += `<g class="axis">`;
+  [0,.5,1].forEach(f=>{const v=Math.round(max*f);
+    g+=`<line x1="${P.l}" x2="${W-P.r}" y1="${y(v)}" y2="${y(v)}"/><text x="${P.l-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`;});
+  g += `</g>`;
+  weeks.forEach((w,i)=>{ if(i%3===0) g+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle">${w.slice(5)}</text>`; });
+  g += `<path d="${line(wAll)}" fill="none" stroke="var(--accent)" stroke-width="2"/>`;
+  g += `<path d="${line(wEng)}" fill="none" stroke="var(--accent2)" stroke-width="2"/>`;
+  weeks.forEach((w,i)=>{
+    g+=`<circle cx="${x(i)}" cy="${y(wAll[w]||0)}" r="9" fill="transparent" data-tt="Week of ${w}&#10;All: ${wAll[w]||0} · Eng&amp;Tech: ${wEng[w]||0}"/>`;
+    g+=`<circle cx="${x(i)}" cy="${y(wAll[w]||0)}" r="2.5" fill="var(--accent)" pointer-events="none"/>`;
+    g+=`<circle cx="${x(i)}" cy="${y(wEng[w]||0)}" r="2.5" fill="var(--accent2)" pointer-events="none"/>`;});
+  $("trend").innerHTML = g+"</svg>";
+}
+
+function targets(){
+  const base = RAW.filter(r =>
+    (!state.cat || r[F.CAT]===state.cat) && (!state.co || r[F.CO]===state.co) &&
+    (!state.remote || r[F.REMOTE]===1) && (!state.salary || r[F.HI]!=null));
+  const counts = KEYWORDS.map(kw => [kw, base.filter(r=>kwMatch(r[F.TITLE],kw)).length])
+    .sort((a,b)=>b[1]-a[1]);
+  const max = Math.max(...counts.map(c=>c[1]), 1);
+  $("targets").innerHTML = counts.map(([k,v])=>
+    `<div class="bar-row${state.kw===k?" on":""}" data-kw="${esc(k)}">
+      <span class="name">${esc(k)}</span>
+      <span class="track"><span class="fill" style="width:${Math.max(1.5,100*v/max)}%;background:var(--accent2)"></span></span>
+      <span class="num">${v.toLocaleString()}</span></div>`).join("");
+  document.querySelectorAll("#targets .bar-row").forEach(el=>el.onclick=()=>{
+    state.kw = state.kw===el.dataset.kw ? "" : el.dataset.kw; state.page=0; render();});
+}
+
+function catBars(rows){
+  const c={}; rows.forEach(r=>c[r[F.CAT]]=(c[r[F.CAT]]||0)+1);
+  const entries=Object.entries(c).sort((a,b)=>b[1]-a[1]);
+  const max=entries.length?entries[0][1]:1;
+  $("cats").innerHTML = entries.map(([k,v])=>
+    `<div class="bar-row${state.cat===k?" on":""}" data-cat="${esc(k)}">
+      <span class="name">${esc(k)}</span>
+      <span class="track"><span class="fill" style="width:${Math.max(1.5,100*v/max)}%"></span></span>
+      <span class="num">${v.toLocaleString()}</span></div>`).join("");
+  document.querySelectorAll("#cats .bar-row").forEach(el=>el.onclick=()=>{
+    state.cat = state.cat===el.dataset.cat ? "" : el.dataset.cat;
+    $("fcat").value = state.cat; state.page=0; render();});
+}
+
+function salary(rows){
+  const by={};
+  rows.forEach(r=>{ if(r[F.LO]!=null&&r[F.HI]!=null)
+    (by[r[F.CAT]]=by[r[F.CAT]]||[]).push((r[F.LO]+r[F.HI])/2); });
+  const entries=Object.entries(by).filter(([,a])=>a.length>=15)
+    .map(([k,a])=>({k,n:a.length,p25:quant(a,.25),med:median(a),p75:quant(a,.75)}))
+    .sort((a,b)=>b.med-a.med);
+  if(!entries.length){ $("salary").innerHTML='<p class="count">No categories with ≥ 15 salary postings in this filter.</p>'; return; }
+  const lo=Math.min(...entries.map(e=>e.p25)), hi=Math.max(...entries.map(e=>e.p75));
+  const pct=v=>100*(v-lo)/(hi-lo||1);
+  $("salary").innerHTML = entries.map(e=>
+    `<div class="range-row">
+      <span class="name">${esc(e.k)} <span class="count">(${e.n})</span></span>
+      <span class="track">
+        <span class="band" style="left:${pct(e.p25)}%;width:${Math.max(1,pct(e.p75)-pct(e.p25))}%"></span>
+        <span class="med" style="left:${pct(e.med)}%"></span>
+      </span>
+      <span class="num">${fmt(e.p25)} – ${fmt(e.p75)} · ${fmt(e.med)}</span></div>`).join("");
+}
+
+function landscape(rows){
+  const t={},c={};
+  rows.forEach(r=>{ t[r[F.TITLE]]=(t[r[F.TITLE]]||0)+1; c[r[F.CO]]=(c[r[F.CO]]||0)+1; });
+  const top = (o,n)=>Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,n);
+  $("toptitles").innerHTML = top(t,12).map(([k,v])=>
+    `<tr><td>${esc(k)}</td><td class="num">${v}</td></tr>`).join("");
+  $("topcos").innerHTML = top(c,12).map(([k,v])=>
+    `<tr><td>${esc(k)}</td><td class="num">${v}</td></tr>`).join("");
+}
+
+function table(rows){
+  const k=state.sortK, dir=state.sortDir;
+  const sorted=[...rows].sort((a,b)=>{
+    if(k===F.HI) return dir*(((a[k]??-1))-((b[k]??-1)));
+    return dir*String(a[k]??"").localeCompare(String(b[k]??""));});
+  const pages=Math.max(1,Math.ceil(sorted.length/state.psize));
+  state.page=Math.min(state.page,pages-1);
+  const show=sorted.slice(state.page*state.psize,(state.page+1)*state.psize);
+  $("tablecount").textContent=`${rows.length.toLocaleString()} postings match. `+
+    (state.jd?"Click a row for details + JD. ":"")+"Click headers to sort.";
+  $("pageinfo").textContent=`Page ${state.page+1} of ${pages}`;
+  $("prev").disabled=state.page===0; $("next").disabled=state.page>=pages-1;
+  $("tbody").innerHTML = show.map(r=>`<tr data-idx="${r[F.IDX]}">
+    <td><a href="${esc(r[F.URL])}" target="_blank" rel="noopener">${esc(r[F.TITLE])}</a>
+      ${r[F.REMOTE]?'<span class="pill remote">remote</span>':""}</td>
+    <td>${esc(r[F.CO])}</td><td><span class="pill">${esc(r[F.CAT])}</span></td>
+    <td>${esc(r[F.LOC])}</td>
+    <td class="num">${r[F.HI]?fmt(r[F.LO])+"–"+fmt(r[F.HI]):""}</td>
+    <td>${r[F.POSTED]||""}</td></tr>`).join("");
+  document.querySelectorAll("#tbody tr").forEach(tr=>tr.onclick=e=>{
+    if(e.target.closest("a")) return;
+    if(state.jd) openDrawer(+tr.dataset.idx);});
+}
+
+function openDrawer(i){
+  const r=RAW.find(x=>x[F.IDX]===i); if(!r) return;
+  $("dtitle").textContent=r[F.TITLE];
+  $("dco").textContent=r[F.CO]+(r[F.DEPT]?" · "+r[F.DEPT]:"");
+  let meta=`<span class="pill">${esc(r[F.CAT])}</span>`;
+  if(r[F.LOC]) meta+=`<span class="pill">${esc(r[F.LOC])}</span>`;
+  if(r[F.REMOTE]) meta+='<span class="pill remote">remote</span>';
+  if(r[F.HI]) meta+=`<span class="pill">${fmt(r[F.LO])} – ${fmt(r[F.HI])}</span>`;
+  if(r[F.POSTED]) meta+=`<span class="pill">posted ${r[F.POSTED]}</span>`;
+  meta+=`<a class="apply" href="${esc(r[F.URL])}" target="_blank" rel="noopener">Apply ↗</a>`;
+  $("dmeta").innerHTML=meta;
+  const jd = JD[i];
+  const el=$("djd");
+  if(jd){ el.classList.remove("empty"); el.textContent=jd; }
+  else{ el.classList.add("empty");
+    el.textContent = JD_MODE==="target"
+      ? "JD text not embedded for this posting (this build embeds JDs for target-keyword roles only — rebuild with --jd all for everything). Use Apply to read it on the company's board."
+      : "JD text not embedded in this build. Use Apply to read it on the company's board."; }
+  el.scrollTop=0;
+  $("drawer").classList.add("open"); $("shade").classList.add("open");
+}
+function closeDrawer(){ $("drawer").classList.remove("open"); $("shade").classList.remove("open"); }
+$("dclose").onclick=closeDrawer; $("shade").onclick=closeDrawer;
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeDrawer(); });
+
+function render(){
+  const rows=filtered();
+  tiles(rows); targets(); trend(rows); catBars(rows); salary(rows); landscape(rows); table(rows);
+}
+["q","fcat","fco","fremote","fsalary","fjd"].forEach(id=>{
+  $(id).addEventListener(id==="q"?"input":"change",()=>{
+    state.q=$("q").value; state.cat=$("fcat").value; state.co=$("fco").value;
+    state.remote=$("fremote").checked; state.salary=$("fsalary").checked;
+    state.jd=$("fjd").checked; state.page=0; render();});});
+$("reset").onclick=()=>{ state.q=state.cat=state.co=state.kw=""; state.remote=state.salary=false;
+  state.page=0; $("q").value=""; $("fcat").value=""; $("fco").value="";
+  $("fremote").checked=false; $("fsalary").checked=false; render();};
+$("psize").onchange=()=>{ state.psize=+$("psize").value; state.page=0; table(filtered()); };
+$("prev").onclick=()=>{ state.page--; table(filtered()); };
+$("next").onclick=()=>{ state.page++; table(filtered()); };
+document.querySelectorAll("th[data-k]").forEach(th=>th.onclick=()=>{
+  const k=+th.dataset.k;
+  state.sortDir = state.sortK===k ? -state.sortDir : (k===F.HI||k===F.POSTED?-1:1);
+  state.sortK=k; state.page=0; table(filtered());});
+document.addEventListener("mousemove",e=>{
+  const el=e.target.closest("[data-tt]");
+  if(el){ tt.style.display="block"; tt.innerHTML=el.dataset.tt.replace(/\n/g,"<br>");
+    tt.style.left=Math.min(e.clientX+14,innerWidth-280)+"px"; tt.style.top=(e.clientY+14)+"px"; }
+  else tt.style.display="none";});
+render();
+{% endraw %}
+</script>

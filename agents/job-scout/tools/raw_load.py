@@ -210,6 +210,87 @@ def promote(cfg: dict, con, where: str | None = None, days: int | None = None,
             "filter": where or f"title_keywords ({len(keywords or [])})"}
 
 
+# ── trend export ─────────────────────────────────────────────────────
+_CATEGORY_RULES = [           # first match wins; checked against department,
+    ("Sales & GTM", ("sales", "gtm", "go to market", "revenue", "account",
+                     "business development", "partnerships", "solution engineering")),
+    ("Marketing", ("marketing", "growth", "brand", "communications", "content")),
+    ("Design", ("design",)),
+    ("Product", ("product",)),
+    ("Engineering & Tech", ("engineer", "technology", "tech", "r&d",
+                            "research", "infrastructure", "platform", "data",
+                            "security", "software", "devops", "machine learning",
+                            "ai", "it", "qa", "development")),
+    ("People & Talent", ("people", "hr", "talent", "recruit")),
+    ("Finance & Legal", ("finance", "accounting", "legal", "compliance", "audit")),
+    ("Operations & CX", ("operations", "ops", "support", "success", "customer",
+                         "supply", "warehouse", "logistics", "trust")),
+]
+_TITLE_TECH = ("engineer", "developer", "architect", "scientist", "sre",
+               "devops", "technical lead", "programmer")
+
+
+def categorize(department: str | None, title: str | None) -> str:
+    """Coarse canonical category. Department vocabulary differs per company,
+    so this is keyword-based; title is the fallback when department is empty."""
+    d = (department or "").lower()
+    if d:
+        for cat, keys in _CATEGORY_RULES:
+            if any(k in d for k in keys):
+                return cat
+    t = (title or "").lower()
+    if any(k in t for k in _TITLE_TECH):
+        return "Engineering & Tech"
+    for cat, keys in _CATEGORY_RULES:
+        if any(k in t for k in keys):
+            return cat
+    return "Other"
+
+
+def export(con, out_dir: Path) -> dict:
+    """Write two dated parquet snapshots under exports/:
+    - ats_raw_trends_YYYYMMDD.parquet: all columns except jd_text, plus
+      derived category, parsed USD salary band, and company enrichment.
+    - ats_raw_full_YYYYMMDD.parquet: the table verbatim (jd_text included).
+    Both land in the gitignored exports/ dir; re-running a day overwrites."""
+    _ensure_table(con)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    stamp = date.today().strftime("%Y%m%d")
+    has_company = bool(con.execute(
+        "SELECT 1 FROM information_schema.tables WHERE table_name='company'").fetchone())
+    join = ("LEFT JOIN company c ON c.name = r.company_name" if has_company else "")
+    enrich = ("c.industry, c.classification" if has_company
+              else "NULL AS industry, NULL AS classification")
+    rows = con.execute(f"""
+        SELECT r.company_name, r.ats_platform, r.req_id, r.title, r.department,
+               r.team, r.employment_type, r.location, r.work_mode, r.comp_summary,
+               r.posted_date, r.apply_url, r.fetched_at, {enrich}
+        FROM ats_posting_raw r {join}""").fetchall()
+    con.execute("""CREATE OR REPLACE TEMP TABLE _trends (
+        company_name VARCHAR, ats_platform VARCHAR, req_id VARCHAR, title VARCHAR,
+        department VARCHAR, team VARCHAR, employment_type VARCHAR,
+        location VARCHAR, work_mode VARCHAR, comp_summary VARCHAR,
+        posted_date DATE, apply_url VARCHAR, fetched_at TIMESTAMP,
+        industry VARCHAR, classification VARCHAR, category VARCHAR,
+        base_min_usd INTEGER, base_max_usd INTEGER)""")
+    out = []
+    for r in rows:
+        (name, plat, req, title, dept, team, emp, loc, wm, comp, posted, url,
+         fetched, industry, cls) = r
+        bmin, bmax = None, None
+        if comp:
+            lo, hi, cur = _parse_comp_range(comp)
+            if cur == "USD":
+                bmin, bmax = lo, hi
+        out.append(r + (categorize(dept, title), bmin, bmax))
+    con.executemany(f"INSERT INTO _trends VALUES ({','.join('?' * 18)})", out)
+    trends = out_dir / f"ats_raw_trends_{stamp}.parquet"
+    full = out_dir / f"ats_raw_full_{stamp}.parquet"
+    con.execute(f"COPY _trends TO '{trends}' (FORMAT PARQUET)")
+    con.execute(f"COPY (SELECT * FROM ats_posting_raw) TO '{full}' (FORMAT PARQUET)")
+    return {"rows": len(out), "trends": str(trends), "full": str(full)}
+
+
 def test_keyword(cfg: dict, con, keyword: str) -> None:
     """Show what a candidate keyword would match in ats_posting_raw, and how
     much of that is NEW versus the current config title_keywords."""
@@ -259,6 +340,8 @@ def main() -> int:
     p.add_argument("--test", metavar="KEYWORD",
                    help="show what a candidate keyword would match (and what's "
                         "new vs config title_keywords) — no writes")
+    p.add_argument("--export", action="store_true",
+                   help="write dated trend + full parquet snapshots to exports/")
     args = p.parse_args()
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s %(name)s %(levelname)s %(message)s")
@@ -267,6 +350,8 @@ def main() -> int:
     try:
         if args.test:
             test_keyword(cfg, con, args.test)
+        elif args.export:
+            print(export(con, ROOT / cfg["database"].get("export_dir", "./exports")))
         elif args.stats:
             stats(con)
         elif args.promote:
