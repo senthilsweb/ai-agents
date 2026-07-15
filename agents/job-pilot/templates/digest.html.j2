@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<body style="font-family:-apple-system,Segoe UI,Arial,sans-serif; color:#1a2333; max-width:860px; margin:0 auto; padding:16px">
+  <h2 style="margin:0 0 2px">job-pilot daily digest — {{ run_date }}</h2>
+  <p style="color:#5a6478; margin:0 0 18px">
+    {{ new_jobs|length }} new posting{{ 's' if new_jobs|length != 1 }} since {{ baseline_tag }}
+    · {{ matches|length }} analyzed · {{ pdf_count }} cover letter{{ 's' if pdf_count != 1 }} attached
+  </p>
+
+  {% if not new_jobs %}
+  <p style="background:#f2f5fa; padding:14px 16px; border-radius:8px">
+    No new matching jobs today. The pipeline ran fine — a silent day would
+    have meant it was broken.
+  </p>
+  {% else %}
+  <h3 style="margin:18px 0 8px">New jobs today</h3>
+  <table cellpadding="7" cellspacing="0" style="border-collapse:collapse; width:100%; font-size:13.5px">
+    <tr style="background:#eef1f7; text-align:left">
+      <th>Title</th><th>Company</th><th>Location</th><th>Salary</th>
+      <th>Match</th><th>Top missing skills</th>
+    </tr>
+    {% for row in rows %}
+    <tr style="border-bottom:1px solid #e3e7ef{% if row.match %}; background:#f4faf4{% endif %}">
+      <td><a href="{{ row.job.apply_url }}" style="color:#1554b0">{{ row.job.title }}</a></td>
+      <td>{{ row.job.company_name }}</td>
+      <td>{{ row.job.location or '—' }}</td>
+      <td>{{ row.salary or '—' }}</td>
+      <td>
+        {% if row.match %}
+          <strong>{{ row.match.match_band.replace('_', ' ') }}</strong> ({{ row.match.total_score }}/100)
+        {% elif row.candidate %}not analyzed{% else %}—{% endif %}
+      </td>
+      <td>{{ row.match.missing_skills[:3]|join(', ') if row.match else '' }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+
+  {% if attached %}
+  <h3 style="margin:22px 0 8px">Matched — cover letters attached</h3>
+  <ul style="font-size:13.5px">
+    {% for m in attached %}
+    <li><strong>{{ m.job.title }}</strong> at {{ m.job.company_name }}
+        — {{ m.match_band.replace('_', ' ') }} ({{ m.total_score }}/100).
+        {{ m.recommendation }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if failures %}
+  <h3 style="margin:22px 0 8px; color:#a33">Failures</h3>
+  <ul style="font-size:13px; color:#833">
+    {% for f in failures %}
+    <li><code>{{ f.node }}</code> — {{ f.job_ref }}: {{ f.reason }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <p style="color:#8a93a6; font-size:12px; margin-top:24px">
+    job-pilot · baseline {{ baseline_tag }} · facts from the public
+    job-scout trends parquet · scores from the deployed job-matcher API
+  </p>
+</body>
+</html>

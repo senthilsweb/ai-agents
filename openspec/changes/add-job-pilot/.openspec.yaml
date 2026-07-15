@@ -1,0 +1,29 @@
+schema: spec-driven
+name: add-job-pilot
+status: implemented
+approval:
+  reviewed_by: senthilsweb
+  reviewed_date: 2026-07-15
+  note: >
+    Inception-gate approval 2026-07-15. Owner answered the five open
+    questions: (1) name stays job-pilot; (2) cover-letter PDFs attach
+    from good_match (>= 65) and up; (3) email via Gmail SMTP (app
+    password from env/GitHub secrets); (4) resume stays in the public
+    git repo with direct access — owner's explicit decision, overrides
+    the drafted private-source design; PII-scrub of the committed copy
+    recommended; (5) category filter is ('Engineering & Tech',
+    'Product', 'Sales & GTM') — data showed Solutions Architect /
+    Forward Deployed Engineer roles filed under Sales & GTM.
+
+    Construction complete (2026-07-15, same day): all five bolts +
+    docs finale. 34 pytest evals green (no network, no secrets); live
+    e2e dry run against real parquet URLs (123 new jobs vs
+    trends/20260714 -> 5 real candidates -> mocked analyze -> 3 PDFs ->
+    digest.html); Docker image built and smoke-tested locally. One
+    construction correction logged (fpdf2 replaces WeasyPrint —
+    system-dep right-sizing, same reasoning as job-matcher Correction
+    3). Security-baseline pass done; one owner action item open: commit
+    the PII-scrubbed inputs/resume.md. `status: verified` requires the
+    live Verification tasks in tasks.md (first guarded CI run, email
+    received, traces visible) — needs repo secrets, not doable from
+    this environment.

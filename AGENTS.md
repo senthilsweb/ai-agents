@@ -136,6 +136,37 @@ Run: `cd agents/job-matcher && nvm use 24 && npx eve dev --port 3535`
 (use `npx eve dev` directly, not `npm run dev` — the latter can pick up
 the wrong Node version; see the agent's README)
 
+### Job Pilot (`agents/job-pilot/`)
+
+Daily job-qualification digest: finds jobs **new since its last run**
+in job-scout's public trends parquet (in-memory DuckDB anti-join over
+two HTTPS URLs — fully stateless, no database file), filters them by
+the owner's target roles, scores only those through the deployed
+job-matcher API, and emails one digest with cover-letter PDFs attached
+for `good_match`-and-up. **LangGraph** `StateGraph`, no LangChain
+chains (ADR 0003 — the graph is reserved for v2 human-in-the-loop
+outreach approval). No LLM reasoning of its own, so evals are plain
+pytest.
+
+All paths below are relative to `agents/job-pilot/`:
+
+- `pipeline/` — `state.py` (pydantic models), `delta.py` (parquet
+  anti-join), `filters.py` (category + title keywords + salary floor,
+  read from job-scout's `config.yaml`), `matcher.py` (JD harvest with
+  host allowlist, `/upload` + `/analyze` client, one-attempt-no-retry,
+  `RUN_PAID_MATCH` + `max_jobs_per_run` guards), `letters.py` (fpdf2
+  PDFs), `digest.py` (Jinja2 autoescaped HTML + Gmail SMTP),
+  `telemetry.py` (LangSmith native + OTel dual export, degrades to a
+  warning), `graph.py` (the StateGraph).
+- `run.py` — entrypoint; `--dry-run` writes the HTML instead of sending.
+- `tests/` — 34 code-level tests, no network, no secrets.
+- CI: `.github/workflows/job-pilot.yml` (digest, after the daily trends
+  publish; never uploads artifacts) + `job-pilot-image.yml` (tests on
+  every push, GHCR image `ghcr.io/senthilsweb/job-pilot` on main).
+- `openspec/changes/add-job-pilot/` (repo root) — the full design spec.
+
+Run: `cd agents/job-pilot && .venv/bin/python run.py --dry-run`
+
 ---
 
 ## Monorepo Conventions

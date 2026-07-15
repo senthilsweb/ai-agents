@@ -1,0 +1,65 @@
+# job-pilot daily digest — spec:
+# openspec/changes/add-job-pilot/specs/ci-orchestration/spec.md
+#
+# Runs after the daily trends publish so the fresh parquet is on main.
+# NO artifact uploads, ever: match results, cover letters, and JD text
+# must not be downloadable from this public repo — the email is the
+# only output channel.
+name: job-pilot daily digest
+
+on:
+  workflow_run:
+    workflows: ["job-scout daily trends"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      baseline:
+        description: "trends/YYYYMMDD tag to diff against (default: last successful digest run)"
+        required: false
+
+permissions:
+  contents: read
+  actions: read     # to query this workflow's own run history
+  packages: read
+
+jobs:
+  digest:
+    # On workflow_run, only proceed if the trends publish succeeded.
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve baseline tag (last successful run, else yesterday)
+        id: baseline
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "${{ inputs.baseline }}" ]; then
+            echo "tag=${{ inputs.baseline }}" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          LAST=$(gh api "/repos/${{ github.repository }}/actions/workflows/job-pilot.yml/runs?status=success&per_page=1" \
+                 --jq '.workflow_runs[0].run_started_at // empty' | cut -dT -f1 | tr -d '-')
+          if [ -z "$LAST" ]; then LAST=$(date -u -d yesterday +%Y%m%d); fi
+          echo "tag=trends/$LAST" >> "$GITHUB_OUTPUT"
+
+      - name: Run the pipeline in the published image
+        run: |
+          docker run --rm \
+            -e BASELINE_TAG="${{ steps.baseline.outputs.tag }}" \
+            -e RUN_PAID_MATCH=1 \
+            -e JOBMATCH_API_BASE="${{ secrets.JOBMATCH_API_BASE }}" \
+            -e JOBMATCH_AGENT_BASE="${{ secrets.JOBMATCH_AGENT_BASE }}" \
+            -e SMTP_HOST="${{ secrets.SMTP_HOST }}" \
+            -e SMTP_PORT="${{ secrets.SMTP_PORT }}" \
+            -e SMTP_USER="${{ secrets.SMTP_USER }}" \
+            -e SMTP_PASS="${{ secrets.SMTP_PASS }}" \
+            -e DIGEST_TO="${{ secrets.DIGEST_TO }}" \
+            -e DIGEST_FROM="${{ secrets.DIGEST_FROM }}" \
+            -e LETTERHEAD_PHONE="${{ secrets.LETTERHEAD_PHONE }}" \
+            -e LANGSMITH_TRACING="${{ secrets.LANGSMITH_API_KEY != '' && 'true' || 'false' }}" \
+            -e LANGSMITH_API_KEY="${{ secrets.LANGSMITH_API_KEY }}" \
+            -e LANGSMITH_PROJECT=job-pilot \
+            -e OTEL_EXPORTER_OTLP_ENDPOINT="${{ secrets.OTEL_EXPORTER_OTLP_ENDPOINT }}" \
+            -e OTEL_EXPORTER_OTLP_HEADERS="${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}" \
+            -e PHOENIX_COLLECTOR_ENDPOINT="${{ secrets.PHOENIX_COLLECTOR_ENDPOINT }}" \
+            -e PHOENIX_CLIENT_HEADERS="${{ secrets.PHOENIX_CLIENT_HEADERS }}" \
+            ghcr.io/senthilsweb/job-pilot:latest

@@ -1,0 +1,15 @@
+schema: spec-driven
+name: templated-cover-letter
+status: implemented
+approval:
+  reviewed_by: senthilsweb
+  reviewed_date: 2026-07-15
+  note: >
+    Requested and scoped by the owner directly in-session 2026-07-15:
+    cover-letter PDFs must follow the personal letterhead template
+    (sk-cover-letter-cmi-june-2026.pdf) — header and signature styled,
+    identity fields from the analyze response / a template file.
+    Owner offered python-docx or the current approach; template-driven
+    fpdf2 chosen (see proposal.md Why) — the "template" is a committed
+    letterhead.yaml, not a .docx, to avoid a LibreOffice/Word
+    dependency for DOCX→PDF conversion.

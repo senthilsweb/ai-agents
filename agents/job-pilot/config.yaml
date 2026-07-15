@@ -1,0 +1,30 @@
+# job-pilot configuration. Tunables only — secrets live in .env / GitHub
+# secrets, never here (openspec/changes/add-job-pilot/design.md §Secrets).
+
+parquet:
+  # {ref} is "main" (latest) or a "trends/YYYYMMDD" tag (any past day).
+  url_template: "https://raw.githubusercontent.com/senthilsweb/ai-agents/{ref}/agents/job-scout/data/ats_raw_trends.parquet"
+
+filter:
+  # Pinned at the Inception gate 2026-07-15: Sales & GTM included because
+  # Solutions Architect / Forward Deployed Engineer roles are filed there.
+  categories:
+    - "Engineering & Tech"
+    - "Product"
+    - "Sales & GTM"
+  # title_keywords and base_salary_min_usd are read from job-scout's
+  # config (single source of truth for the owner's targets).
+  targets_config: "../job-scout/config.yaml"
+
+matcher:
+  resume_path: "./inputs/resume.md"   # committed, PII-scrubbed (gate decision)
+  pdf_band_threshold: "good_match"    # attach cover letters from this band up
+  max_jobs_per_run: 25                # abort before any paid call above this
+  batch_size: 5
+
+email:
+  subject_prefix: "[job-pilot]"
+
+logging:
+  dir: "./logs"
+  level: "INFO"

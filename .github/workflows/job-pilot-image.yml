@@ -1,0 +1,48 @@
+# Tests on every push touching job-pilot; image rebuild + GHCR push on
+# main. Tests need no secrets and no network beyond local fixtures
+# (spec: ci-orchestration "Tests run in CI on every push").
+name: job-pilot tests and image
+
+on:
+  push:
+    paths:
+      - "agents/job-pilot/**"
+      - "agents/job-scout/config.yaml"   # targets/slugs the pipeline reads
+      - ".github/workflows/job-pilot-image.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install and test
+        working-directory: agents/job-pilot
+        run: |
+          pip install -q -e ".[dev]"
+          pytest -q
+
+  image:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        run: |
+          docker build -f agents/job-pilot/Dockerfile \
+            -t ghcr.io/senthilsweb/job-pilot:latest .
+          docker push ghcr.io/senthilsweb/job-pilot:latest

@@ -1,0 +1,26 @@
+# Cover-letter letterhead — mirrors sk-cover-letter-cmi-june-2026.pdf.
+# Spec: openspec/changes/templated-cover-letter/. Everything the PDF
+# header/signature shows comes from here; nothing is hard-coded in code.
+# The phone number is deliberately NOT committed (this repo is public):
+# set LETTERHEAD_PHONE in .env / GitHub secrets and it slots into the
+# contact line at run time.
+
+name: "Senthilnathan Karuppaiah"
+title_line: "Sr.Engineering Manager · Data Governance Architect · AI Systems Practitioner"
+contact:
+  email: "nathansweb@icloud.com"
+  phone: ""                       # from LETTERHEAD_PHONE env — never commit it
+  location: "New Jersey, USA"
+links:
+  - "linkedin.com/in/senthilsweb"
+  - "github.com/senthilsweb"
+  - "senthilsweb.com"
+signature_links:
+  - "nathansweb@icloud.com"
+  - "linkedin.com/in/senthilsweb"
+  - "senthilsweb.com"
+colors:
+  name: "#212B36"      # dark navy
+  accent: "#0E7C86"    # teal — title line, links, signature contact
+  muted: "#6B7280"     # gray — contact line
+  rule: "#212B36"
