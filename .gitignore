@@ -91,3 +91,6 @@ session.db.bak
 
 # mkdocs build output (job-scout-docs workflow builds it in CI)
 site/
+
+# article drafts — local only, published elsewhere
+drafts/

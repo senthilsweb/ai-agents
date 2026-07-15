@@ -17,6 +17,7 @@ and built in bolts.
 |---|---|
 | See current hiring trends | `docker run --rm ghcr.io/senthilsweb/job-scout trends` — [Getting Started](docs/getting-started.md) |
 | Query the public dataset (no clone, no account) | DuckDB against the raw URL — [data/README.md](data/README.md) has columns + example queries |
+| Query a past day's snapshot | swap `main` for a `trends/YYYYMMDD` tag in the same URL — one tag per daily publish; [how to browse tags](data/README.md#browsing-a-snapshot-on-github) |
 | Load all job boards into my local DuckDB | `python tools/raw_load.py` — [Data & Queries](docs/data-and-queries.md) |
 | Explore postings before filtering | SQL on `ats_posting_raw` — [Data & Queries](docs/data-and-queries.md) |
 | Run the interactive notebook (shortlist + scoring) | `marimo edit notebook.py` — [Getting Started](docs/getting-started.md) |

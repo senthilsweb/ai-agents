@@ -31,6 +31,31 @@ DuckDB reads these URLs directly — no download, no account:
 SELECT count(*) FROM 'https://raw.githubusercontent.com/senthilsweb/ai-agents/main/agents/job-scout/data/ats_raw_trends.parquet';
 ```
 
+### Browsing a snapshot on GitHub
+
+A tag is a bookmark to a commit, not a folder — so the tag page's
+"Source code (zip / tar.gz)" links are whole-repository archives that
+GitHub generates on demand (they are not stored files, and they are
+not the dataset). To see the files as they were on a given day, browse
+the repo tree at the tag ref:
+
+```
+https://github.com/senthilsweb/ai-agents/tree/trends/20260715/agents/job-scout/data
+```
+
+(or on the Code tab: branch dropdown → Tags → pick the day). From the
+command line:
+
+```bash
+gh api repos/senthilsweb/ai-agents/tags --jq '.[].name'          # list tags
+gh api "repos/senthilsweb/ai-agents/contents/agents/job-scout/data?ref=trends/20260715" \
+  --jq '.[] | "\(.name)  \(.size) bytes"'                        # files at that day
+```
+
+Storage note: tags are a few bytes each and the on-demand archives
+cost nothing, so daily tags accumulate for free; only the daily
+parquet commit itself grows the repo (~0.6 MB/day).
+
 ## Column guide
 
 | Column | Meaning |
