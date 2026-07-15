@@ -1,0 +1,18 @@
+# Child site, merged into the root mkdocs.yml via the monorepo plugin.
+# site_name doubles as the URL namespace: pages publish under /job-scout/
+# (old top-level URLs are redirected — see the root mkdocs.yml).
+site_name: job-scout
+docs_dir: docs
+
+nav:
+  - Overview: index.md
+  - Getting Started: getting-started.md
+  - Installation: installation.md
+  - Configuration: configuration.md
+  - Data & Queries: data-and-queries.md
+  - Dashboards & Reports: dashboards-and-reports.md
+  - Runbook: runbook.md
+  - CI/CD: ci-cd.md
+  - FAQ: faq.md
+  - API Match Pipeline (reference): api-match-pipeline.md
+  - Documentation Style Guide: style-guide.md

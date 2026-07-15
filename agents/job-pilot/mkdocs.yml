@@ -1,0 +1,12 @@
+# Child site, merged into the root mkdocs.yml via the monorepo plugin.
+# site_name doubles as the URL namespace: pages publish under /job-pilot/.
+site_name: job-pilot
+docs_dir: docs
+
+nav:
+  - Overview: index.md
+  - Getting Started: getting-started.md
+  - Configuration: configuration.md
+  - Runbook: runbook.md
+  - CI/CD: ci-cd.md
+  - FAQ: faq.md

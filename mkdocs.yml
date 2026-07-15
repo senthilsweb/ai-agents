@@ -1,18 +1,22 @@
-# Wiki site for the ai-agents monorepo, published to GitHub Pages by
+# Umbrella wiki for the ai-agents monorepo, published to GitHub Pages by
 # .github/workflows/job-scout-docs.yml.
 #
-# Currently serves agents/job-scout/docs only. When a second agent gets
-# a docs/ folder, switch to the mkdocs-monorepo plugin (one !include per
-# agent) — page content will not need to change.
-# Spec: agents/job-scout/openspec/changes/job-scout-wiki/design.md (D5)
-site_name: ai-agents · job-scout
+# Each agent with a docs/ folder is merged in via the mkdocs-monorepo
+# plugin (one !include per agent; the child's site_name becomes its URL
+# namespace). Old top-level job-scout URLs keep working via redirects.
+# Specs: agents/job-scout/openspec/changes/job-scout-wiki/design.md (D5),
+#        openspec/changes/docs-monorepo-job-pilot/
+site_name: ai-agents
 site_url: https://senthilsweb.github.io/ai-agents/
 repo_url: https://github.com/senthilsweb/ai-agents
 repo_name: senthilsweb/ai-agents
-edit_uri: edit/main/agents/job-scout/docs/
+edit_uri: edit/main/
 
-docs_dir: agents/job-scout/docs
+docs_dir: docs
 site_dir: site
+# Marked "Internal reference" in its own header — not for the public site.
+exclude_docs: |
+  openobserve-claude-code-query-cookbook.md
 
 theme:
   name: material
@@ -40,16 +44,27 @@ theme:
 
 nav:
   - Home: index.md
-  - Getting Started: getting-started.md
-  - Installation: installation.md
-  - Configuration: configuration.md
-  - Data & Queries: data-and-queries.md
-  - Dashboards & Reports: dashboards-and-reports.md
-  - Runbook: runbook.md
-  - CI/CD: ci-cd.md
-  - FAQ: faq.md
-  - API Match Pipeline (reference): api-match-pipeline.md
-  - Documentation Style Guide: style-guide.md
+  - Architecture: ARCHITECTURE.md
+  - job-scout: '!include ./agents/job-scout/mkdocs.yml'
+  - job-pilot: '!include ./agents/job-pilot/mkdocs.yml'
+
+plugins:
+  - search
+  - monorepo
+  - redirects:
+      # job-scout pages lived at the site root before the monorepo
+      # split (2026-07-15). Every published URL keeps working.
+      redirect_maps:
+        getting-started.md: job-scout/getting-started.md
+        installation.md: job-scout/installation.md
+        configuration.md: job-scout/configuration.md
+        data-and-queries.md: job-scout/data-and-queries.md
+        dashboards-and-reports.md: job-scout/dashboards-and-reports.md
+        runbook.md: job-scout/runbook.md
+        ci-cd.md: job-scout/ci-cd.md
+        faq.md: job-scout/faq.md
+        api-match-pipeline.md: job-scout/api-match-pipeline.md
+        style-guide.md: job-scout/style-guide.md
 
 markdown_extensions:
   - admonition
@@ -69,4 +84,5 @@ markdown_extensions:
 
 extra_javascript:
   - https://unpkg.com/tablesort@5.3.0/dist/tablesort.min.js
-  - javascripts/tablesort.js
+  # lives in agents/job-scout/docs/, so it lands under /job-scout/ now
+  - job-scout/javascripts/tablesort.js

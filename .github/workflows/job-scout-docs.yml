@@ -13,6 +13,9 @@ on:
     branches: [main]
     paths:
       - "agents/job-scout/docs/**"
+      - "agents/job-pilot/docs/**"
+      - "agents/*/mkdocs.yml"
+      - "docs/**"
       - "agents/job-scout/templates/trends_dashboard.html.j2"
       - "agents/job-scout/tools/build_trends_report.py"
       - "utils/duckdb-s3-console.html"
@@ -45,7 +48,8 @@ jobs:
         # mkdocs pinned <2: the 2.0 rewrite drops the plugin system
         # mkdocs-material 9.x depends on.
         run: |
-          pip install --quiet "mkdocs-material==9.*" "mkdocs<2"
+          pip install --quiet "mkdocs-material==9.*" "mkdocs<2" \
+            mkdocs-monorepo-plugin mkdocs-redirects
           mkdocs build --strict
 
       - name: Build live pages (/console/ + daily /trends/)

@@ -1,0 +1,12 @@
+schema: spec-driven
+name: docs-monorepo-job-pilot
+status: approved
+approval:
+  reviewed_by: senthilsweb
+  reviewed_date: 2026-07-15
+  note: >
+    Owner asked in-session (2026-07-15) for job-pilot docs published to
+    the GitHub Pages site as a new agent. The root mkdocs.yml already
+    prescribed this moment: "When a second agent gets a docs/ folder,
+    switch to the mkdocs-monorepo plugin." This change executes that
+    documented decision — no new design question to gate.
