@@ -1,6 +1,6 @@
 [project]
 name = "job-pilot"
-version = "0.1.0"
+version = "0.2.0"
 description = "Daily job qualification and outreach digest — LangGraph pipeline over job-scout's public parquet and the deployed job-matcher API"
 requires-python = ">=3.12"
 dependencies = [
