@@ -134,9 +134,16 @@ latin-1. design.md + email-digest spec amended with dated notes.
 
 ## Verification (live)
 
-- [ ] First guarded live run from GitHub Actions (`RUN_PAID_MATCH=1`,
-      small delta day) — email received with correct sections +
-      attachments
-- [ ] Traces visible in LangSmith and OpenObserve for that run
-- [ ] Quiet-day run verified (short email, green workflow)
-- [ ] `.openspec.yaml` → `status: verified`
+- [x] First guarded live run from GitHub Actions: run 29460782335
+      (2026-07-16 00:12 UTC, baseline trends/20260714) — 123 new →
+      3 candidates (62 US-gated) → 3 analyzed, 0 failures → 3 PDFs →
+      digest sent with 3 attachments. Owner inbox confirmation of
+      content pending.
+- [ ] Traces visible in LangSmith / OpenObserve / Arize for that run
+      (exporter logged "2 endpoint(s)" + LangSmith env set; visual
+      check pending)
+- [x] Quiet-day run verified: run 29460731505 (2026-07-16 00:11 UTC,
+      baseline resolved to trends/20260715 = main) — 0 new jobs, short
+      email sent, green workflow
+- [ ] `.openspec.yaml` → `status: verified` (after owner confirms the
+      email + traces)
