@@ -134,6 +134,19 @@ latin-1. design.md + email-digest spec amended with dated notes.
 
 ## Verification (live)
 
+**Correction 2 (2026-07-16, found by a failed run):** baseline
+resolution used the last successful run's calendar DATE, which breaks
+around UTC midnight: run 29461608765 (00:30 UTC) resolved
+trends/20260716 — a tag that publishes at 11:00 — and 404'd; worse, the
+next chained run would have diffed against its own day's tag and
+silently skipped a whole delta. Fixed in job-pilot.yml: the candidate
+date is the run's date only if it started >= 11:00 UTC (else the day
+before), then the step walks back up to 7 days to the newest tag that
+actually EXISTS, and fails loudly otherwise. The ci-orchestration
+spec's "Baseline from workflow history" requirement is amended by this
+correction. The failed run also confirmed fail-loud behavior: fetch
+died before any paid call, workflow red.
+
 - [x] First guarded live run from GitHub Actions: run 29460782335
       (2026-07-16 00:12 UTC, baseline trends/20260714) — 123 new →
       3 candidates (62 US-gated) → 3 analyzed, 0 failures → 3 PDFs →
