@@ -1,0 +1,12 @@
+schema: spec-driven
+name: us-location-filter
+status: approved
+approval:
+  reviewed_by: senthilsweb
+  reviewed_date: 2026-07-15
+  note: >
+    Owner-requested in-session 2026-07-15 after exploring the location
+    column in the console: non-US postings must not reach the paid
+    /analyze call ("we will waste LLM cost to unnecessarily parse
+    outside US locations"). Heuristic layers validated against live
+    data the same day: 3219 us / 1423 non-us / 785 ambiguous.

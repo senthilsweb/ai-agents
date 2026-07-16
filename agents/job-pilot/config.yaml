@@ -6,6 +6,10 @@ parquet:
   url_template: "https://raw.githubusercontent.com/senthilsweb/ai-agents/{ref}/agents/job-scout/data/ats_raw_trends.parquet"
 
 filter:
+  # Only US (or ambiguous-remote) locations reach the paid /analyze call
+  # (openspec/changes/us-location-filter/). Dropped jobs still show in
+  # the digest table, so nothing disappears silently.
+  us_only: true
   # Pinned at the Inception gate 2026-07-15: Sales & GTM included because
   # Solutions Architect / Forward Deployed Engineer roles are filed there.
   categories:

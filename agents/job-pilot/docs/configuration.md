@@ -13,6 +13,7 @@ public.
 |---|---|---|
 | `parquet.url_template` | where the public snapshots live (`{ref}` = `main` or a `trends/YYYYMMDD` tag) | GitHub raw URL |
 | `filter.categories` | job categories allowed through | Engineering & Tech, Product, Sales & GTM |
+| `filter.us_only` | drop known non-US locations before the paid call; "Remote" and other ambiguous values stay eligible, and dropped jobs still show in the digest table | `true` |
 | `filter.targets_config` | path to job-scout's `config.yaml` — the single source for title keywords and the salary floor | `../job-scout/config.yaml` |
 | `matcher.resume_path` | the resume the matcher scores | `./inputs/resume.md` |
 | `matcher.pdf_band_threshold` | attach cover letters from this match band up | `good_match` |

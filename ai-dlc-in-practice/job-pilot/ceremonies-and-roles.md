@@ -123,4 +123,18 @@ The same session also filled the last Verification prerequisite:
 PDF's two-column "Earlier Experience" block — which extraction had
 garbled — restructured into readable bullets.
 
+## Change 4: us-location-filter — 2026-07-15
+
+Owner explored the location column in the console, saw non-US postings
+would reach the paid /analyze call, and asked for a US gate ("we will
+waste LLM cost"). Layered string heuristic (US markers → state codes →
+state names → hub cities → known non-US → remote-ish), validated on
+live data before merging: 123 new jobs → candidates went 5 → 3, and
+both drops were verified correct against the parquet (Sydney, United
+Kingdom). Ambiguous "Remote" stays eligible; dropped jobs stay visible
+in the digest table. Recorded as a stopgap: the durable fix is a
+normalized `country` column at fetch time in job-scout, at which point
+this heuristic collapses to a column check.
+`agents/job-pilot/openspec/changes/us-location-filter/`.
+
 ## 3. Operations — not started
