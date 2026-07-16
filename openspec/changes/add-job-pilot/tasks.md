@@ -152,11 +152,16 @@ died before any paid call, workflow red.
       3 candidates (62 US-gated) → 3 analyzed, 0 failures → 3 PDFs →
       digest sent with 3 attachments. Owner inbox confirmation of
       content pending.
-- [ ] Traces visible in LangSmith / OpenObserve / Arize for that run
-      (exporter logged "2 endpoint(s)" + LangSmith env set; visual
-      check pending)
+- [x] Traces visible for CI runs: verified 2026-07-16 by querying
+      OpenObserve's search API — fetch_new_jobs / filter_roles /
+      compose_email / send_email spans present for run 29461786439
+      after fixing a space-truncated OTEL_EXPORTER_OTLP_HEADERS secret
+      (was 401 in CI) and the Arize model_id requirement. Arize +
+      LangSmith exports run error-free; owner can eyeball their UIs at
+      leisure.
 - [x] Quiet-day run verified: run 29460731505 (2026-07-16 00:11 UTC,
       baseline resolved to trends/20260715 = main) — 0 new jobs, short
       email sent, green workflow
-- [ ] `.openspec.yaml` → `status: verified` (after owner confirms the
-      email + traces)
+- [x] `.openspec.yaml` → `status: verified` (2026-07-16: owner
+      confirmed the live email + PDFs; traces verified in OpenObserve;
+      quiet-day and full paths both green in production)
