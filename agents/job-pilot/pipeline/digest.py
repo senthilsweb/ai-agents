@@ -35,7 +35,10 @@ def compose(run_date: str, baseline_tag: str, new_jobs: list[JobFact],
             failures: list[Failure], threshold: str) -> str:
     """Candidates only (digest-redesign spec): analyzed jobs as ranked
     cards, the rest of the delta appears solely in the counter line."""
+    from datetime import date
+
     from pipeline.filters import location_bucket
+    display_date = date.fromisoformat(run_date).strftime("%d-%b-%Y")
     cards = [{"m": m, "salary": _salary(m.job)}
              for m in sorted(matches, key=lambda m: -m.total_score)]
     attached = [m for m in matches
@@ -43,7 +46,8 @@ def compose(run_date: str, baseline_tag: str, new_jobs: list[JobFact],
     n_outside_us = sum(1 for j in new_jobs
                        if location_bucket(j.location) in ("non_us", "other"))
     return _env.get_template("digest.html.j2").render(
-        run_date=run_date, baseline_tag=baseline_tag, cards=cards,
+        run_date=run_date, display_date=display_date,
+        baseline_tag=baseline_tag, cards=cards,
         matches=matches, failures=failures, pdf_count=len(attached),
         n_new=len(new_jobs), n_candidates=len(candidates),
         n_outside_us=n_outside_us)

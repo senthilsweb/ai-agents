@@ -7,7 +7,7 @@
 <body style="margin:0; padding:0; background:#f9f9f7; color:#0b0b0b; font-family:-apple-system,Segoe UI,Arial,sans-serif">
 <div style="max-width:720px; margin:0 auto; padding:24px 16px">
 
-  <h2 style="margin:0 0 2px; font-size:20px">job-pilot <span style="color:#898781; font-weight:400">· {{ run_date }}</span></h2>
+  <h2 style="margin:0 0 2px; font-size:20px">job-pilot <span style="color:#898781; font-weight:400">· {{ display_date }}</span></h2>
   <p style="color:#52514e; font-size:13px; margin:2px 0 18px">
     {{ n_new }} new posting{{ 's' if n_new != 1 }} scanned since {{ baseline_tag }}
     {%- if n_outside_us %} · {{ n_outside_us }} outside US{% endif %}
@@ -81,8 +81,7 @@
     <span style="color:#1baf7a">&#9632;</span> preferred
     <span style="color:#eda100">&#9632;</span> experience
     <span style="color:#008300">&#9632;</span> domain
-    &nbsp;·&nbsp; job-pilot · baseline {{ baseline_tag }} · facts from the public
-    job-scout trends parquet · scores from the deployed job-matcher API
+    &nbsp;·&nbsp; job-pilot · baseline {{ baseline_tag }}
   </p>
 </div>
 </body>
