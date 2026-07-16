@@ -53,13 +53,30 @@ def compose(run_date: str, baseline_tag: str, new_jobs: list[JobFact],
         n_outside_us=n_outside_us)
 
 
-def build_message(html: str, run_date: str, pdf_paths: list[Path],
-                  environ=None, subject_prefix="[job-pilot]") -> EmailMessage:
+class _SafeCtx(dict):
+    """Unknown placeholders render empty — a template typo must never
+    block the send (email-recipients-subject spec)."""
+    def __missing__(self, key):
+        log.warning("subject template: unknown placeholder {%s}", key)
+        return ""
+
+
+def render_subject(template: str, ctx: dict) -> str:
+    return template.format_map(_SafeCtx(ctx))
+
+
+def recipients(value: str) -> list[str]:
+    """Comma-separated DIGEST_TO -> trimmed address list."""
+    return [a.strip() for a in value.split(",") if a.strip()]
+
+
+def build_message(html: str, subject: str, pdf_paths: list[Path],
+                  environ=None) -> EmailMessage:
     environ = environ if environ is not None else os.environ
     msg = EmailMessage()
-    msg["Subject"] = f"{subject_prefix} daily digest — {run_date}"
+    msg["Subject"] = subject
     msg["From"] = environ["DIGEST_FROM"]
-    msg["To"] = environ["DIGEST_TO"]
+    msg["To"] = ", ".join(recipients(environ["DIGEST_TO"]))
     msg.set_content("This digest is HTML — open in an HTML-capable client.")
     msg.add_alternative(html, subtype="html")
     for p in pdf_paths:

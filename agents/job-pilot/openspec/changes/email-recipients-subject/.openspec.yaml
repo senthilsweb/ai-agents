@@ -1,0 +1,13 @@
+schema: spec-driven
+name: email-recipients-subject
+status: approved
+approval:
+  reviewed_by: senthilsweb
+  reviewed_date: 2026-07-16
+  note: >
+    Owner-requested in-session 2026-07-16 (suggestion reviewed and two
+    decisions taken at the gate): multiple digest recipients via a
+    comma-separated DIGEST_TO (To only — no CC), and a configurable
+    subject line with placeholders, defaulting to the counts-first
+    template "[job-pilot] {matched} matches ({strong} strong) ·
+    {new} new · {date}".

@@ -1,7 +1,7 @@
 """Eval 5 (design.md §Evals, amended by digest-redesign): candidates-only
 cards, counters, quiet day, failures, hostile-title autoescape,
 message assembly with attachments."""
-from pipeline.digest import build_message, compose
+from pipeline.digest import build_message, compose, recipients, render_subject
 from pipeline.letters import render_cover_pdf
 from pipeline.state import Failure, JobFact, MatchResult
 
@@ -92,9 +92,30 @@ def test_build_message_carries_pdfs(tmp_path):
           "colors": {"name": "#212B36", "accent": "#0E7C86",
                      "muted": "#6B7280", "rule": "#212B36"}}
     pdf = render_cover_pdf(match_for(job()), tmp_path, lh)
-    msg = build_message("<html></html>", "2026-07-16", [pdf], environ=ENV)
+    msg = build_message("<html></html>", "subject x", [pdf], environ=ENV)
     assert msg["To"] == "owner@example.com"
-    assert "[job-pilot] daily digest — 2026-07-16" == msg["Subject"]
+    assert msg["Subject"] == "subject x"
     atts = list(msg.iter_attachments())
     assert len(atts) == 1
     assert atts[0].get_filename().endswith(".pdf")
+
+
+def test_multiple_recipients_in_to_header():
+    env = {**ENV, "DIGEST_TO": " me@x.com , spouse@y.com,, agent@z.com "}
+    msg = build_message("<html></html>", "s", [], environ=env)
+    assert msg["To"] == "me@x.com, spouse@y.com, agent@z.com"
+    assert recipients(env["DIGEST_TO"]) == \
+        ["me@x.com", "spouse@y.com", "agent@z.com"]
+
+
+def test_subject_template_renders_counts():
+    tpl = "[job-pilot] {matched} matches ({strong} strong) · {new} new · {date}"
+    ctx = {"date": "16-Jul-2026", "new": 123, "candidates": 3,
+           "matched": 3, "strong": 2, "pdfs": 3}
+    assert render_subject(tpl, ctx) == \
+        "[job-pilot] 3 matches (2 strong) · 123 new · 16-Jul-2026"
+
+
+def test_subject_template_typo_never_blocks_send():
+    assert render_subject("digest {matchez} · {date}",
+                          {"date": "16-Jul-2026"}) == "digest  · 16-Jul-2026"

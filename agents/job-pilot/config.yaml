@@ -27,7 +27,10 @@ matcher:
   batch_size: 5
 
 email:
-  subject_prefix: "[job-pilot]"
+  # Placeholders: {date} dd-mmm-yyyy, {new}, {candidates}, {matched},
+  # {strong}, {pdfs}. Unknown placeholders render empty (never block
+  # the send). Spec: openspec/changes/email-recipients-subject/.
+  subject_template: "[job-pilot] {matched} matches ({strong} strong) · {new} new · {date}"
 
 logging:
   dir: "./logs"

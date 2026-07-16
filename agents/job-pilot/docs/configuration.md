@@ -18,6 +18,7 @@ public.
 | `matcher.resume_path` | the resume the matcher scores | `./inputs/resume.md` |
 | `matcher.pdf_band_threshold` | attach cover letters from this match band up | `good_match` |
 | `matcher.max_jobs_per_run` | abort before any paid call above this | `25` |
+| `email.subject_template` | subject line with `{date}` `{new}` `{candidates}` `{matched}` `{strong}` `{pdfs}` placeholders; a typo renders empty, never blocks the send | counts-first template |
 
 Target roles and the salary floor are **not** duplicated here — edit
 them once in job-scout's `config.yaml` and both agents follow.
@@ -40,7 +41,7 @@ scrubbed: no phone number, no street address (the repo is public).
 |---|---|
 | `JOBMATCH_API_BASE`, `JOBMATCH_AGENT_BASE` | deployed job-matcher endpoints |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | Gmail SMTP (app password) |
-| `DIGEST_TO`, `DIGEST_FROM` | email addresses |
+| `DIGEST_TO`, `DIGEST_FROM` | email addresses; `DIGEST_TO` accepts a comma-separated list (`a@x.com, b@y.com`) |
 | `RUN_PAID_MATCH` | paid-call switch — `1` allows `/analyze` calls |
 | `LETTERHEAD_PHONE` | phone for the PDF letterhead |
 | `LANGSMITH_TRACING`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` | LangSmith tracing (optional) |

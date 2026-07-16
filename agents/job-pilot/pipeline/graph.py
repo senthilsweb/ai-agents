@@ -98,11 +98,25 @@ def build_graph(cfg: dict, deps: dict | None = None, tracer=None,
         return {"email_html": html}
 
     def send_email(state: PilotState):
+        from datetime import date
+
+        from pipeline.digest import render_subject
         with span(tracer, "send_email", pdfs=len(state.get("pdf_paths", []))):
+            matches = state.get("matches", [])
+            subject = render_subject(
+                cfg["email"].get("subject_template",
+                                 "[job-pilot] daily digest — {date}"),
+                {"date": date.fromisoformat(state["run_date"])
+                         .strftime("%d-%b-%Y"),
+                 "new": len(state.get("new_jobs", [])),
+                 "candidates": len(state.get("candidates", [])),
+                 "matched": len(matches),
+                 "strong": sum(1 for m in matches
+                               if m.match_band == "strong_match"),
+                 "pdfs": len(state.get("pdf_paths", []))})
             msg = deps["build_message"](
-                state["email_html"], state["run_date"],
-                [Path(p) for p in state.get("pdf_paths", [])], environ=environ,
-                subject_prefix=cfg["email"]["subject_prefix"])
+                state["email_html"], subject,
+                [Path(p) for p in state.get("pdf_paths", [])], environ=environ)
             return {"send_result": deps["send"](msg, environ=environ)}
 
     def has_candidates(state: PilotState) -> str:
