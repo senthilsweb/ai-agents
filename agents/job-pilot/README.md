@@ -7,8 +7,10 @@ snapshot of open jobs at ~95 tech companies. job-pilot wakes up after
 that publish, finds the jobs that are **new since its last run** and
 match your target roles, sends only those to the deployed
 [job-matcher](../job-matcher/) API for scoring and a cover letter, and
-emails you one digest: every new job that day, match scores, top
-missing skills, and cover-letter PDFs attached for the good matches.
+emails you one digest: the matching jobs as ranked score cards (with
+top missing skills and a recommendation), cover-letter PDFs attached
+for the good matches, and one counter line accounting for everything
+else that was scanned.
 
 It is a **LangGraph** pipeline with no LLM reasoning of its own — all
 model calls happen inside the job-matcher API. That keeps job-pilot

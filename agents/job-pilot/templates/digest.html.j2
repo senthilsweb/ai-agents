@@ -1,64 +1,89 @@
+{#- Digest email — candidates only, match-report card style.
+    Spec: openspec/changes/digest-redesign/. Palette and card anatomy
+    ported from job-scout templates/match_report.html.j2 (light mode).
+    Inline CSS only: the safe floor for Gmail/Outlook. -#}
 <!doctype html>
 <html>
-<body style="font-family:-apple-system,Segoe UI,Arial,sans-serif; color:#1a2333; max-width:860px; margin:0 auto; padding:16px">
-  <h2 style="margin:0 0 2px">job-pilot daily digest — {{ run_date }}</h2>
-  <p style="color:#5a6478; margin:0 0 18px">
-    {{ new_jobs|length }} new posting{{ 's' if new_jobs|length != 1 }} since {{ baseline_tag }}
-    · {{ matches|length }} analyzed · {{ pdf_count }} cover letter{{ 's' if pdf_count != 1 }} attached
+<body style="margin:0; padding:0; background:#f9f9f7; color:#0b0b0b; font-family:-apple-system,Segoe UI,Arial,sans-serif">
+<div style="max-width:720px; margin:0 auto; padding:24px 16px">
+
+  <h2 style="margin:0 0 2px; font-size:20px">job-pilot <span style="color:#898781; font-weight:400">· {{ run_date }}</span></h2>
+  <p style="color:#52514e; font-size:13px; margin:2px 0 18px">
+    {{ n_new }} new posting{{ 's' if n_new != 1 }} scanned since {{ baseline_tag }}
+    {%- if n_outside_us %} · {{ n_outside_us }} outside US{% endif %}
+    · <strong>{{ n_candidates }} matched your filter</strong>
+    · {{ matches|length }} analyzed · {{ pdf_count }} letter{{ 's' if pdf_count != 1 }} attached
   </p>
 
-  {% if not new_jobs %}
-  <p style="background:#f2f5fa; padding:14px 16px; border-radius:8px">
-    No new matching jobs today. The pipeline ran fine — a silent day would
-    have meant it was broken.
-  </p>
-  {% else %}
-  <h3 style="margin:18px 0 8px">New jobs today</h3>
-  <table cellpadding="7" cellspacing="0" style="border-collapse:collapse; width:100%; font-size:13.5px">
-    <tr style="background:#eef1f7; text-align:left">
-      <th>Title</th><th>Company</th><th>Location</th><th>Salary</th>
-      <th>Match</th><th>Top missing skills</th>
-    </tr>
-    {% for row in rows %}
-    <tr style="border-bottom:1px solid #e3e7ef{% if row.match %}; background:#f4faf4{% endif %}">
-      <td><a href="{{ row.job.apply_url }}" style="color:#1554b0">{{ row.job.title }}</a></td>
-      <td>{{ row.job.company_name }}</td>
-      <td>{{ row.job.location or '—' }}</td>
-      <td>{{ row.salary or '—' }}</td>
-      <td>
-        {% if row.match %}
-          <strong>{{ row.match.match_band.replace('_', ' ') }}</strong> ({{ row.match.total_score }}/100)
-        {% elif row.candidate %}not analyzed{% else %}—{% endif %}
-      </td>
-      <td>{{ row.match.missing_skills[:3]|join(', ') if row.match else '' }}</td>
-    </tr>
-    {% endfor %}
-  </table>
+  {% if not cards %}
+  <div style="background:#fcfcfb; border:1px solid #e1e0d9; border-radius:8px; padding:16px 18px; font-size:14px; color:#52514e">
+    No new jobs matched your filter today ({{ n_new }} posting{{ 's' if n_new != 1 }} scanned).
+    The pipeline ran fine — a silent day would have meant it was broken.
+  </div>
   {% endif %}
 
-  {% if attached %}
-  <h3 style="margin:22px 0 8px">Matched — cover letters attached</h3>
-  <ul style="font-size:13.5px">
-    {% for m in attached %}
-    <li><strong>{{ m.job.title }}</strong> at {{ m.job.company_name }}
-        — {{ m.match_band.replace('_', ' ') }} ({{ m.total_score }}/100).
-        {{ m.recommendation }}</li>
-    {% endfor %}
-  </ul>
-  {% endif %}
+  {% for c in cards %}
+  {% set m = c.m %}
+  {% set band_bg = {'strong_match':'#0ca30c','good_match':'#0a7d5f','moderate_match':'#fab219','weak_match':'#ec835a','no_match':'#d03b3b'}[m.match_band] %}
+  {% set band_fg = '#0b0b0b' if m.match_band in ('moderate_match','weak_match') else '#ffffff' %}
+  <div style="background:#fcfcfb; border:1px solid #e1e0d9; border-radius:8px; margin-bottom:10px; padding:14px 16px">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse">
+      <tr>
+        <td style="width:56px; vertical-align:top; padding-right:12px">
+          <div style="color:#898781; font-size:12px">{{ loop.index }}</div>
+          <div style="font-size:22px; font-weight:700">{{ m.total_score }}</div>
+        </td>
+        <td style="vertical-align:top">
+          <a href="{{ m.job.apply_url }}" style="color:#0b0b0b; font-size:15px; font-weight:700; text-decoration:none">{{ m.job.title }}</a>
+          <div style="color:#52514e; font-size:12.5px; margin-top:2px">
+            {{ m.job.company_name }} · {{ m.job.location or 'location n/a' }}{% if c.salary %} · {{ c.salary }}{% endif %}
+          </div>
+          {#- four-segment score bar: required / preferred / experience / domain points out of 100 -#}
+          <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:separate; border-spacing:2px 0; margin-top:8px; width:100%; max-width:320px">
+            <tr style="height:9px; font-size:0; line-height:0">
+              {% for pts, color in [(m.required_skills_score,'#2a78d6'), (m.preferred_skills_score,'#1baf7a'), (m.experience_score,'#eda100'), (m.domain_score,'#008300')] %}
+              {%- if pts > 0 %}<td style="width:{{ pts }}%; background:{{ color }}; border-radius:2px">&nbsp;</td>{% endif -%}
+              {% endfor %}
+              {% set rest = 100 - m.total_score %}
+              {%- if rest > 0 %}<td style="width:{{ rest }}%; background:#e1e0d9; border-radius:2px">&nbsp;</td>{% endif %}
+            </tr>
+          </table>
+        </td>
+        <td style="vertical-align:top; text-align:right; white-space:nowrap; padding-left:12px">
+          <span style="background:{{ band_bg }}; color:{{ band_fg }}; font-size:11.5px; font-weight:600; padding:4px 12px; border-radius:999px">{{ m.match_band.replace('_', ' ')|title }}</span><br>
+          <a href="{{ m.job.apply_url }}" style="color:#2a78d6; font-size:13px; text-decoration:none; display:inline-block; margin-top:8px">Apply &#8599;</a>
+        </td>
+      </tr>
+    </table>
+    {% if m.missing_skills %}
+    <div style="color:#52514e; font-size:12.5px; margin-top:10px">
+      <span style="color:#898781; text-transform:uppercase; font-size:10.5px; letter-spacing:.06em">Top gaps</span>
+      — {{ m.missing_skills[:3]|join(' · ') }}
+    </div>
+    {% endif %}
+    {% if m.recommendation %}
+    <div style="color:#52514e; font-size:12.5px; margin-top:4px">{{ m.recommendation }}</div>
+    {% endif %}
+  </div>
+  {% endfor %}
 
   {% if failures %}
-  <h3 style="margin:22px 0 8px; color:#a33">Failures</h3>
-  <ul style="font-size:13px; color:#833">
+  <div style="background:#fcfcfb; border:1px solid #ec835a; border-radius:8px; padding:12px 16px; margin-top:14px">
+    <div style="color:#d03b3b; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px">Failures</div>
     {% for f in failures %}
-    <li><code>{{ f.node }}</code> — {{ f.job_ref }}: {{ f.reason }}</li>
+    <div style="font-size:12.5px; color:#52514e; margin:2px 0"><code style="color:#898781">{{ f.node }}</code> — {{ f.job_ref }}: {{ f.reason }}</div>
     {% endfor %}
-  </ul>
+  </div>
   {% endif %}
 
-  <p style="color:#8a93a6; font-size:12px; margin-top:24px">
-    job-pilot · baseline {{ baseline_tag }} · facts from the public
+  <p style="color:#898781; font-size:11.5px; margin-top:22px">
+    <span style="color:#2a78d6">&#9632;</span> required
+    <span style="color:#1baf7a">&#9632;</span> preferred
+    <span style="color:#eda100">&#9632;</span> experience
+    <span style="color:#008300">&#9632;</span> domain
+    &nbsp;·&nbsp; job-pilot · baseline {{ baseline_tag }} · facts from the public
     job-scout trends parquet · scores from the deployed job-matcher API
   </p>
+</div>
 </body>
 </html>

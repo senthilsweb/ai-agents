@@ -1,0 +1,14 @@
+schema: spec-driven
+name: digest-redesign
+status: approved
+approval:
+  reviewed_by: senthilsweb
+  reviewed_date: 2026-07-16
+  note: >
+    Owner feedback on the first live digest (run 29460782335, screenshot
+    reviewed): (1) the email listed all 123 delta rows — owner wants
+    ONLY the jobs that passed his filter ("I should get only three");
+    (2) formatting was poor — owner wants the job-scout match-report
+    card design (score, segmented bar, band pill, Apply link). This
+    overrules add-job-pilot's email-digest requirement "every delta
+    row, matched or not" — recorded as a MODIFIED requirement here.

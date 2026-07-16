@@ -192,9 +192,14 @@ def analyze_batch(api_base: str, resume_path: Path,
 
 def to_match(job: JobFact, rep: dict) -> MatchResult:
     a = rep.get("analysis") or {}
+    sb = rep["score_breakdown"]
     return MatchResult(
         job=job,
-        total_score=rep["score_breakdown"]["total_score"],
+        total_score=sb["total_score"],
+        required_skills_score=sb.get("required_skills_score", 0),
+        preferred_skills_score=sb.get("preferred_skills_score", 0),
+        experience_score=sb.get("experience_score", 0),
+        domain_score=sb.get("domain_score", 0),
         match_band=rep["match_status"],
         recommendation=rep.get("recommendation", ""),
         missing_skills=(a.get("gaps") or a.get("ats_keywords_missing") or [])[:5],

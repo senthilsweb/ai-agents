@@ -1,5 +1,6 @@
-"""Eval 5 (design.md §Evals): digest HTML — sections, quiet day,
-failures, hostile-title autoescape; message assembly with attachments."""
+"""Eval 5 (design.md §Evals, amended by digest-redesign): candidates-only
+cards, counters, quiet day, failures, hostile-title autoescape,
+message assembly with attachments."""
 from pipeline.digest import build_message, compose
 from pipeline.letters import render_cover_pdf
 from pipeline.state import Failure, JobFact, MatchResult
@@ -19,53 +20,81 @@ def job(company="Harvey", req="R1", title="Forward Deployed Engineering Manager"
 
 def match_for(j, band="good_match", score=72):
     return MatchResult(job=j, total_score=score, match_band=band,
+                       required_skills_score=40, preferred_skills_score=12,
+                       experience_score=10, domain_score=10,
                        recommendation="Worth applying.",
                        missing_skills=["Kubernetes", "Rust", "Go", "Zig"],
                        cover_letter="Dear team,")
 
 
-def test_full_digest_has_all_sections():
-    j1, j2 = job(), job(company="Notion", req="R2", title="Product Manager, AI")
-    html = compose("2026-07-15", "trends/20260714", [j1, j2], [j1], [match_for(j1)],
-                   [Failure(node="match", job_ref="Notion / PM", reason="api 500")],
+def test_only_candidates_are_listed():
+    # 3 new jobs, 1 candidate analyzed — the other 2 must not appear.
+    j1 = job()
+    j2 = job(company="Coder", req="R2", title="Senior Product Manager",
+             location="United Kingdom")
+    j3 = job(company="Alan", req="R3", title="Care Ops", location="Paris")
+    html = compose("2026-07-16", "trends/20260714", [j1, j2, j3], [j1],
+                   [match_for(j1)], [], "good_match")
+    assert "Forward Deployed Engineering Manager" in html
+    assert "Coder" not in html and "Alan" not in html
+    assert "3 new postings scanned" in html
+    assert "2 outside US" in html
+    assert "1 matched your filter" in html
+
+
+def test_cards_carry_report_anatomy():
+    j = job()
+    html = compose("2026-07-16", "trends/20260714", [j], [j],
+                   [match_for(j, band="strong_match", score=84)], [],
                    "good_match")
-    assert "New jobs today" in html
-    assert "Matched — cover letters attached" in html
-    assert "Failures" in html and "api 500" in html
-    assert "good match" in html and "72/100" in html
-    assert "Kubernetes" in html and "Zig" not in html      # top-3 cap
-    assert "$240k" in html and "$280k" in html
-    assert "2 new postings" in html
+    assert "84" in html and "Strong Match" in html
+    assert "#0ca30c" in html                       # strong-band pill color
+    assert "#2a78d6" in html and "#eda100" in html  # bar segments
+    assert "Apply" in html and "jobs.ashbyhq.com" in html
+    assert "Kubernetes" in html and "Zig" not in html   # top-3 gaps cap
+    assert "Worth applying." in html
+
+
+def test_cards_ranked_by_score():
+    j1, j2 = job(), job(company="Notion", req="R2", title="Product Manager, AI")
+    html = compose("2026-07-16", "trends/20260714", [j1, j2], [j1, j2],
+                   [match_for(j1, score=65), match_for(j2, score=90)], [],
+                   "good_match")
+    assert html.index("Notion") < html.index("Harvey")
 
 
 def test_quiet_day_still_composes():
-    html = compose("2026-07-15", "trends/20260714", [], [], [], [], "good_match")
-    assert "No new matching jobs today" in html
-    assert "0 new postings" in html
+    html = compose("2026-07-16", "trends/20260714", [], [], [], [], "good_match")
+    assert "No new jobs matched your filter today" in html
+    assert "0 postings scanned" in html
+
+
+def test_failures_section():
+    j = job()
+    html = compose("2026-07-16", "trends/20260714", [j], [j], [],
+                   [Failure(node="match", job_ref="Harvey / FDE",
+                            reason="api 500")], "good_match")
+    assert "Failures" in html and "api 500" in html
 
 
 def test_hostile_title_is_escaped():
     hostile = job(title="<script>alert('x')</script> Engineer")
-    html = compose("2026-07-15", "trends/20260714", [hostile], [], [], [],
-                   "good_match")
+    html = compose("2026-07-16", "trends/20260714", [hostile], [hostile],
+                   [match_for(hostile)], [], "good_match")
     assert "<script>alert" not in html
     assert "&lt;script&gt;" in html
 
 
-def test_below_threshold_match_listed_but_not_attached():
-    j = job()
-    html = compose("2026-07-15", "trends/20260714", [j], [j],
-                   [match_for(j, band="moderate_match", score=55)], [],
-                   "good_match")
-    assert "moderate match" in html
-    assert "Matched — cover letters attached" not in html
-
-
 def test_build_message_carries_pdfs(tmp_path):
-    pdf = render_cover_pdf(match_for(job()), tmp_path)
-    msg = build_message("<html></html>", "2026-07-15", [pdf], environ=ENV)
+    lh = {"name": "S K", "title_line": "T",
+          "contact": {"email": "e@x.com", "phone": "", "location": "NJ"},
+          "links": ["x.com"], "signature_links": ["e@x.com"],
+          "colors": {"name": "#212B36", "accent": "#0E7C86",
+                     "muted": "#6B7280", "rule": "#212B36"}}
+    pdf = render_cover_pdf(match_for(job()), tmp_path, lh)
+    msg = build_message("<html></html>", "2026-07-16", [pdf], environ=ENV)
     assert msg["To"] == "owner@example.com"
-    assert "[job-pilot] daily digest — 2026-07-15" == msg["Subject"]
+    assert "[job-pilot] daily digest — 2026-07-16" == msg["Subject"]
     atts = list(msg.iter_attachments())
     assert len(atts) == 1
     assert atts[0].get_filename().endswith(".pdf")

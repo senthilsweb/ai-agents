@@ -33,22 +33,20 @@ def _salary(job: JobFact) -> str:
 def compose(run_date: str, baseline_tag: str, new_jobs: list[JobFact],
             candidates: list[JobFact], matches: list[MatchResult],
             failures: list[Failure], threshold: str) -> str:
-    by_key = {(m.job.company_name, m.job.req_id): m for m in matches}
-    cand = {(j.company_name, j.req_id) for j in candidates}
-    rows = [{
-        "job": j,
-        "match": by_key.get((j.company_name, j.req_id)),
-        "candidate": (j.company_name, j.req_id) in cand,
-        "salary": _salary(j),
-    } for j in new_jobs]
-    # matched rows first, best score first; the rest keep company order
-    rows.sort(key=lambda r: -(r["match"].total_score if r["match"] else -1))
+    """Candidates only (digest-redesign spec): analyzed jobs as ranked
+    cards, the rest of the delta appears solely in the counter line."""
+    from pipeline.filters import location_bucket
+    cards = [{"m": m, "salary": _salary(m.job)}
+             for m in sorted(matches, key=lambda m: -m.total_score)]
     attached = [m for m in matches
                 if m.cover_letter and band_at_least(m.match_band, threshold)]
+    n_outside_us = sum(1 for j in new_jobs
+                       if location_bucket(j.location) in ("non_us", "other"))
     return _env.get_template("digest.html.j2").render(
-        run_date=run_date, baseline_tag=baseline_tag, new_jobs=new_jobs,
-        rows=rows, matches=matches, attached=attached, failures=failures,
-        pdf_count=len(attached))
+        run_date=run_date, baseline_tag=baseline_tag, cards=cards,
+        matches=matches, failures=failures, pdf_count=len(attached),
+        n_new=len(new_jobs), n_candidates=len(candidates),
+        n_outside_us=n_outside_us)
 
 
 def build_message(html: str, run_date: str, pdf_paths: list[Path],

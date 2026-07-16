@@ -31,6 +31,11 @@ class MatchResult(BaseModel):
     job: JobFact
     total_score: int
     match_band: str
+    # component points (sum ≈ total) — drive the digest's score bar
+    required_skills_score: int = 0
+    preferred_skills_score: int = 0
+    experience_score: int = 0
+    domain_score: int = 0
     recommendation: str = ""
     missing_skills: list[str] = []
     cover_letter: str = ""
