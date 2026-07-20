@@ -63,10 +63,13 @@ jobs:
           fi
           # Tag HEAD regardless of whether data changed — the tag means
           # "this is the snapshot as of this date". Skip if it exists
-          # (manual re-dispatch on the same day).
+          # (manual re-dispatch on the same day). Must check the REMOTE:
+          # checkout does not fetch tags, so a local rev-parse misses a
+          # tag pushed by an earlier run and the push gets rejected
+          # (seen live 2026-07-20).
           tag="trends/$(date -u +%Y%m%d)"
-          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
-            echo "tag $tag already exists — skipping"
+          if git ls-remote --exit-code --tags origin "$tag" >/dev/null; then
+            echo "tag $tag already exists on origin — skipping"
           else
             git tag "$tag"
             git push origin "$tag"
