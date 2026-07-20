@@ -361,7 +361,15 @@ def main() -> int:
         else:
             out = load(cfg, con)
             print(out)
+            # Design principle: per-company failures are logged and the run
+            # continues — a partial snapshot still publishes. Fail the run
+            # only when NOTHING loaded (config or network is truly broken).
             if out["companies_failed"]:
+                log.warning("continuing despite %d failed board(s): %s",
+                            len(out["companies_failed"]),
+                            ", ".join(out["companies_failed"]))
+            if out["companies_loaded"] == 0:
+                log.error("no boards loaded at all — failing the run")
                 return 1
         return 0
     finally:

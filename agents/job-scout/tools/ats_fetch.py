@@ -146,15 +146,26 @@ def fetch_workday(tenant: str, site: str, host: str = "wd5", limit: int = 20,
     d = _get(url, {"appliedFacets": {}, "limit": limit, "offset": 0,
                    "searchText": search_text})
     base = f"https://{tenant}.{host}.myworkdayjobs.com/en-US/{site}"
-    return [{
-        "title": j["title"],
-        "req_id": (j.get("bulletFields") or [None])[0],   # e.g. JR2017180
-        "req_id_type": "workday_r",
-        "location": j.get("locationsText"),
-        "apply_url": base + j["externalPath"],
-        "posted_date": None,
-        "posted_recency": j.get("postedOn"),
-    } for j in d.get("jobPostings", [])]
+    jobs, skipped = [], 0
+    for j in d.get("jobPostings", []):
+        # One malformed posting must not sink the whole board (seen live:
+        # NVIDIA postings without a title, 2026-07-19) — skip and continue.
+        if not j.get("title") or not j.get("externalPath"):
+            skipped += 1
+            continue
+        jobs.append({
+            "title": j["title"],
+            "req_id": (j.get("bulletFields") or [None])[0],   # e.g. JR2017180
+            "req_id_type": "workday_r",
+            "location": j.get("locationsText"),
+            "apply_url": base + j["externalPath"],
+            "posted_date": None,
+            "posted_recency": j.get("postedOn"),
+        })
+    if skipped:
+        log.warning("workday %s/%s: skipped %d posting(s) missing title/externalPath",
+                    tenant, site, skipped)
+    return jobs
 
 
 FETCHERS = {"greenhouse": fetch_greenhouse, "lever": fetch_lever,
