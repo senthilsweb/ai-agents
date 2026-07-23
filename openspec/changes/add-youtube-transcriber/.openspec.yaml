@@ -1,0 +1,44 @@
+schema: spec-driven
+name: add-youtube-transcriber
+status: implemented
+approval:
+  reviewed_by: senthilsweb
+  reviewed_date: 2026-07-23
+  note: >
+    Raised 2026-07-22. Three design decisions were taken by the owner
+    when the change was raised: (1) ASR engine is local faster-whisper,
+    not hosted Groq — zero cost and fully offline; (2) output is
+    runs/<timestamp>-<video_id>/ with transcript.json + .md + .srt +
+    metrics.json; (3) CLI-only invocation, no CI, no server.
+
+    Inception-gate approval 2026-07-23. Owner answered the three
+    remaining questions: (4) default model stays distil-large-v3 at
+    int8 and the wall-clock wait is ACCEPTED — accuracy over speed;
+    (5) runs/ gitignored CONFIRMED — the repo is public, third-party
+    work must never be pushed to it, and this agent is internal
+    productivity automation only (second deliberate exception to the
+    monorepo runs/-is-committed convention, after job-matcher's PII
+    exception); (6) NO Docker in v1 — local CLI only.
+
+    Construction complete 2026-07-23, all five bolts. 83 pytest evals
+    green (no network, no model, no secrets). Live e2e verified on both
+    owner-supplied seed videos: EQuCyrwyfXU (888s audio -> 153 segments
+    / 2521 words) and gYAqupu6iNI (1092s -> 219 / 2550), both in one
+    invocation, exit 0. Warm re-run confirmed the cache branch (no
+    download, byte-identical output) and was the first run with
+    telemetry active — LangSmith on its own project plus OTel dual
+    export to OpenObserve and Arize, secrets copied from job-pilot's
+    .env. Security-baseline pass done, all 8 items, no unresolved gaps.
+    git verified: runs/, .cache/, logs/, .env all ignored and untracked.
+
+    One Construction correction logged: the first timing measurement
+    charged a one-time ~1GB model download to transcription, making one
+    video look 2.4x slower than another on the same machine. Fixed in
+    the instrumentation (model load and ASR timed separately) rather
+    than documented around; honest figure is ~4.8x realtime, so a
+    60-minute video takes ~12 minutes.
+
+    `status: verified` awaits two human checks that cannot be done from
+    this environment: an accuracy spot-check of one transcript against
+    its audio, and confirming traces are visible in the LangSmith and
+    Arize UIs.

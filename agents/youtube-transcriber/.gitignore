@@ -1,0 +1,15 @@
+# Transcripts are verbatim third-party copyrighted speech and this repo is
+# public. Nothing produced by a run is ever committed.
+# See openspec/changes/add-youtube-transcriber/ — gate decision 2026-07-23.
+runs/
+.cache/
+logs/
+
+# Cookie files for YouTube bot-blocking — never commit these.
+*.cookies.txt
+cookies.txt
+
+.env
+.venv/
+__pycache__/
+*.egg-info/

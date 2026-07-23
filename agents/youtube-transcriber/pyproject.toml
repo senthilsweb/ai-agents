@@ -1,0 +1,32 @@
+[project]
+name = "youtube-transcriber"
+version = "0.1.0"
+description = "Full audio transcript from a YouTube video — local ASR, zero LLM tokens"
+requires-python = ">=3.12"
+dependencies = [
+    "langgraph>=0.2.0",
+    "pydantic>=2.7",
+    "yt-dlp>=2025.1.15",
+    "faster-whisper>=1.1.0",
+    "tenacity>=9.0",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+telemetry = [
+    "opentelemetry-sdk>=1.27",
+    "opentelemetry-exporter-otlp-proto-http>=1.27",
+]
+dev = [
+    "pytest>=8.0",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["pipeline"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

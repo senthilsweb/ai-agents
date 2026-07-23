@@ -167,6 +167,42 @@ All paths below are relative to `agents/job-pilot/`:
 
 Run: `cd agents/job-pilot && .venv/bin/python run.py --dry-run`
 
+### YouTube Transcriber (`agents/youtube-transcriber/`)
+
+Turns a YouTube video ID or link into the **full spoken transcript** — the
+actual audio, transcribed end to end, not the captions, description, or
+title. **LangGraph** `StateGraph`, no LangChain chains (ADR 0003). ASR is
+local `faster-whisper`, so there is **no LLM anywhere in the pipeline** —
+no prompt, no completion, no tokens, no API key, and audio never leaves the
+machine. Evals are therefore plain pytest. Local CLI only: no Docker, no
+CI, no server (gate decision 2026-07-23).
+
+All paths below are relative to `agents/youtube-transcriber/`:
+
+- `pipeline/` — `state.py` (pydantic models; `VideoRef` validates the
+  11-char id), `config.py` (env-driven ASR settings and caps),
+  `resolve.py` (the only untrusted-input boundary: host allowlist, id
+  regex, strips every query param, duration cap), `ytdlp.py` +
+  `audio.py` (argument-list subprocesses, tenacity retry on download
+  only, 16 kHz mono opus cache keyed by video id), `transcribe.py`
+  (faster-whisper adapter — CPU only, CTranslate2 has no Metal backend),
+  `outputs.py` (json + md + srt + metrics), `telemetry.py` (OTel,
+  degrades to a warning), `graph.py` (the StateGraph; one conditional
+  edge for the audio cache).
+- `run.py` — CLI; takes N videos, runs them sequentially, isolates
+  per-video failures, exits non-zero if any failed.
+- `tests/` — 73 tests, no network, no model, no secrets.
+- `runs/` and `.cache/` are **gitignored** — the second deliberate
+  exception to the runs/-is-committed convention (after job-matcher's),
+  because transcripts are verbatim third-party speech and this repo is
+  public.
+- Prerequisites: `ffmpeg` (`brew install ffmpeg`) and a one-time ~1 GB
+  Whisper weights download.
+- `openspec/changes/add-youtube-transcriber/` (repo root) — the full
+  design spec.
+
+Run: `cd agents/youtube-transcriber && .venv/bin/python run.py <video-id-or-url>`
+
 ---
 
 ## Monorepo Conventions
