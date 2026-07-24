@@ -1,6 +1,6 @@
 schema: spec-driven
 name: add-langgraph-hello
-status: implemented
+status: verified
 approval:
   reviewed_by: senthilsweb
   reviewed_date: 2026-07-24
@@ -27,7 +27,23 @@ approval:
     invocation, no network, no secrets); CLI + live uvicorn smoke verified
     locally.
 
-    `status: verified` awaits the microVM boot on a KVM-capable host: build
-    the image, `infra/firecracker/build-rootfs.sh` → `boot.sh`, then GET
-    /whoami and confirm the kernel/hostname/ip are the guest's. Cannot be
-    done on the current host (no /dev/kvm).
+    VERIFIED 2026-07-24 on Intel bare metal (Vultr, 45.32.92.209, Ubuntu
+    24.04, /dev/kvm present, systemd-detect-virt=none). langgraph-hello was
+    built into a rootfs and booted as a real Firecracker microVM via the
+    generic infra/firecracker/ tooling with DEFAULTS (no overrides), and it
+    served: GET /healthz ready, GET /whoami reported kernel 5.10.233 while
+    the HOST kernel is 6.8.0-136-generic — a different kernel, which a
+    container cannot have, so this is unambiguously a microVM. POST /run
+    executed the LangGraph inside the VM ("5 word(s) analyzed on 172.16.0.2
+    (kernel 5.10.233)"). containerized:false (the rootfs no longer carries
+    Docker's marker).
+
+    The bring-up surfaced three real defects in the infra/firecracker/
+    tooling, all fixed in commit a5667df: (1) install-firecracker.sh pulled
+    the ancient 4.14 quickstart kernel, whose CRNG never initialises without
+    an entropy source (predates CONFIG_RANDOM_TRUST_CPU), so getrandom()
+    blocked forever and hung Python (pydantic) at import — now defaults to a
+    modern 5.10 CI kernel; (2) vm-config.json.tmpl gained a virtio-rng
+    entropy device + random.trust_cpu=on; (3) build-rootfs.sh strips
+    /.dockerenv so the containerized probe is honest. Re-verified end to end
+    with the committed defaults after those fixes.

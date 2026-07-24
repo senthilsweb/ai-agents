@@ -252,7 +252,9 @@ All paths below are relative to `agents/langgraph-hello/`:
 - CI: `.github/workflows/langgraph-hello-image.yml` → GHCR image
   `ghcr.io/senthilsweb/langgraph-hello`.
 - `openspec/changes/add-langgraph-hello/` (repo root) — the design spec.
-  microVM boot is verified once a KVM-capable host is available.
+  **microVM boot verified** 2026-07-24 on Intel bare metal (guest kernel
+  5.10.233 vs host 6.8.0 via `GET /whoami` = a real microVM). The bring-up
+  also hardened `infra/firecracker/` (modern kernel + entropy device).
 
 Run (CLI): `cd agents/langgraph-hello && .venv/bin/python run.py "hello world"`
 Run (service): `cd agents/langgraph-hello && .venv/bin/uvicorn server.app:app --port 8000`
