@@ -12,12 +12,41 @@ hand-crafted microVM path — raw Firecracker, one VM, one service. See
 
 ## Host requirements
 
-- **Ubuntu 24.04 LTS** (recommended — best-documented Firecracker host; any KVM
-  Linux with kernel ≥ 5.10 works).
+- **Any KVM Linux** with kernel ≥ 5.10. Ubuntu 24.04 is the best-documented
+  host, but **Rocky/RHEL 9 works equally well** — Firecracker is
+  distro-agnostic, and so are the guest kernel and rootfs. See the Rocky notes
+  below.
 - `/dev/kvm` present (bare metal, or a VM with nested virtualization enabled).
-- `x86_64` or `aarch64`.
-- Packages: `curl`, `iptables`, `e2fsprogs` (`mkfs.ext4`), `gettext-base`
-  (`envsubst`), and `docker` (to build the image + unpack it into a rootfs).
+- `x86_64` (the prebuilt kernel + Firecracker target here; `aarch64` also works
+  with an arm kernel).
+- A container engine — **Docker or Podman** — to pull the image and unpack it
+  into a rootfs (`build-rootfs.sh` auto-detects either).
+- Packages: `curl`, `tar`, `iptables`, `e2fsprogs` (`mkfs.ext4`), `gettext`
+  (`envsubst`), `iproute2`.
+
+### Ubuntu 24.04
+
+```bash
+sudo apt-get update
+sudo apt-get install -y curl tar iptables e2fsprogs gettext-base iproute2 docker.io
+```
+
+### Rocky / RHEL / Alma 9
+
+Nothing here is Ubuntu-specific — the scripts use no `apt`. Just install the
+host packages with `dnf` and use Podman (the RHEL-family default):
+
+```bash
+sudo dnf install -y curl tar iptables e2fsprogs gettext iproute podman
+```
+
+Two Rocky-specific things to know:
+
+- **SELinux** is enforcing by default and can block the loop-mount / tap / VM
+  operations. For a demo, `sudo setenforce 0` (permissive) is the quick path;
+  for a permanent setup, add the appropriate contexts instead.
+- **Podman is daemonless** — no service to start. `build-rootfs.sh` picks it up
+  automatically; force it with `CONTAINER_ENGINE=podman` if both are installed.
 
 ## One-time host setup
 
@@ -31,11 +60,11 @@ sudo ./setup-net.sh                # tap0 + NAT (VM gets 172.16.0.2)
 
 ```bash
 # 1. Get the agent image (example: youtube-transcriber, weights baked in).
-#    Either pull the CI-built image from GHCR:
-docker pull ghcr.io/senthilsweb/youtube-transcriber:latest
-docker tag ghcr.io/senthilsweb/youtube-transcriber:latest youtube-transcriber
+#    Pull the CI-built image from GHCR (use podman on Rocky, docker on Ubuntu):
+podman pull ghcr.io/senthilsweb/youtube-transcriber:latest
+podman tag  ghcr.io/senthilsweb/youtube-transcriber:latest youtube-transcriber
 #    ...or build it locally:
-#      cd ../../agents/youtube-transcriber && docker build -t youtube-transcriber .
+#      cd ../../agents/youtube-transcriber && podman build -t youtube-transcriber .
 
 # 2. Turn the image into an ext4 rootfs (weights are already inside it)
 sudo ./build-rootfs.sh youtube-transcriber /opt/firecracker/rootfs.ext4 4096

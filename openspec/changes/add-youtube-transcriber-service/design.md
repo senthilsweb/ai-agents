@@ -101,9 +101,11 @@ change).
 - `setup-net.sh <tap> <host-ip/cidr> <guest-ip>` — create the tap device,
   enable `ip_forward`, add a NAT MASQUERADE rule out the default-route WAN
   interface. Idempotent.
-- `build-rootfs.sh <docker-image> <out.ext4> <size-mb>` — `docker create` +
-  `docker export` the image filesystem into an `ext4` file. Generic over any
-  image; used here with the transcriber image.
+- `build-rootfs.sh <image> <out.ext4> <size-mb>` — `create` + `export` the
+  image filesystem into an `ext4` file, using whichever container engine is
+  present (Docker or Podman — auto-detected, so RHEL-family hosts using Podman
+  work with no change). Generic over any image; used here with the transcriber
+  image.
 - `vm-config.json.tmpl` + `boot.sh` — render the Firecracker machine config
   (kernel path, rootfs drive, tap network, vcpus, mem, static guest IP on the
   kernel cmdline) and run `firecracker --config-file`. One command to boot.

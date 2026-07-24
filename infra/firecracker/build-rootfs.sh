@@ -13,7 +13,8 @@
 #
 # The VM's network (eth0) is configured by the kernel from the `ip=` boot arg
 # set in boot.sh, so the init written here only mounts the pseudo-filesystems
-# and execs START_CMD. Requires: docker, mkfs.ext4 (e2fsprogs), root (for mount).
+# and execs START_CMD. Requires: docker OR podman, mkfs.ext4 (e2fsprogs), root
+# (for the loop mount). Set CONTAINER_ENGINE to force one.
 set -euo pipefail
 
 FC_DIR="${FC_DIR:-/opt/firecracker}"
@@ -23,12 +24,21 @@ SIZE_MB="${3:-4096}"
 START_CMD="${4:-cd /app && exec uvicorn server.app:app --host 0.0.0.0 --port 8000}"
 
 [[ $EUID -eq 0 ]] || { echo "run as root (sudo)"; exit 1; }
-command -v docker >/dev/null || { echo "docker is required"; exit 1; }
+
+# Container engine: Docker or Podman, whichever is present (Rocky/RHEL ship
+# Podman; Ubuntu tends to have Docker). Both support pull/create/export the
+# same way. Override with CONTAINER_ENGINE=docker|podman.
+ENGINE="${CONTAINER_ENGINE:-}"
+if [[ -z "$ENGINE" ]]; then
+    ENGINE="$(command -v docker || command -v podman || true)"
+fi
+[[ -n "$ENGINE" ]] || { echo "need docker or podman (dnf install -y podman / apt install docker.io)"; exit 1; }
+echo "==> container engine: $ENGINE"
 
 mkdir -p "$(dirname "$OUT")"
 mnt="$(mktemp -d)"
 cid=""
-cleanup() { mountpoint -q "$mnt" && umount "$mnt"; [[ -n "$cid" ]] && docker rm -f "$cid" >/dev/null 2>&1 || true; rmdir "$mnt" 2>/dev/null || true; }
+cleanup() { mountpoint -q "$mnt" && umount "$mnt"; [[ -n "$cid" ]] && "$ENGINE" rm -f "$cid" >/dev/null 2>&1 || true; rmdir "$mnt" 2>/dev/null || true; }
 trap cleanup EXIT
 
 echo "==> creating ${SIZE_MB}MB ext4 at $OUT"
@@ -38,8 +48,8 @@ mkfs.ext4 -q -F "$OUT"
 mount -o loop "$OUT" "$mnt"
 
 echo "==> exporting image filesystem: $IMAGE"
-cid="$(docker create "$IMAGE")"
-docker export "$cid" | tar -x -C "$mnt"
+cid="$("$ENGINE" create "$IMAGE")"
+"$ENGINE" export "$cid" | tar -x -C "$mnt"
 
 echo "==> writing /sbin/fc-init (PID 1)"
 install -d "$mnt/sbin" "$mnt/proc" "$mnt/sys" "$mnt/dev"
