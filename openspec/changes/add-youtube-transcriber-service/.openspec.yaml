@@ -50,11 +50,30 @@ approval:
     tests/test_server.py), no network, no model, no secrets. Shell scripts
     pass `bash -n`; the Firecracker config template renders to valid JSON.
 
-    `status: verified` awaits checks that need the fresh Ubuntu 24.04 KVM VM
-    (being provisioned): (a) `docker build` of the agent image and a
-    confirmation that startup loads the baked weights with no download;
-    (b) a live uvicorn e2e against the two seed videos (EQuCyrwyfXU,
-    gYAqupu6iNI), confirming the model is loaded once and stays resident;
-    (c) a microVM bring-up via infra/firecracker/ with /healthz reachable at
-    the guest IP and runs/ staying inside the VM. None can be done from the
-    build environment (no /dev/kvm, no Docker here).
+    CI: green as of 2026-07-24 (run 30096044471) after two pre-existing
+    test-path fixes surfaced by first CI exposure — pytest `pythonpath=["."]`
+    so `import run` resolves under bare pytest, and installing the `telemetry`
+    extra in CI so test_telemetry collects. The image job now publishes
+    ghcr.io/senthilsweb/youtube-transcriber (latest + sha- + date tags).
+
+    Live deployment verification (2026-07-24, host 5.75.250.223, Rocky Linux
+    10.2, x86_64, Docker 29.5.3): the image was built on the host in 2m48s
+    (4.45 GB, weights baked) and run as a container bound to 127.0.0.1.
+    VERIFIED live: startup warms distil-large-v3 from the baked weights in
+    ~4s with NO download; /healthz returns ready:true, model_loaded:true; a
+    POST /transcribe drove the full async job path through the worker and
+    yt-dlp, and a failure was captured cleanly as status:error with the real
+    message while the artifact endpoint correctly returned 409. So the
+    service, resident model, job lifecycle, and graceful-failure contract are
+    proven on a real RHEL-family host.
+
+    Deliberately NOT moved to `status: verified` — two headline checks remain
+    open and neither can be closed on this host:
+    (a) MICROVM BOOT — impossible here: the box is a Hetzner Cloud VM with no
+        /dev/kvm (nested virt off), so Firecracker cannot run. Needs a
+        bare-metal / nested-virt KVM host. The container path was used
+        instead (owner decision 2026-07-24).
+    (b) REAL TRANSCRIPT CONTENT — YouTube bot-blocks the Hetzner datacenter
+        IP ("Sign in to confirm you're not a bot"). The pipeline handled it
+        gracefully; producing an actual transcript needs a YT_COOKIES_FILE or
+        a non-datacenter IP. Owner accepted deploy-verified without this.

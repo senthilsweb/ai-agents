@@ -61,13 +61,21 @@ decisions taken at raise time: (1) full openspec change; (2) generic
 
 - [x] `pytest tests/test_server.py -v` green; full suite still green (90 passed).
 - [x] Shell scripts pass `bash -n`; `vm-config.json.tmpl` renders to valid JSON.
-- [ ] Local `uvicorn server.app:app --port 8000`: `POST /transcribe` for
-      `EQuCyrwyfXU`, poll to `done`, fetch `transcript.md`; confirm one model
-      load at startup, resident across requests. **(pending Ubuntu VM)**
-- [ ] `docker build` + `docker run -p 8000:8000`: repeat the e2e; confirm **no
-      weight download** at startup (baked). **(pending Ubuntu VM)**
-- [ ] microVM: `infra/firecracker/` scripts in order, hit `/healthz` and repeat
-      the e2e against the VM; confirm `runs/` stays inside the VM. **(pending
-      Ubuntu VM)**
-- [x] Governance: `.openspec.yaml` moved `proposed → implemented`; note records
-      Construction complete and what `verified` awaits on the host.
+- [x] CI green (run 30096044471) after two pre-existing test-path fixes;
+      image published to ghcr.io/senthilsweb/youtube-transcriber.
+- [x] `docker build` + `docker run`: DONE live on Rocky Linux 10.2
+      (host 5.75.250.223, Docker 29.5.3). Built in 2m48s; startup warmed
+      distil-large-v3 from baked weights in ~4s with **no download**;
+      `/healthz` → ready. Container bound to 127.0.0.1.
+- [x] Service e2e: `POST /transcribe` drove the full async job path through the
+      worker + yt-dlp; graceful failure captured as `status:error` + 409 on the
+      artifact. Service, resident model, job lifecycle, failure contract proven.
+- [ ] **Real transcript content — OPEN.** YouTube bot-blocks the datacenter IP;
+      needs `YT_COOKIES_FILE` or a non-datacenter IP. Owner accepted
+      deploy-verified without it (2026-07-24).
+- [ ] **microVM boot — OPEN, blocked on host.** The Hetzner Cloud VM has no
+      `/dev/kvm` (nested virt off), so Firecracker cannot run here. Needs a
+      bare-metal / nested-virt KVM host. Deployed as a container instead.
+- [x] Governance: `.openspec.yaml` at `implemented`; note records live
+      deploy-verification on Rocky and the two open items above. Not moved to
+      `verified` because the microVM path was never bootable on this host.
