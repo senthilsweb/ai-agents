@@ -1,6 +1,6 @@
 schema: spec-driven
 name: add-microvm-ssh-access
-status: proposed
+status: verified
 approval:
   reviewed_by: senthilsweb
   reviewed_date: 2026-07-24
@@ -23,3 +23,13 @@ approval:
     Scope: `infra/firecracker/build-rootfs.sh` + the generated fc-init, plus
     README docs. No agent code changes. Debian-based images only (they carry
     apt); non-Debian rootfs skip with a warning.
+
+    Implemented + VERIFIED 2026-07-24 on the bare-metal box (45.32.92.209).
+    Built the transcriber rootfs with SSH_PUBKEY set → openssh-server baked,
+    authorized_keys installed, fc-init starts sshd. Booted, then `ssh -i key
+    root@172.16.0.2` landed a root shell inside the running VM (whoami=root,
+    guest kernel 5.10.233) while the agent's /healthz still answered
+    (model_loaded:true) — sshd and the app coexist. Access is key-only: a
+    connection without the key is refused (Permission denied). Off-by-default
+    confirmed: a langgraph-hello rootfs built with NO SSH_PUBKEY has no sshd
+    binary and no sshd line in fc-init. Commit 7785663.
