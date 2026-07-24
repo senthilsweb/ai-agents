@@ -115,9 +115,13 @@ sudo ROOTFS=/opt/firecracker/other.ext4 GUEST_IP=172.16.0.3 ./boot.sh
 
 ## Notes
 
-- The guest kernel URL in `install-firecracker.sh` is a prebuilt Firecracker
-  quickstart kernel. If that URL is stale, drop your own uncompressed `vmlinux`
-  at `/opt/firecracker/vmlinux` and re-run.
+- The guest kernel is a **modern 5.10** build from Firecracker CI (not the old
+  4.14 quickstart kernel). This matters: 4.14 predates `CONFIG_RANDOM_TRUST_CPU`,
+  so with no entropy source its CRNG never initialises and `getrandom()` blocks
+  forever — which silently hangs Python (pydantic/uvicorn) at import inside the
+  VM. 5.10 trusts the CPU's RDRAND and seeds instantly on bare metal. The config
+  also adds a virtio-rng `entropy` device and `random.trust_cpu=on` as belt-and-
+  suspenders. Override the kernel with `KERNEL_URL=` if needed.
 - CPU only — CTranslate2 (faster-whisper) has no GPU path here, matching the
   agent's design. Size `MEM_MIB` to the model: 2048 MiB fits `distil-large-v3`
   int8; larger models need more.

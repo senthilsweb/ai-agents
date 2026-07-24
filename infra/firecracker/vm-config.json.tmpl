@@ -1,7 +1,7 @@
 {
   "boot-source": {
     "kernel_image_path": "${KERNEL}",
-    "boot_args": "console=ttyS0 reboot=k panic=1 pci=off init=/sbin/fc-init ip=${GUEST_IP}::${GATEWAY_IP}:${NETMASK}::eth0:off"
+    "boot_args": "console=ttyS0 reboot=k panic=1 pci=off random.trust_cpu=on init=/sbin/fc-init ip=${GUEST_IP}::${GATEWAY_IP}:${NETMASK}::eth0:off"
   },
   "drives": [
     {
@@ -21,5 +21,6 @@
   "machine-config": {
     "vcpu_count": ${VCPUS},
     "mem_size_mib": ${MEM_MIB}
-  }
+  },
+  "entropy": {}
 }

@@ -51,6 +51,12 @@ echo "==> exporting image filesystem: $IMAGE"
 cid="$("$ENGINE" create "$IMAGE")"
 "$ENGINE" export "$cid" | tar -x -C "$mnt"
 
+# Drop the container-runtime marker files — this rootfs boots as a microVM, not
+# a container, so leaving /.dockerenv behind makes in-guest "am I containerized?"
+# checks lie. (The real proof it's a VM is the guest kernel differing from the
+# host's; this just keeps the marker honest.)
+rm -f "$mnt/.dockerenv" "$mnt/run/.containerenv" 2>/dev/null || true
+
 echo "==> writing /sbin/fc-init (PID 1)"
 install -d "$mnt/sbin" "$mnt/proc" "$mnt/sys" "$mnt/dev"
 cat > "$mnt/sbin/fc-init" <<EOF
