@@ -57,6 +57,11 @@ cid="$("$ENGINE" create "$IMAGE")"
 # host's; this just keeps the marker honest.)
 rm -f "$mnt/.dockerenv" "$mnt/run/.containerenv" 2>/dev/null || true
 
+# Give the guest a DNS resolver. A Firecracker rootfs has none by default, so
+# any outbound name lookup in the VM fails ("Temporary failure in name
+# resolution"). Override the nameserver with DNS_SERVER if you like.
+echo "nameserver ${DNS_SERVER:-1.1.1.1}" > "$mnt/etc/resolv.conf"
+
 echo "==> writing /sbin/fc-init (PID 1)"
 install -d "$mnt/sbin" "$mnt/proc" "$mnt/sys" "$mnt/dev"
 cat > "$mnt/sbin/fc-init" <<EOF

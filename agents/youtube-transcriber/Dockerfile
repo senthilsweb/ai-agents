@@ -33,6 +33,14 @@ RUN pip install --no-cache-dir .
 # defaults in pipeline/config.py.
 RUN python -c "from faster_whisper import WhisperModel; WhisperModel('distil-large-v3', device='cpu', compute_type='int8')"
 
+# The weights are baked, so never phone home to HuggingFace at startup. Without
+# this, the loader tries to validate the cached model over the network and, on
+# a host with no DNS (e.g. a Firecracker microVM), crashes at startup with a
+# name-resolution error instead of using the local cache. Set AFTER the bake so
+# the download above still works at build time.
+ENV HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1
+
 # No secrets are baked. ASR is fully local — there is no API key. Optional
 # telemetry (OTLP endpoint) arrives as an env var at `docker run` time.
 EXPOSE 8000
