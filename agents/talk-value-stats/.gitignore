@@ -1,0 +1,8 @@
+# Generated static site + parquet — rebuilt from db.json by build.py / CI.
+# The JSON DB (db.json) IS committed; the rendered output is not.
+dist/
+
+.env
+.venv/
+__pycache__/
+*.egg-info/

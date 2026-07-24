@@ -151,7 +151,28 @@ three-run table.
       report as ignored; `git ls-files` on the agent returns nothing for
       any of them
 - [x] 83 pytest tests green (no network, no model, no secrets)
-- [ ] **Owner action:** spot-check one transcript against the audio for
-      accuracy, and confirm traces are visible in the LangSmith and Arize
-      UIs. Both need a human looking at them — this is the last gate
-      before `status: verified`.
+- [x] **Owner accuracy check passed (2026-07-23):** owner reviewed the
+      output of three further videos (`eBUyTS7SzV4`, `qcNV1ItEkds`, plus a
+      same-invocation repeat of `eBUyTS7SzV4`) and confirmed the transcript
+      quality. That repeat also proved determinism — byte-identical SRT and
+      Markdown on a 21-minute video, `diff` clean.
+- [x] AI-DLC parity gaps closed (2026-07-23):
+      `ai-dlc-in-practice/youtube-transcriber/ceremonies-and-roles.md`
+      written (was missing while job-matcher, job-pilot and pii-classifier
+      all had one), and `openspec/observations/0002-transcriber-realtime-
+      factor-measurement.md` records the timing defect as the first
+      Operations-phase artifact for this agent.
+- [ ] **Owner action, last item before `status: verified`:** confirm the
+      spans are visible in the LangSmith and Arize UIs. The agent side is
+      confirmed ("exporting spans to 2 endpoint(s)"), but nobody has yet
+      looked at either UI to see them land — an exporter reporting success
+      is not the same as a span arriving.
+
+## Process drift noted (not a task)
+
+The code was committed as `2e68f95` and tagged `youtube-transcriber/v0.1.0`
+(tag pushed to origin) while `.openspec.yaml` read `status: implemented`.
+The lifecycle puts `verified` before a release cut, so the tag front-ran
+its gate. Harmless here — a local CLI with no users — but recorded rather
+than tidied away, per this repo's convention of logging decisions next to
+the artifact they affected.

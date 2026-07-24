@@ -1,0 +1,30 @@
+[project]
+name = "talk-value-stats"
+version = "0.1.0"
+description = "Extract quantified business-value stats from talk transcripts (GenAI) and publish a static site + DuckDB parquet"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.7",
+    "python-dotenv>=1.0",
+    "jinja2>=3.1",      # build.py — static site
+    "pyarrow>=16",      # export.py — stats.parquet
+    "anthropic>=0.40",  # extract.py — the one GenAI call (structured outputs)
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "duckdb>=1.0",      # exercised in the README examples; handy for local querying
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# Flat module set — no package; scripts import schema/extract/build/export directly.
+py-modules = ["schema", "extract", "build", "export"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

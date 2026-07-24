@@ -1,0 +1,88 @@
+schema: spec-driven
+name: add-talk-value-stats
+status: implemented
+builds_on: add-youtube-transcriber
+approval:
+  reviewed_by: senthilsweb
+  reviewed_date: 2026-07-24
+  note: >
+    Raised 2026-07-24. The owner wanted the quantified business-value claims
+    buried in transcribed talks (cost savings, revenue, productivity, FTE,
+    cycle-time, …) surfaced as a published, mobile-friendly site: title, YouTube
+    thumbnail, and one card per example with the typed outcomes and a running
+    summary, grounded to the exact quote. The scope then grew to a repeatable
+    pipeline — a GenAI model extracts the stats into a typed shape, they live in
+    a single JSON DB, a static site + a DuckDB parquet are generated, and CI
+    deploys to GitHub Pages.
+
+    Owner decisions taken while the change was raised (2026-07-24): (1) metrics
+    are a UNIFORM list tagged by an 8-value category enum with an `other` escape
+    hatch, not fixed named fields — real talks state numbers fixed slots can't
+    hold (200 bps EBITA, 85,000 lives, 400x, weeks->minutes); (2) one video per
+    page; (3) stack is Python + pydantic (canonical) — an initial TypeScript/zod
+    prototype (schema.ts, validate.ts) was discarded to avoid a dual source of
+    truth; (4) trigger is a CLI (extract.py), not a REST endpoint — it fits a
+    static->Pages pipeline with no host to run; (5) the site is MULTIPAGE static
+    HTML (index + one crawlable <slug>.html per talk, no JS) — a single-page
+    hash-router SPA was prototyped and rejected because JS-rendered content is
+    not crawlable (SEO); (6) the extracted numbers are also published as a
+    DuckDB-queryable stats.parquet next to the site, mirroring the
+    job-scout/job-pilot parquet-over-HTTPS pattern; (7) db.json IS committed
+    (short attributed quotes of public promotional talks = fair-use commentary),
+    the owner's explicit call.
+
+    PROMOTED TO ITS OWN AGENT (2026-07-24). This began life as
+    youtube-transcriber/site/ and was moved to agents/talk-value-stats/ at owner
+    direction, precisely so the transcriber keeps its clean "no LLM anywhere — no
+    prompt, no completion, no tokens, no API key" identity: talk-value-stats is
+    the one agent that calls a model (and only in extract.py). It CONSUMES the
+    transcriber's runs/*/transcript.md as input (override $TRANSCRIBER_RUNS) and
+    never produces transcripts. The transcriber lost only the temporary site/
+    sub-layer, its [site] pyproject extra, and one .gitignore line; its own code
+    is untouched and its suite stays 90 pytest green.
+
+    Construction complete 2026-07-24 (code level). Delivered under
+    agents/talk-value-stats/: schema.py (pydantic v2, schemaVersion 2 — adds
+    Person, page-level speakers[], per-example speakerName, slug, and an
+    ExtractedContent model the LLM returns); extract.py (the one GenAI call —
+    client.messages.parse(output_format=ExtractedContent) structured outputs,
+    prompt from prompts/extract.md, model from env MODEL_STATS_EXTRACTOR -> MODEL
+    -> error, VideoSource parsed authoritatively from the transcript header,
+    upsert db.json by videoId); db.json (4 seeded talks); build.py + templates/
+    (multipage static, Tailwind CDN + inline Lucide, Jinja finalize None->"");
+    export.py (stats.parquet, one row per metric, pyarrow); pyproject.toml,
+    .gitignore, README.md; tests/test_stats.py + a committed
+    tests/fixtures/transcript.md; and .github/workflows/talk-value-stats.yml
+    (test -> build -> GitHub Pages, no secret). AGENTS.md gained a
+    talk-value-stats section.
+
+    VERIFIED (local, 2026-07-24): 7 pytest green (no network/model/key) —
+    committed-DB validation, extractor header-parse + assemble + upsert-dedupe,
+    helpers, multipage build, and parquet export + column contract. The rendered
+    list and all four detail pages were checked at mobile width via headless
+    Chromium; two defects were caught and fixed on sight — a Jinja null rendering
+    as the literal "None" (fixed with a finalize), and an ASR mis-hearing
+    ("Catherine" -> the correct "Kathryn Middleton", visible on the thumbnail;
+    this is the grounding-quote review mechanism working). stats.parquet was
+    queried live with DuckDB (24 rows x 28 cols; GROUP BY category and a
+    cost_savings-with-deep-link query returned correct results). The transcriber
+    was re-run after the move and is a clean 90 green.
+
+    DESIGN (owner-directed, 2026-07-24). The owner asked for a stunning,
+    unconventional detail page and disliked the initial per-category coloured
+    rounded-border tiles. Three directions were mocked and reviewed (editorial
+    ledger, bento dashboard, timeline); the owner chose the TIMELINE and an
+    evergreen accent. It shipped into the real Jinja templates: a horizontal
+    talk-scrubber (every stat moment plotted across the runtime, clickable) over a
+    vertical timeline where each number hangs off its timestamp with the verbatim
+    quote. One accent only — the rainbow-per-category borders are gone. The port
+    replaced the Tailwind-CDN styling with hand-authored CSS (CSS-variable themed,
+    Google Fonts), removing a runtime dependency; the only JS is a
+    progressive-enhancement sticky-title fade, so pages stay fully server-rendered.
+
+    REMAINING (both external, not unverified requirements): (1) one live
+    extract.py run against a real transcript with the owner's Anthropic
+    credential + tokens — the entire non-LLM assembly path is tested, only the
+    model call itself is unexercised here; (2) the one-time GitHub Pages
+    enablement (Settings -> Pages -> Source = GitHub Actions), which the owner
+    will do — no commit needed.

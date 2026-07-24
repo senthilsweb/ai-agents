@@ -1,0 +1,197 @@
+[
+  {
+    "schemaVersion": 2,
+    "slug": "vercel-support-agent",
+    "source": {
+      "videoId": "gYAqupu6iNI",
+      "title": "Automating 90% of support tickets: How we built Vercel's support agent — Ship 26 NYC",
+      "channel": "Vercel",
+      "url": "https://www.youtube.com/watch?v=gYAqupu6iNI",
+      "durationSeconds": 1095,
+      "publishedAt": null
+    },
+    "speakers": [
+      { "name": "Kathryn Middleton", "role": "Engineering Manager, Agent Experiences", "company": "Vercel", "headshotUrl": null, "profileUrl": null }
+    ],
+    "headline": "An in-house support agent, built by two engineers in three weeks, now resolves 91% of Vercel's tickets autonomously.",
+    "extractedBy": "manual",
+    "extractedAt": "2026-07-24",
+    "examples": [
+      {
+        "useCase": "Autonomous customer support",
+        "org": "Vercel",
+        "speakerName": "Catherine",
+        "summary": "Vercel replaced an off-the-shelf support vendor with an agent built on its own platform (AI SDK, AI Gateway, Vercel MCP, Marketplace search). It is now the first line of defense on every incoming ticket, resolving the large majority without a human.",
+        "timestampStart": "00:01:03",
+        "metrics": [
+          { "category": "quality", "label": "Tickets auto-resolved", "value": 91, "unit": "%", "display": "91%", "direction": "up", "confidence": "stated", "quote": "we completely transformed our support operation to resolve now 91% of tickets, completely autonomously", "timestamp": "00:01:03" },
+          { "category": "cycle_time", "label": "Time to production", "value": 3, "unit": "weeks", "display": "3 weeks", "direction": "down", "confidence": "stated", "quote": "how we shipped to production in just three weeks. And that was seven months ago.", "timestamp": "00:01:03" },
+          { "category": "scale", "label": "Tickets resolved last week", "value": 7000, "unit": "tickets/wk", "display": "7,000/wk", "direction": "neutral", "confidence": "stated", "quote": "Just last week, it resolved over 7,000 tickets.", "timestamp": "00:02:02" },
+          { "category": "scale", "label": "Cases handled to date", "value": 130000, "unit": "cases", "display": "130,000", "direction": "neutral", "confidence": "stated", "quote": "in total, it handled over 130,000 cases fully autonomously", "timestamp": "00:02:02" },
+          { "category": "productivity_gain", "label": "Engineer hours saved", "value": 5000, "unit": "hrs/mo", "display": "5,000 hrs/mo", "direction": "up", "confidence": "stated", "quote": "This has saved our support engineers over 5,000 hours every month.", "timestamp": "00:02:02" },
+          { "category": "fte_savings", "label": "Equivalent headcount", "value": 31, "unit": "FTE", "display": "= 31 engineers", "direction": "up", "confidence": "stated", "quote": "that's equivalent of adding 31 additional support engineers to our team", "timestamp": "00:02:02" },
+          { "category": "quality", "label": "Above industry resolution", "value": 20, "unit": "points", "display": "+20 pts", "direction": "up", "confidence": "stated", "quote": "It outperforms the industry by 20 points.", "timestamp": "00:16:16" },
+          { "category": "other", "label": "Team that built it", "value": 2, "unit": "engineers", "display": "2 engineers", "direction": "neutral", "confidence": "stated", "quote": "We built the support agent in three weeks with the team of two using features [available] to every Vercel customer today.", "timestamp": "00:16:16" }
+        ]
+      }
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "slug": "ascendion-ai-arbitrage",
+    "source": {
+      "videoId": "EQuCyrwyfXU",
+      "title": "How Ascendion is Engineering Value With AI Arbitrage",
+      "channel": "Ascendion",
+      "url": "https://www.youtube.com/watch?v=EQuCyrwyfXU",
+      "durationSeconds": 888,
+      "publishedAt": null
+    },
+    "speakers": [
+      { "name": "Karthik Krishnamurthy", "role": "CEO", "company": "Ascendion", "headshotUrl": null, "profileUrl": null }
+    ],
+    "headline": "Ascendion's CEO Karthik Krishnamurthy frames \"AI arbitrage\" as an operating-model shift measured only by business outcomes — revenue, margin, and speed.",
+    "extractedBy": "manual",
+    "extractedAt": "2026-07-24",
+    "examples": [
+      {
+        "useCase": "Revenue acceleration",
+        "org": "A UK bank",
+        "speakerName": "Karthik Krishnamurthy",
+        "summary": "By reframing the operating model rather than the technology, Ascendion is pulling a bank's revenue-generating strategy forward by four quarters against a plan the bank thought would take 26 months.",
+        "timestampStart": "00:01:56",
+        "metrics": [
+          { "category": "additional_revenue", "label": "Additional revenue", "value": 2000000000, "unit": "GBP", "display": "£2B", "direction": "up", "confidence": "projected", "quote": "in the UK, 2 billion pounds of additional revenue, and we're getting them there four quarters ahead", "timestamp": "00:02:41" },
+          { "category": "cycle_time", "label": "Strategy pulled forward", "value": 4, "unit": "quarters", "display": "4 quarters early", "direction": "down", "confidence": "projected", "quote": "a bank that we're working with where we're accelerating revenue for them four quarters. They thought they'll take them 26 months to get to that strategy", "timestamp": "00:01:56" }
+        ]
+      },
+      {
+        "useCase": "Margin improvement",
+        "org": "A Fortune 100 client",
+        "speakerName": "Karthik Krishnamurthy",
+        "summary": "A Fortune 100 client is putting 200 basis points back onto its EBITA by changing the way it builds software.",
+        "timestampStart": "00:02:41",
+        "metrics": [
+          { "category": "cost_savings", "label": "EBITA margin recovered", "value": 200, "unit": "bps", "display": "+200 bps EBITA", "direction": "up", "confidence": "stated", "quote": "a Fortune 100 client that is putting 200 BIPs back on their EBITA as a result of moving to a new way by which they build software", "timestamp": "00:02:41" }
+        ]
+      },
+      {
+        "useCase": "Ascendion's own AI-native operating model",
+        "org": "Ascendion",
+        "speakerName": "Karthik Krishnamurthy",
+        "summary": "Ascendion targets a 10x expansion of human impact rather than headcount cuts, and scaled to 15,000 agents in six months — versus the many years it took to reach 10,000 people.",
+        "timestampStart": "00:06:05",
+        "metrics": [
+          { "category": "productivity_gain", "label": "Impact per person", "value": 10, "unit": "x", "display": "10x", "direction": "up", "confidence": "projected", "quote": "how can you get 50 people [to] do the work of 500 people. So you've got a 10x everybody.", "timestamp": "00:06:05" },
+          { "category": "scale", "label": "Agents stood up", "value": 15000, "unit": "agents", "display": "15,000 agents / 6 mo", "direction": "up", "confidence": "stated", "quote": "many, many years to get to 10,000 people, and we took about six months to get to 15,000 agents", "timestamp": "00:09:53" }
+        ]
+      }
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "slug": "garry-tan-yc-brain",
+    "source": {
+      "videoId": "eBUyTS7SzV4",
+      "title": "Every company should have a Brain — Garry Tan, Y Combinator",
+      "channel": "AI Engineer",
+      "url": "https://www.youtube.com/watch?v=eBUyTS7SzV4",
+      "durationSeconds": 1268,
+      "publishedAt": null
+    },
+    "speakers": [
+      { "name": "Garry Tan", "role": "President & CEO", "company": "Y Combinator", "headshotUrl": null, "profileUrl": null }
+    ],
+    "headline": "Garry Tan argues the leverage isn't the model — it's how you wire the work — and puts numbers on what AI-native founders are already doing.",
+    "extractedBy": "manual",
+    "extractedAt": "2026-07-24",
+    "examples": [
+      {
+        "useCase": "One engineer's coding output",
+        "org": "Y Combinator (Garry Tan)",
+        "speakerName": "Garry Tan",
+        "summary": "Tan compares his own 2013 output as a near full-time engineer with his output today running YC full-time. Even under the harshest verbosity discount he applies himself, the gain stays large.",
+        "timestampStart": "00:01:13",
+        "metrics": [
+          { "category": "productivity_gain", "label": "Output multiple", "value": 400, "unit": "x", "display": "~400x", "direction": "up", "confidence": "estimated", "quote": "I did the math on my output, and it's about 400x", "timestamp": "00:02:02" },
+          { "category": "productivity_gain", "label": "Conservative floor", "value": null, "unit": "x", "display": "8–80x", "direction": "up", "confidence": "estimated", "quote": "assume I'm flattering myself. It's still 8x at the floor and 80x in the middle.", "timestamp": "00:02:47" },
+          { "category": "other", "label": "2013 baseline", "value": 14, "unit": "lines/day", "display": "14 lines/day", "direction": "neutral", "confidence": "stated", "quote": "when I was doing that, I could maybe do about 14 usable logical lines of code a day", "timestamp": "00:01:13" }
+        ]
+      },
+      {
+        "useCase": "AI-generated codebases",
+        "org": "YC Winter 2025 batch",
+        "speakerName": "Garry Tan",
+        "summary": "A year ago, a quarter of the Winter 2025 batch had codebases that were almost entirely AI-generated — and that cohort became YC's fastest-growing, most profitable batch.",
+        "timestampStart": "00:02:47",
+        "metrics": [
+          { "category": "quality", "label": "AI-generated code", "value": 95, "unit": "%", "display": "95%", "direction": "up", "confidence": "stated", "quote": "In the winter 25 batch, a quarter [of] the companies had code bases that were 95% AI generated, and that was a year ago.", "timestamp": "00:02:47" }
+        ]
+      },
+      {
+        "useCase": "Revenue from a seed check",
+        "org": "YC portfolio (all-time)",
+        "speakerName": "Garry Tan",
+        "summary": "Across YC's history, 94 companies have crossed $100M in revenue starting from a seed check.",
+        "timestampStart": "00:03:36",
+        "metrics": [
+          { "category": "scale", "label": "Companies past $100M revenue", "value": 94, "unit": "companies", "display": "94 → $100M+", "direction": "up", "confidence": "stated", "quote": "94 companies total have now crossed 100 million dollars in revenue from a seed check in the history of YC", "timestamp": "00:03:36" }
+        ]
+      },
+      {
+        "useCase": "Revenue per head",
+        "org": "AI-native YC companies (Emergence, Retail)",
+        "speakerName": "Garry Tan",
+        "summary": "Tan cites revenue-per-head that he says never existed before in software: Emergence reached nine figures of ARR eight months after launch and was only 15 people at $15M; Retail runs at $60M with about 40 people.",
+        "timestampStart": "00:06:19",
+        "metrics": [
+          { "category": "additional_revenue", "label": "Emergence ARR", "value": null, "unit": "", "display": "9-figure ARR / 8 mo", "direction": "up", "confidence": "stated", "quote": "Emergence[,] an AI App Builder out of Summer 24, they went from public launch to nine figures of ARR in eight months.", "timestamp": "00:06:19" },
+          { "category": "productivity_gain", "label": "Emergence revenue/head", "value": 15, "unit": "people", "display": "$15M @ 15 people", "direction": "up", "confidence": "stated", "quote": "When they crossed $15 million, they were only 15 people.", "timestamp": "00:06:19" },
+          { "category": "productivity_gain", "label": "Retail revenue/head", "value": 40, "unit": "people", "display": "$60M @ ~40 people", "direction": "up", "confidence": "stated", "quote": "Retail, out of Winter 24, it's at $60 million with about 40 people.", "timestamp": "00:06:19" }
+        ]
+      }
+    ]
+  },
+  {
+    "schemaVersion": 2,
+    "slug": "ascendion-ai-native-company",
+    "source": {
+      "videoId": "qcNV1ItEkds",
+      "title": "How to Build an AI-Native Company | Karthik Krishnamurthy (Ascendion)",
+      "channel": "Ascendion",
+      "url": "https://www.youtube.com/watch?v=qcNV1ItEkds",
+      "durationSeconds": 785,
+      "publishedAt": null
+    },
+    "speakers": [
+      { "name": "Karthik Krishnamurthy", "role": "CEO", "company": "Ascendion", "headshotUrl": null, "profileUrl": null },
+      { "name": "Ben Fanning", "role": "Host, Lead the Team", "company": null, "headshotUrl": null, "profileUrl": null }
+    ],
+    "headline": "Karthik Krishnamurthy on why he left a $20B IT giant to build an AI-native company — and the outcomes that convinced him.",
+    "extractedBy": "manual",
+    "extractedAt": "2026-07-24",
+    "examples": [
+      {
+        "useCase": "AI-driven engineering ROI",
+        "org": "A client (unnamed)",
+        "speakerName": "Karthik Krishnamurthy",
+        "summary": "The story that made the case for AI-native work: a $200,000 project that saved the client roughly $60M — and, more importantly to KK, saved 85,000 lives.",
+        "timestampStart": "00:00:43",
+        "metrics": [
+          { "category": "cost_savings", "label": "Savings on a $200K project", "value": 60000000, "unit": "USD", "display": "$60M", "direction": "up", "confidence": "stated", "quote": "It was a $200,000 project. It saved that company about $60 million", "timestamp": "00:00:43" },
+          { "category": "other", "label": "Lives saved", "value": 85000, "unit": "people", "display": "85,000 lives", "direction": "up", "confidence": "stated", "quote": "but more importantly then, it saved the lives of 85,000 people", "timestamp": "00:00:43" }
+        ]
+      },
+      {
+        "useCase": "Legacy code re-engineering",
+        "org": "A bank",
+        "speakerName": "Karthik Krishnamurthy",
+        "summary": "Ascendion's AI re-engineering tool read undocumented \"ghost code\" left by developers long gone, recovered its business meaning, and answered a CEO's urgent question in minutes — work that would otherwise have taken weeks.",
+        "timestampStart": "00:04:12",
+        "metrics": [
+          { "category": "cycle_time", "label": "Answer turnaround", "value": null, "unit": "", "display": "weeks → minutes", "direction": "down", "confidence": "stated", "quote": "we helped him answer an incredibly important question to the CEO in a matter of minutes when it would have taken him weeks to figure out the answer", "timestamp": "00:05:40" }
+        ]
+      }
+    ]
+  }
+]

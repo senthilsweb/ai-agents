@@ -1,0 +1,93 @@
+{% extends "base.html.j2" %}
+{% block title %}{{ page.source.title }} — AI Value Stats{% endblock %}
+{% block description %}{{ page.headline or page.source.title }}{% endblock %}
+{% block head_extra %}
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="{{ page.source.title }}" />
+  <meta property="og:description" content="{{ page.headline or page.source.title }}" />
+  <meta property="og:image" content="{{ thumb(page.source.videoId) }}" />
+{% endblock %}
+
+{% block bar %}
+<div class="bar" id="bar"><div class="in">
+  <a class="back" href="./index.html">← All talks</a>
+  <span class="ttl">{{ page.source.title }}</span>
+  {% if page.source.durationSeconds %}<span class="right">{{ hms(page.source.durationSeconds) }}</span>{% endif %}
+</div></div>
+{% endblock %}
+
+{% block body %}
+<header class="talk">
+  <div>
+    {% if page.source.channel %}<div class="chan">{{ page.source.channel }}</div>{% endif %}
+    <h1>{{ page.source.title }}</h1>
+    {% if page.headline %}<p class="deck">{{ page.headline }}</p>{% endif %}
+    {% if page.speakers %}
+    <div class="who">
+      {% for s in page.speakers %}
+      <div class="p"><span class="av">{{ initials(s.name) }}</span>
+        <div>
+          <div class="n">{% if s.profileUrl %}<a href="{{ s.profileUrl }}" target="_blank" rel="noopener">{{ s.name }}</a>{% else %}{{ s.name }}{% endif %}</div>
+          {% if s.role or s.company %}<div class="r">{{ s.role }}{% if s.role and s.company %} · {% endif %}{{ s.company }}</div>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  <a class="vthumb" href="{{ page.source.url }}" target="_blank" rel="noopener" aria-label="Watch on YouTube">
+    <img src="{{ thumb(page.source.videoId) }}" alt="" />
+    <span class="play">{{ play(46, '#fff') }}</span>
+    {% if page.source.durationSeconds %}<span class="dur">{{ hms(page.source.durationSeconds) }}</span>{% endif %}
+  </a>
+</header>
+
+{% set ms = moments(page) %}
+{% if ms and page.source.durationSeconds %}
+<div class="scrub">
+  <div class="top"><span>The numbers, across the talk</span><span><b>{{ ms|length }}</b> moments · {{ hms(page.source.durationSeconds) }}</span></div>
+  <div class="track">
+    <span class="line"></span>
+    {% for m in ms %}
+    <a class="tick" style="left:{{ m.pct }}%" href="{{ m.url }}" target="_blank" rel="noopener">
+      <span class="bub">{{ m.display }} · {{ m.t }}</span><span class="dot"></span>
+    </a>
+    {% endfor %}
+    <div class="ends"><span>0:00</span><span>{{ hms(page.source.durationSeconds) }}</span></div>
+  </div>
+</div>
+{% endif %}
+
+<div class="tl">
+  {% for ex in page.examples %}
+  <div class="chapter">
+    <div class="spine"><span class="cdot"></span></div>
+    <div>
+      <h2>{{ "%02d"|format(loop.index) }} · {{ ex.useCase }}</h2>
+      {% if ex.org %}<div class="org">{{ ex.org }}</div>{% endif %}
+      <div class="sum">{{ ex.summary }}</div>
+    </div>
+  </div>
+  {% for m in ex.metrics %}
+  {% if m.timestamp %}<a class="node {{ m.direction }}" href="{{ watch(page.source.videoId, m.timestamp) }}" target="_blank" rel="noopener">{% else %}<div class="node {{ m.direction }}">{% endif %}
+    <div class="when"><span>{{ m.timestamp or '—' }}</span></div>
+    <div>
+      <div class="num {{ m.direction }}"><span class="ar">{{ arrow(m.direction) }}</span>{{ m.display }}</div>
+      <div class="cat">{{ cat(m.category) }}</div>
+      <div class="lab">{{ m.label }}{% if m.confidence != 'stated' %}<span class="conf">{{ m.confidence }}</span>{% endif %}</div>
+      <div class="q">“{{ m.quote }}”</div>
+    </div>
+  {% if m.timestamp %}</a>{% else %}</div>{% endif %}
+  {% endfor %}
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Progressive enhancement only — fade the talk title into the sticky bar on scroll.
+  addEventListener('scroll', function () {
+    document.getElementById('bar').classList.toggle('scrolled', scrollY > 240);
+  }, { passive: true });
+</script>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html.j2" %}
+{% block title %}AI Value Stats — the numbers, from the talk{% endblock %}
+
+{% block bar %}
+<div class="bar"><div class="in">
+  <span class="mark"><span class="d"></span> AI Value Stats</span>
+  <a class="right pq" href="./stats.parquet">stats.parquet ↗</a>
+</div></div>
+{% endblock %}
+
+{% block body %}
+<div class="hero">
+  <div class="k">Transcribed, then measured</div>
+  <h1>The hard numbers, pulled from the talk.</h1>
+  <p>Every figure below was spoken on stage and lifted straight from the transcript — grounded to the exact quote, and linked back to the moment it was said.</p>
+</div>
+
+<ul class="list">
+  {% for page in pages %}
+  {% set primary = page.speakers[0] if page.speakers else None %}
+  {% set stat = page.examples[0].metrics[0] if page.examples and page.examples[0].metrics else None %}
+  <li>
+    <a href="./{{ page.slug }}.html">
+      <div class="thumb">
+        <img loading="lazy" src="{{ thumb(page.source.videoId) }}" alt="" />
+        <span class="play">{{ play(22, '#fff') }}</span>
+      </div>
+      <div class="lc">
+        {% if page.source.channel %}<div class="c">{{ page.source.channel }}</div>{% endif %}
+        <div class="t">{{ page.source.title }}</div>
+        {% if primary %}<div class="a">{{ primary.name }}{% if primary.company %} · {{ primary.company }}{% endif %}</div>{% endif %}
+      </div>
+      {% if stat %}
+      <div class="lstat"><div class="v">{{ stat.display }}</div><div class="l">{{ stat.label }}</div></div>
+      {% endif %}
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+
+<p class="pqline">All numbers are also queryable as <a href="./stats.parquet">stats.parquet</a> (DuckDB-ready).</p>
+{% endblock %}

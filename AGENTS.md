@@ -262,6 +262,55 @@ All paths below are relative to `agents/langgraph-hello/`:
 Run (CLI): `cd agents/langgraph-hello && .venv/bin/python run.py "hello world"`
 Run (service): `cd agents/langgraph-hello && .venv/bin/uvicorn server.app:app --port 8000`
 
+### Talk Value Stats (`agents/talk-value-stats/`)
+
+Turns a talk's **transcript** into a published, blog-style **stats site** plus a
+**DuckDB-queryable parquet**: `transcript → GenAI extraction → one JSON DB →
+static site + parquet → GitHub Pages`. Each page shows the video (thumbnail,
+title, speaker(s)) and one card per example — its use case and the quantified
+outcomes (cost savings, revenue, productivity, FTE, cycle time, …) — with
+**every number grounded to the verbatim quote** and a deep link to the moment
+it was said. Born 2026-07-24 by **promoting** what started as
+`youtube-transcriber/site/` into its own agent, precisely so the transcriber
+keeps its clean "no LLM anywhere" identity: this is the one agent that calls a
+model (and only in `extract.py`). It **consumes** the transcriber's
+`runs/*/transcript.md`; it never produces transcripts.
+
+All paths below are relative to `agents/talk-value-stats/`:
+
+- `schema.py` — the pydantic v2 source of truth (`schemaVersion: 2`):
+  `TranscriptStatsPage` (one video → `speakers[]` → ordered `examples[]` →
+  ordered `metrics[]`), `Person`, and `ExtractedContent` (what the model
+  returns — the judgement part only; the extractor assembles the authoritative
+  `VideoSource` from the transcript header). Metrics are a **uniform list tagged
+  by an 8-value `category` enum** (+ `other` escape hatch), never fixed named
+  fields — real talks state numbers fixed slots can't hold (200 bps EBITA,
+  85,000 lives, 400×).
+- `extract.py` — the CLI + **the only GenAI call in the monorepo**. Reads a
+  `transcript.md`, calls Claude via `client.messages.parse(output_format=…)`
+  (structured outputs), and **upserts `db.json` by `videoId`**. Model from env
+  (`MODEL_STATS_EXTRACTOR` → `MODEL` → error); transcripts from the sibling
+  `youtube-transcriber/runs/` (override `$TRANSCRIBER_RUNS`).
+- `db.json` — the JSON DB (a single committed array of pages).
+- `build.py` + `templates/` — **multipage static** generator (Jinja2 → `dist/`):
+  `index.html` + one crawlable `<slug>.html` per talk, server-rendered (SEO/link-
+  preview friendly; the only JS is a progressive-enhancement scroll listener). An
+  editorial **"timeline"** design (light, evergreen accent) — a horizontal
+  talk-scrubber plots every stat moment across the runtime, then a vertical
+  timeline hangs each number off its timestamp. Bespoke CSS in `base.html.j2`
+  (CSS variables) + Google Fonts; no framework, no CSS build.
+- `export.py` — flattens `db.json` to `dist/stats.parquet` (one row per metric,
+  denormalized, with a `watchUrl` deep link) for **DuckDB** — including remotely
+  over HTTPS once on Pages, the same pattern job-pilot uses on job-scout's parquet.
+- `tests/` — pytest, no network/model/key, with a committed transcript fixture.
+- CI: `.github/workflows/talk-value-stats.yml` — test → build → **GitHub Pages**
+  on `main` (no secret; never sees a transcript).
+- `openspec/changes/add-talk-value-stats/` (repo root) — the design spec and the
+  content/privacy decision (commit `db.json` vs keep local).
+
+Run (extract): `cd agents/talk-value-stats && MODEL_STATS_EXTRACTOR=claude-opus-4-8 python extract.py <transcript.md|video-id>`
+Run (build): `cd agents/talk-value-stats && python build.py && (cd dist && python3 -m http.server 8080)`
+
 ---
 
 ## Monorepo Conventions
