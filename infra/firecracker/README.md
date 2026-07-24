@@ -1,130 +1,233 @@
-# infra/firecracker — run an agent as a Firecracker microVM
+# Agent Sandbox — Firecracker microVMs for our agents
 
-Generic, agent-agnostic tooling to package **any** container image as a
-Firecracker microVM rootfs and boot it on a plain KVM Linux host. It is
-parameterized by `(image, vcpus, mem, ip)` and knows nothing about a specific
-agent — the running example is `youtube-transcriber`, but the same four scripts
-deploy any of the monorepo's containerized agents.
+Generic, agent-agnostic tooling to package **any** of the monorepo's container
+images as a [Firecracker](https://firecracker-microvm.github.io/) microVM and
+boot it on a bare-metal KVM host. Each agent gets its **own kernel** and a
+hardware-virtualization boundary — stronger isolation than a container — while
+staying dead simple: raw Firecracker, one VM, one service, five shell scripts.
 
-Why this exists (and not Kubernetes / Kata / pyro): the goal is the *simplest*
-hand-crafted microVM path — raw Firecracker, one VM, one service. See
-`openspec/changes/add-youtube-transcriber-service/design.md`.
+It is parameterized by `(image, vcpus, mem, ip)` and knows nothing about any
+specific agent. Verified end-to-end with both `langgraph-hello` (tiny) and
+`youtube-transcriber` (a 4.45 GB image with a resident Whisper model).
 
-## Host requirements
+> Why raw Firecracker and not Kubernetes / Kata / a sandbox product (E2B, pyro)?
+> The goal is the **simplest hand-crafted microVM path** we fully control and
+> understand. See `openspec/changes/add-youtube-transcriber-service/design.md`.
 
-- **Any KVM Linux** with kernel ≥ 5.10. Ubuntu 24.04 is the best-documented
-  host, but **Rocky/RHEL 9 works equally well** — Firecracker is
-  distro-agnostic, and so are the guest kernel and rootfs. See the Rocky notes
-  below.
-- `/dev/kvm` present (bare metal, or a VM with nested virtualization enabled).
-- `x86_64` (the prebuilt kernel + Firecracker target here; `aarch64` also works
-  with an arm kernel).
-- A container engine — **Docker or Podman** — to pull the image and unpack it
-  into a rootfs (`build-rootfs.sh` auto-detects either).
-- Packages: `curl`, `tar`, `iptables`, `e2fsprogs` (`mkfs.ext4`), `gettext`
-  (`envsubst`), `iproute2`.
+---
 
-### Ubuntu 24.04
+## 1. Pick a host — the `/dev/kvm` rule
 
-```bash
-sudo apt-get update
-sudo apt-get install -y curl tar iptables e2fsprogs gettext-base iproute2 docker.io
-```
+Firecracker needs **`/dev/kvm`**. That single requirement decides your host:
 
-### Rocky / RHEL / Alma 9
+| Host type | `/dev/kvm`? | Verdict |
+|---|---|---|
+| **Bare metal** (Vultr Bare Metal, Equinix Metal, Hetzner *dedicated*) | ✅ native | **Best.** No nested virt to worry about. |
+| Cloud VM with nested virt (GCP w/ flag, Azure v3+) | ⚠️ if enabled | Works if you turn nested virtualization on at create time. |
+| Standard cloud VM (Hetzner **Cloud**, DigitalOcean droplet, most AWS) | ❌ | **Won't work** — no `/dev/kvm`, Firecracker can't run. |
 
-Nothing here is Ubuntu-specific — the scripts use no `apt`. Just install the
-host packages with `dnf` and use Podman (the RHEL-family default):
+First command on any new box — if this fails, stop, the host is wrong:
 
 ```bash
-sudo dnf install -y curl tar iptables e2fsprogs gettext iproute podman
+ls -l /dev/kvm && systemd-detect-virt   # want the device to exist; "none" = bare metal
 ```
 
-Two Rocky-specific things to know:
+**Recommended host: Ubuntu 24.04 LTS on Intel/AMD bare metal, x86_64.** Rocky /
+RHEL 9 works too (see §7).
 
-- **SELinux** is enforcing by default and can block the loop-mount / tap / VM
-  operations. For a demo, `sudo setenforce 0` (permissive) is the quick path;
-  for a permanent setup, add the appropriate contexts instead.
-- **Podman is daemonless** — no service to start. `build-rootfs.sh` picks it up
-  automatically; force it with `CONTAINER_ENGINE=podman` if both are installed.
+---
 
-## One-time host setup
+## 2. From a fresh bare-metal box to a running microVM
+
+The exact sequence, start to finish (as root):
 
 ```bash
-cd infra/firecracker
-sudo ./install-firecracker.sh      # firecracker binary + prebuilt guest kernel
-sudo ./setup-net.sh                # tap0 + NAT (VM gets 172.16.0.2)
+# a. Prerequisites (Ubuntu). Docker is used to unpack images into a rootfs.
+apt-get update
+apt-get install -y curl tar iptables e2fsprogs gettext-base iproute2 docker.io git
+
+# b. Get this repo
+git clone https://github.com/senthilsweb/ai-agents.git /root/ai-agents
+cd /root/ai-agents/infra/firecracker
+
+# c. One-time host setup
+./install-firecracker.sh    # firecracker binary + a MODERN 5.10 guest kernel
+./setup-net.sh              # tap0 (host 172.16.0.1) + NAT; VM will be 172.16.0.2
+
+# d. Get the agent image — build locally...
+( cd /root/ai-agents/agents/langgraph-hello && docker build -t langgraph-hello . )
+#   ...or pull the CI-built image from GHCR (make the package public, or
+#   `docker login ghcr.io` first):
+#   docker pull ghcr.io/senthilsweb/langgraph-hello:latest
+#   docker tag  ghcr.io/senthilsweb/langgraph-hello:latest langgraph-hello
+
+# e. Image -> ext4 rootfs (size in MB; leave headroom over the image content)
+./build-rootfs.sh langgraph-hello /opt/firecracker/lgh.ext4 1024
+
+# f. Boot it
+ROOTFS=/opt/firecracker/lgh.ext4 ./boot.sh
 ```
 
-## Per-agent: build the image, then the rootfs, then boot
-
-```bash
-# 1. Get the agent image (example: youtube-transcriber, weights baked in).
-#    Pull the CI-built image from GHCR (use podman on Rocky, docker on Ubuntu):
-podman pull ghcr.io/senthilsweb/youtube-transcriber:latest
-podman tag  ghcr.io/senthilsweb/youtube-transcriber:latest youtube-transcriber
-#    ...or build it locally:
-#      cd ../../agents/youtube-transcriber && podman build -t youtube-transcriber .
-
-# 2. Turn the image into an ext4 rootfs (weights are already inside it)
-sudo ./build-rootfs.sh youtube-transcriber /opt/firecracker/rootfs.ext4 4096
-
-# 3. Boot the microVM (2 vCPU / 2048 MiB by default — fits distil-large-v3)
-sudo ./boot.sh
-```
-
-Then, from the host:
+From the host, the service is at the guest IP:
 
 ```bash
 curl http://172.16.0.2:8000/healthz
-curl -XPOST http://172.16.0.2:8000/transcribe \
-     -H 'content-type: application/json' \
-     -d '{"video_id":"EQuCyrwyfXU"}'
-# → {"job_id":"...","status":"queued"} ; poll GET /jobs/{id} until "done"
+curl http://172.16.0.2:8000/whoami   # kernel/hostname/ip are the GUEST's = proof it's a microVM
 ```
 
-## Deploying a *different* agent
+`boot.sh` runs Firecracker in the foreground (the VM's serial console). To leave
+it running detached, background it: see §5.
 
-Nothing changes except step 1–2 arguments and the start command:
+---
+
+## 3. Spin up a microVM for any agent
+
+The tooling is generic. To deploy a different agent, change the image, the
+rootfs size, and (if not a `uvicorn server.app:app` service) the start command:
 
 ```bash
-sudo ./build-rootfs.sh my-other-agent /opt/firecracker/other.ext4 2048 \
-     "cd /app && exec python run.py --serve"
-sudo ROOTFS=/opt/firecracker/other.ext4 GUEST_IP=172.16.0.3 ./boot.sh
+# youtube-transcriber (bigger image + a resident model → more disk + RAM)
+( cd /root/ai-agents/agents/youtube-transcriber && docker build -t youtube-transcriber . )
+./build-rootfs.sh youtube-transcriber /opt/firecracker/yt.ext4 8192
+ROOTFS=/opt/firecracker/yt.ext4 MEM_MIB=4096 ./boot.sh
+
+# an agent with a different entrypoint — pass START_CMD as the 4th arg
+./build-rootfs.sh my-agent /opt/firecracker/my.ext4 2048 \
+    "cd /app && exec python run.py --serve"
+ROOTFS=/opt/firecracker/my.ext4 ./boot.sh
 ```
 
-## Files
+`build-rootfs.sh` automatically **carries the image's `ENV` and sets `HOME`**
+(see §8, Finding 4), so an agent's baked caches and env vars work inside the VM
+the same way they do under `docker run`.
+
+### Running several agents at once
+
+One tap serves one VM. For a second VM, give it its own IP (and its own tap if
+you want isolation):
+
+```bash
+ROOTFS=/opt/firecracker/yt.ext4 GUEST_IP=172.16.0.3 GUEST_MAC=06:00:AC:10:00:03 ./boot.sh
+```
+
+---
+
+## 4. Boot knobs (all env vars on `boot.sh`)
+
+| Var | Default | Notes |
+|---|---|---|
+| `ROOTFS` | `/opt/firecracker/rootfs.ext4` | the ext4 from `build-rootfs.sh` |
+| `KERNEL` | `/opt/firecracker/vmlinux` | modern 5.10 by default |
+| `MEM_MIB` | `2048` | size to the workload (4096 for the transcriber's model) |
+| `VCPUS` | `2` | CPU-only ASR; more vCPU = faster transcription |
+| `GUEST_IP` / `GATEWAY_IP` | `172.16.0.2` / `172.16.0.1` | |
+| `TAP` | `tap0` | must match `setup-net.sh` |
+
+`build-rootfs.sh` extras: `CONTAINER_ENGINE=docker|podman`, `DNS_SERVER=…`.
+
+---
+
+## 5. Managing microVMs
+
+```bash
+# Run detached (survives your SSH session)
+cd /root/ai-agents/infra/firecracker
+ROOTFS=/opt/firecracker/yt.ext4 MEM_MIB=4096 nohup ./boot.sh > /root/fc.log 2>&1 & disown
+
+tail -f /root/fc.log             # serial console + app logs
+pgrep -ax firecracker            # what's running
+pkill -x firecracker             # stop ALL microVMs (exact match — safe)
+```
+
+### Keep it running across reboots (systemd)
+
+A `nohup` VM dies on reboot. For a long-lived deployment, install a unit that
+re-creates the network and boots the VM on start:
+
+```ini
+# /etc/systemd/system/agent-microvm.service
+[Unit]
+Description=Agent microVM (Firecracker)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/ai-agents/infra/firecracker
+Environment=ROOTFS=/opt/firecracker/yt.ext4 MEM_MIB=4096
+ExecStartPre=/root/ai-agents/infra/firecracker/setup-net.sh
+ExecStart=/root/ai-agents/infra/firecracker/boot.sh
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+systemctl daemon-reload && systemctl enable --now agent-microvm
+```
+
+---
+
+## 6. Files
 
 | File | Role |
 |---|---|
-| `install-firecracker.sh` | firecracker binary + prebuilt `vmlinux` kernel |
-| `setup-net.sh` | tap device + `ip_forward` + NAT MASQUERADE (mirrors pyro's `setup-bridge.sh`) |
-| `build-rootfs.sh` | `docker export` an image into `rootfs.ext4` + inject `/sbin/fc-init` |
-| `vm-config.json.tmpl` | Firecracker machine config template (kernel, drive, net, cpu/mem) |
+| `install-firecracker.sh` | firecracker binary + a modern 5.10 `vmlinux` guest kernel |
+| `setup-net.sh` | `tap0` + `ip_forward` + NAT MASQUERADE |
+| `build-rootfs.sh` | `docker/podman export` an image into `rootfs.ext4`; inject `/sbin/fc-init`; carry image ENV; strip container markers; add DNS |
+| `vm-config.json.tmpl` | Firecracker machine config (kernel, drive, net, cpu/mem, entropy) |
 | `boot.sh` | render the template + `firecracker --config-file` |
 
-## Deliberate v1 simplifications
+---
 
-- **No jailer.** One trusted image, single tenant. If the VM ever runs
-  untrusted images, add the Firecracker `jailer` — noted as the hardening step.
+## 7. Rocky / RHEL / Alma 9 host
+
+Nothing here is Ubuntu-specific — the scripts use no `apt`.
+
+```bash
+dnf install -y curl tar iptables e2fsprogs gettext iproute podman
+```
+
+- **SELinux** is enforcing by default and can block loop-mount / tap / VM ops.
+  Quick path for a demo: `setenforce 0`. Permanent: add the right contexts.
+- **Podman** (RHEL-family default) is auto-detected by `build-rootfs.sh`; force
+  it with `CONTAINER_ENGINE=podman`.
+
+---
+
+## 8. Lessons learned — what a container hides
+
+A microVM boots the rootfs directly; it does **not** run the container runtime.
+`docker export` copies the filesystem only — not the image's `ENV`, `HOME`, or
+the entropy/DNS/PATH the Docker runtime injects. So assumptions a container
+satisfies silently fail in a microVM. Full write-up:
+**`openspec/observations/0003-firecracker-microvm-bringup.md`**. In brief:
+
+| # | What broke (microVM only) | Fix (all in this tooling) |
+|---|---|---|
+| 1 | Old **4.14** guest kernel → `getrandom()` blocked → Python hung at import | default **5.10** kernel (trusts RDRAND) + virtio-rng entropy device |
+| 2 | No **`PATH`** in PID 1 → `shutil.which("yt-dlp")` found nothing | `fc-init` exports `PATH` |
+| 3 | No **DNS** resolver → name lookups fail | `build-rootfs.sh` writes `/etc/resolv.conf` |
+| 4 | **`HOME=/`** → baked HuggingFace cache at `/root/.cache` invisible | `fc-init` sets `HOME=/root` **and carries the image's ENV** via `docker inspect` |
+
+The rule of thumb: **when moving a container to a microVM, replicate the runtime
+environment `docker run` provides — env, HOME, DNS, entropy, PATH — and use a
+modern guest kernel.**
+
+---
+
+## 9. Deliberate v1 simplifications
+
+- **No jailer.** One trusted image, single tenant. Add the Firecracker `jailer`
+  before running untrusted images.
 - **No auth / no public exposure.** The service binds to the private VM IP;
-  putting it on the internet needs an auth layer first (a non-goal for v1).
+  putting it on the internet needs an auth layer first.
 - **One VM, one tap, one worker.** No snapshot pools, no clustering.
-- **Kernel-configured networking.** eth0 is set up by the kernel from the `ip=`
-  boot arg, so `fc-init` only mounts pseudo-filesystems and starts the app.
-
-## Notes
-
-- The guest kernel is a **modern 5.10** build from Firecracker CI (not the old
-  4.14 quickstart kernel). This matters: 4.14 predates `CONFIG_RANDOM_TRUST_CPU`,
-  so with no entropy source its CRNG never initialises and `getrandom()` blocks
-  forever — which silently hangs Python (pydantic/uvicorn) at import inside the
-  VM. 5.10 trusts the CPU's RDRAND and seeds instantly on bare metal. The config
-  also adds a virtio-rng `entropy` device and `random.trust_cpu=on` as belt-and-
-  suspenders. Override the kernel with `KERNEL_URL=` if needed.
-- CPU only — CTranslate2 (faster-whisper) has no GPU path here, matching the
-  agent's design. Size `MEM_MIB` to the model: 2048 MiB fits `distil-large-v3`
-  int8; larger models need more.
-- Transcripts stay inside the VM (`runs/`), consistent with the copyright
-  framing of the transcriber — nothing produced by a run is committed or
-  published.
+- **Kernel-configured networking.** `eth0` is set up by the kernel from the
+  `ip=` boot arg; `fc-init` only mounts pseudo-filesystems, sets the env, and
+  starts the app.
+- **CPU only.** No GPU passthrough — CTranslate2 (faster-whisper) has no GPU path
+  here anyway.
+- Anything a run produces (e.g. transcripts) stays **inside the VM**, consistent
+  with each agent's copyright/privacy framing.

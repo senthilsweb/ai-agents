@@ -278,6 +278,12 @@ Run (service): `cd agents/langgraph-hello && .venv/bin/uvicorn server.app:app --
   agent-agnostic; agent-specific service code (a `server/`, a `Dockerfile`)
   stays inside the agent. (`shared/` is a TypeScript/npm workspace and is not
   the home for shell/host infra.)
+- **Agent Sandbox (Firecracker microVMs):** `infra/firecracker/README.md` is the
+  authoritative guide — from a fresh bare-metal box (`/dev/kvm` required) to
+  building rootfs images and spinning up a microVM per agent, plus management
+  and systemd persistence. The hard-won gotchas (a container hides four things a
+  microVM needs — kernel entropy, PATH, DNS, HOME/ENV) are consolidated in
+  `openspec/observations/0003-firecracker-microvm-bringup.md`.
 - Subagents are declared under `agent/subagents/<name>/` with their own
   `agent.ts`, `instructions.md`, `sandbox/`, and `skills/`.
 - `runs/` is committed so history is preserved. **Exception:**
