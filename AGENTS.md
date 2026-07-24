@@ -228,6 +228,35 @@ All paths below are relative to `agents/youtube-transcriber/`:
 Run (CLI): `cd agents/youtube-transcriber && .venv/bin/python run.py <video-id-or-url>`
 Run (service): `cd agents/youtube-transcriber && .venv/bin/uvicorn server.app:app --port 8000`
 
+### langgraph-hello (`agents/langgraph-hello/`)
+
+A deliberately tiny **LangGraph** `StateGraph` (ADR 0003, no LangChain chains)
+with **no LLM, no network, no weights, no API key**. It normalizes text,
+branches on empty-vs-text (one conditional edge), computes simple stats, and
+probes its own environment. Its second job is to be a **clean Firecracker
+microVM smoke test**: tiny image, fast boot, and its `probe` node / `GET
+/whoami` report the guest kernel, hostname, and eth0 IP that *prove* microVM
+isolation. Born 2026-07-24 because the youtube-transcriber service couldn't
+exercise the Firecracker path (its host has no `/dev/kvm`, and YouTube blocks
+the datacenter IP).
+
+All paths below are relative to `agents/langgraph-hello/`:
+
+- `pipeline/` — `state.py`, `config.py` (`MAX_INPUT_CHARS`), `probe.py`
+  (env probe), `graph.py` (the StateGraph:
+  `normalize → route → {echo_empty|analyze} → probe → assemble`).
+- `run.py` — CLI; `server/app.py` — `GET /healthz`, `POST /run`, `GET /whoami`.
+- `tests/` — 10 pytest, no network, no secrets. `Dockerfile` — slim + uvicorn,
+  ~200 MB.
+- Reuses the generic `infra/firecracker/` tooling unchanged for the microVM.
+- CI: `.github/workflows/langgraph-hello-image.yml` → GHCR image
+  `ghcr.io/senthilsweb/langgraph-hello`.
+- `openspec/changes/add-langgraph-hello/` (repo root) — the design spec.
+  microVM boot is verified once a KVM-capable host is available.
+
+Run (CLI): `cd agents/langgraph-hello && .venv/bin/python run.py "hello world"`
+Run (service): `cd agents/langgraph-hello && .venv/bin/uvicorn server.app:app --port 8000`
+
 ---
 
 ## Monorepo Conventions

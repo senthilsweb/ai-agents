@@ -1,0 +1,33 @@
+schema: spec-driven
+name: add-langgraph-hello
+status: implemented
+approval:
+  reviewed_by: senthilsweb
+  reviewed_date: 2026-07-24
+  note: >
+    Raised and built 2026-07-24. A deliberately tiny LangGraph StateGraph
+    agent (ADR 0003 — no LangChain chains) that doubles as a clean
+    Firecracker microVM smoke test. Origin: the youtube-transcriber service
+    could not exercise the Firecracker path — the only host available
+    (Hetzner Cloud, 5.75.250.223) has no /dev/kvm, and separately YouTube
+    bot-blocks that datacenter IP. The owner chose to validate the microVM
+    path with a smaller, self-contained agent instead: no LLM, no network,
+    no model weights, no API key, so it builds tiny and boots fast, and its
+    `probe` node / GET /whoami report the guest kernel, hostname and eth0 IP
+    that prove microVM isolation.
+
+    Owner decisions 2026-07-24: (1) build the agent now, host-independent;
+    a KVM-capable host for the actual microVM boot comes later. (2) Keep it
+    a genuine but minimal LangGraph example — one conditional edge, pydantic
+    state, REST + CLI mirroring youtube-transcriber's shape.
+
+    Construction complete 2026-07-24: pipeline/ (state, config, probe,
+    graph), run.py, server/app.py (GET /healthz, POST /run, GET /whoami),
+    tiny Dockerfile, tests. 10 pytest green via `.venv/bin/pytest` (bare
+    invocation, no network, no secrets); CLI + live uvicorn smoke verified
+    locally.
+
+    `status: verified` awaits the microVM boot on a KVM-capable host: build
+    the image, `infra/firecracker/build-rootfs.sh` → `boot.sh`, then GET
+    /whoami and confirm the kernel/hostname/ip are the guest's. Cannot be
+    done on the current host (no /dev/kvm).
