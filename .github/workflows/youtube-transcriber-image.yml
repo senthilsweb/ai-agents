@@ -41,8 +41,12 @@ jobs:
         working-directory: agents/youtube-transcriber
         # No network, no model, no secrets — run_one/load_model are stubbed in
         # the tests, so nothing here downloads Whisper weights.
+        # Install the telemetry extra too: tests/test_telemetry.py imports
+        # `opentelemetry`, which lives in the `telemetry` optional group, not
+        # `dev`. Without it collection fails even though telemetry itself
+        # degrades to a warning at runtime.
         run: |
-          pip install -q -e ".[dev]"
+          pip install -q -e ".[dev,telemetry]"
           pytest -q
 
   image:
