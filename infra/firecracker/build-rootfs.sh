@@ -62,6 +62,13 @@ rm -f "$mnt/.dockerenv" "$mnt/run/.containerenv" 2>/dev/null || true
 # resolution"). Override the nameserver with DNS_SERVER if you like.
 echo "nameserver ${DNS_SERVER:-1.1.1.1}" > "$mnt/etc/resolv.conf"
 
+# Carry the image's declared ENV into the VM. `docker export` gives us only the
+# filesystem, NOT the image's ENV/HOME/WORKDIR — so an app booted via fc-init
+# runs in a bare environment unlike `docker run`, and anything relying on vars
+# the Dockerfile set (PATH, HF_HUB_OFFLINE, ...) breaks. fc-init sources this.
+"$ENGINE" inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$IMAGE" \
+    > "$mnt/etc/fc-env" 2>/dev/null || true
+
 echo "==> writing /sbin/fc-init (PID 1)"
 install -d "$mnt/sbin" "$mnt/proc" "$mnt/sys" "$mnt/dev"
 cat > "$mnt/sbin/fc-init" <<EOF
@@ -70,11 +77,16 @@ cat > "$mnt/sbin/fc-init" <<EOF
 mount -t proc     proc /proc     2>/dev/null || true
 mount -t sysfs    sys  /sys      2>/dev/null || true
 mount -t devtmpfs dev  /dev      2>/dev/null || true
-# Kernel starts init with no PATH, and /bin/sh's internal default is not
-# exported to child processes — so a Python app's shutil.which() would find
-# nothing (e.g. yt-dlp in /usr/local/bin). Set an explicit PATH so tools are
-# discoverable. PYTHONUNBUFFERED keeps startup logs visible on the console.
-export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+# docker export drops the image's ENV/HOME, so replicate what \`docker run\`
+# provides. HOME defaults to /root (our images run as root and bake caches under
+# /root — e.g. HuggingFace weights at /root/.cache/huggingface); the image's own
+# ENV (PATH, HF_HUB_OFFLINE, ...) is sourced from /etc/fc-env. Without this,
+# apps can't find tools (shutil.which) or their baked caches inside the VM, and
+# the kernel also starts init with no PATH at all. PYTHONUNBUFFERED keeps
+# startup logs visible on the console.
+export HOME=/root
+set -a; [ -f /etc/fc-env ] && . /etc/fc-env; set +a
+export PATH="\${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
 export PYTHONUNBUFFERED=1
 echo "fc-init: starting workload"
 $START_CMD
