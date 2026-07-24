@@ -1,0 +1,25 @@
+schema: spec-driven
+name: add-microvm-ssh-access
+status: proposed
+approval:
+  reviewed_by: senthilsweb
+  reviewed_date: 2026-07-24
+  note: >
+    Requested by the owner 2026-07-24 ("Openspec change request -> We need
+    option C"). An agent microVM is a single-purpose appliance — its rootfs
+    (from `docker export`) has no sshd, no login user, no getty, so there is
+    no way to get a shell inside a *running* VM to inspect state, check a
+    baked cookies file, or debug a failing agent. Today the only options are
+    stopping the VM to loop-mount its ext4 (disrupts the service) or booting
+    a throwaway serial-console shell (replaces the app).
+
+    This change adds OPT-IN SSH to the generic infra/firecracker/ tooling:
+    when `SSH_PUBKEY` (or `SSH_PUBKEY_FILE`) is passed to build-rootfs.sh, it
+    installs openssh-server into the rootfs, bakes the public key into
+    root's authorized_keys, and fc-init starts sshd alongside the app — so
+    `ssh root@<guest-ip>` works while the service runs. OFF BY DEFAULT:
+    production microVMs stay sshd-less unless the operator explicitly opts in.
+
+    Scope: `infra/firecracker/build-rootfs.sh` + the generated fc-init, plus
+    README docs. No agent code changes. Debian-based images only (they carry
+    apt); non-Debian rootfs skip with a warning.

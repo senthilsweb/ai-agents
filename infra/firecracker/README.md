@@ -169,6 +169,30 @@ systemctl daemon-reload && systemctl enable --now agent-microvm
 
 ---
 
+## 5b. SSH into a microVM (debug, opt-in)
+
+By default a microVM has **no sshd** — it's a single-service appliance. To get a
+shell inside a *running* VM, opt in at build time with a public key:
+
+```bash
+# generate a key for the host (or reuse one)
+ssh-keygen -t ed25519 -f /root/.ssh/microvm -N ''
+
+# bake sshd + that key into the rootfs
+SSH_PUBKEY="$(cat /root/.ssh/microvm.pub)" \
+  ./build-rootfs.sh youtube-transcriber /opt/firecracker/yt.ext4 8192
+#   ...or: SSH_PUBKEY_FILE=/root/.ssh/microvm.pub ./build-rootfs.sh ...
+
+ROOTFS=/opt/firecracker/yt.ext4 MEM_MIB=4096 ./boot.sh   # sshd starts with the app
+ssh -i /root/.ssh/microvm root@172.16.0.2                # shell inside the VM
+```
+
+- **Off by default.** No `SSH_PUBKEY` → no sshd, no extra packages.
+- **Key-only** (root, `prohibit-password`); **private IP only** (reachable from
+  the host or an SSH tunnel — this adds no public port).
+- **Debug-oriented**, Debian images only (non-Debian rootfs skip with a warning).
+- See `openspec/changes/add-microvm-ssh-access/`.
+
 ## 6. Files
 
 | File | Role |
