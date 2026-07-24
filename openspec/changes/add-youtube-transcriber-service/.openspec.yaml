@@ -1,0 +1,60 @@
+schema: spec-driven
+name: add-youtube-transcriber-service
+status: implemented
+amends: add-youtube-transcriber
+approval:
+  reviewed_by: senthilsweb
+  reviewed_date: 2026-07-24
+  note: >
+    Raised 2026-07-24. This change AMENDS the 2026-07-23 Inception gate of
+    add-youtube-transcriber, which recorded the agent as local CLI only —
+    specifically it reopens gate items (3) "CLI-only invocation, no CI, no
+    server" and (6) "NO Docker in v1". The owner now wants the same
+    pipeline exposed as a long-lived REST service running inside a
+    Firecracker microVM on a KVM Linux host (Ubuntu 24.04), with the ASR
+    model held resident in RAM so a request does not pay a model load. A
+    GitHub Actions workflow builds the image and publishes it to GHCR
+    (ghcr.io/senthilsweb/youtube-transcriber) so it can be pulled onto the
+    deployment host — this is the "no CI" part of item (3) being reopened;
+    added at owner request 2026-07-24, auth via the built-in GITHUB_TOKEN,
+    no custom build secret.
+
+    Three owner decisions taken when the change was raised: (1) this goes
+    through the full openspec process as its own change rather than editing
+    the original in place; (2) the Firecracker host tooling is GENERIC and
+    agent-agnostic, living in a new top-level infra/firecracker/ so any
+    agent can be deployed the same way, not hardcoded to this one; (3) the
+    ~1GB distil-large-v3 (int8) weights are BAKED into the rootfs so the
+    microVM boots with no download and no network dependency for weights.
+
+    What does NOT change: the LangGraph pipeline itself (pipeline/*.py) is
+    untouched — the service imports and calls run_one/Config/parse_video_ref
+    as-is. The CLI path (run.py) keeps working exactly as before. The
+    zero-LLM, zero-token, local-ASR property is preserved: the server adds
+    HTTP and job orchestration, no model reasoning. The copyright constraint
+    is preserved and strengthened for the server case — transcripts are
+    verbatim third-party speech, stay inside the VM, and are returned only
+    to the requesting caller; runs/ is never committed or published.
+
+    Owner approved and directed Construction 2026-07-24.
+
+    Construction complete 2026-07-24 (code level). Delivered: server/app.py
+    (FastAPI, resident model via transcribe.load_model, async job queue,
+    /transcribe + /jobs/{id} + artifact endpoints + /healthz), agent-root
+    Dockerfile with distil-large-v3 int8 weights baked in, generic
+    infra/firecracker/ (install-firecracker.sh, setup-net.sh, build-rootfs.sh,
+    vm-config.json.tmpl, boot.sh), and CI workflow
+    youtube-transcriber-image.yml (tests + GHCR image on main). pyproject
+    gained fastapi/uvicorn/httpx; the pipeline and run.py are untouched.
+    Tests: 90 pytest green (73 pipeline + graph + 7 new server tests in
+    tests/test_server.py), no network, no model, no secrets. Shell scripts
+    pass `bash -n`; the Firecracker config template renders to valid JSON.
+
+    `status: verified` awaits checks that need the fresh Ubuntu 24.04 KVM VM
+    (being provisioned): (a) `docker build` of the agent image and a
+    confirmation that startup loads the baked weights with no download;
+    (b) a live uvicorn e2e against the two seed videos (EQuCyrwyfXU,
+    gYAqupu6iNI), confirming the model is loaded once and stays resident;
+    (c) a microVM bring-up via infra/firecracker/ with /healthz reachable at
+    the guest IP and runs/ staying inside the VM. None can be done from the
+    build environment (no /dev/kvm, no Docker here).

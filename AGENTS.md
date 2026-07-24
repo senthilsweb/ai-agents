@@ -174,8 +174,11 @@ actual audio, transcribed end to end, not the captions, description, or
 title. **LangGraph** `StateGraph`, no LangChain chains (ADR 0003). ASR is
 local `faster-whisper`, so there is **no LLM anywhere in the pipeline** —
 no prompt, no completion, no tokens, no API key, and audio never leaves the
-machine. Evals are therefore plain pytest. Local CLI only: no Docker, no
-CI, no server (gate decision 2026-07-23).
+machine. Evals are therefore plain pytest. Shipped as a local CLI (gate
+decision 2026-07-23), plus an optional **REST service + Firecracker microVM
+deployment** added by the `add-youtube-transcriber-service` change
+(2026-07-24), which amends that gate's no-Docker/no-server items. The CLI and
+the pipeline are unchanged — the service imports and calls them.
 
 All paths below are relative to `agents/youtube-transcriber/`:
 
@@ -191,17 +194,39 @@ All paths below are relative to `agents/youtube-transcriber/`:
   edge for the audio cache).
 - `run.py` — CLI; takes N videos, runs them sequentially, isolates
   per-video failures, exits non-zero if any failed.
-- `tests/` — 73 tests, no network, no model, no secrets.
+- `server/app.py` — FastAPI service (the 2026-07-24 addition). Loads the
+  ASR model once at startup (reuses `transcribe.load_model`, so the model
+  is resident), then serves async jobs: `POST /transcribe` enqueues and
+  returns a job id, `GET /jobs/{id}` polls, `GET /jobs/{id}/transcript.{md,srt,json}`
+  serves artifacts, `GET /healthz`. Every request input goes through
+  `resolve.parse_video_ref` before it reaches the pipeline. Adds no logic
+  to `pipeline/` — it calls `run_one` unchanged.
+- `Dockerfile` — agent-root, same convention as job-pilot/job-scout;
+  `python:3.12-slim` + `ffmpeg` + `pip install .`, with the ~1 GB
+  distil-large-v3 weights **baked in** so the container/microVM boots with
+  no download. `CMD` runs uvicorn.
+- `tests/` — 90 tests (73 pipeline + 17 across the graph/server), no
+  network, no model, no secrets. `tests/test_server.py` stubs `run_one` and
+  exercises the job lifecycle, id validation, and artifact endpoints.
 - `runs/` and `.cache/` are **gitignored** — the second deliberate
   exception to the runs/-is-committed convention (after job-matcher's),
   because transcripts are verbatim third-party speech and this repo is
-  public.
+  public. The service upholds this: transcripts stay inside the VM and are
+  returned only to the requesting caller.
 - Prerequisites: `ffmpeg` (`brew install ffmpeg`) and a one-time ~1 GB
-  Whisper weights download.
+  Whisper weights download (baked into the image for the deployed path).
 - `openspec/changes/add-youtube-transcriber/` (repo root) — the full
-  design spec.
+  design spec; `add-youtube-transcriber-service/` — the service + microVM
+  amendment.
+- Deployment tooling is **generic**, not agent-specific: `infra/firecracker/`
+  (repo root) turns any agent's container image into a Firecracker microVM.
+- CI: `.github/workflows/youtube-transcriber-image.yml` — tests on every push
+  touching the agent; on `main`, builds + pushes GHCR image
+  `ghcr.io/senthilsweb/youtube-transcriber` (buildx, amd64, gha-cached weights
+  layer; auth via built-in `GITHUB_TOKEN`, no custom secret).
 
-Run: `cd agents/youtube-transcriber && .venv/bin/python run.py <video-id-or-url>`
+Run (CLI): `cd agents/youtube-transcriber && .venv/bin/python run.py <video-id-or-url>`
+Run (service): `cd agents/youtube-transcriber && .venv/bin/uvicorn server.app:app --port 8000`
 
 ---
 
@@ -213,6 +238,12 @@ Run: `cd agents/youtube-transcriber && .venv/bin/python run.py <video-id-or-url>
   in the agent's `package.json`), **not** a relative `#shared/*` path; see
   `openspec/adr/0001-shared-agent-runtime-kit.md` §1 for why.
 - Skills are scoped per agent; copy markdown under each agent that needs it.
+- Generic host/deployment tooling (not tied to one agent) lives at the repo
+  root under `infra/<tech>/` — e.g. `infra/firecracker/` packages any agent's
+  container image as a Firecracker microVM. Keep it parameterized and
+  agent-agnostic; agent-specific service code (a `server/`, a `Dockerfile`)
+  stays inside the agent. (`shared/` is a TypeScript/npm workspace and is not
+  the home for shell/host infra.)
 - Subagents are declared under `agent/subagents/<name>/` with their own
   `agent.ts`, `instructions.md`, `sandbox/`, and `skills/`.
 - `runs/` is committed so history is preserved. **Exception:**
