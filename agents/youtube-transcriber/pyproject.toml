@@ -33,3 +33,7 @@ packages = ["pipeline", "server"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Put the agent root on sys.path so tests can `import run` (a top-level script,
+# not a package) under a bare `pytest` invocation — `python -m pytest` adds cwd
+# implicitly, plain `pytest` (as CI runs it) does not.
+pythonpath = ["."]
