@@ -220,6 +220,9 @@ All paths below are relative to `agents/youtube-transcriber/`:
   amendment.
 - Deployment tooling is **generic**, not agent-specific: `infra/firecracker/`
   (repo root) turns any agent's container image into a Firecracker microVM.
+  **microVM deployment verified** 2026-07-24 on Intel bare metal — default boot
+  serves the resident distil-large-v3 model (`model_loaded:true`, ~8s); real
+  transcript content stays cookie-gated (YouTube blocks datacenter IPs).
 - CI: `.github/workflows/youtube-transcriber-image.yml` — tests on every push
   touching the agent; on `main`, builds + pushes GHCR image
   `ghcr.io/senthilsweb/youtube-transcriber` (buildx, amd64, gha-cached weights

@@ -73,9 +73,13 @@ decisions taken at raise time: (1) full openspec change; (2) generic
 - [ ] **Real transcript content — OPEN.** YouTube bot-blocks the datacenter IP;
       needs `YT_COOKIES_FILE` or a non-datacenter IP. Owner accepted
       deploy-verified without it (2026-07-24).
-- [ ] **microVM boot — OPEN, blocked on host.** The Hetzner Cloud VM has no
-      `/dev/kvm` (nested virt off), so Firecracker cannot run here. Needs a
-      bare-metal / nested-virt KVM host. Deployed as a container instead.
+- [x] **microVM boot — VERIFIED** 2026-07-24 on Intel bare metal (Vultr,
+      native `/dev/kvm`). Committed `infra/firecracker/` tooling, default boot:
+      `/healthz` → `model_loaded:true` (distil-large-v3 resident, ~8s), guest
+      kernel 5.10.233 vs host 6.8.0; `POST /transcribe` failed gracefully on the
+      YouTube datacenter-IP block. Surfaced + fixed four infra defects (old
+      kernel/getrandom, entropy, PATH, HOME/image-ENV) in a5667df/062fc32/
+      378f19e/f955b8f. Real transcript content remains cookie-gated (external).
 - [x] Governance: `.openspec.yaml` at `implemented`; note records live
       deploy-verification on Rocky and the two open items above. Not moved to
       `verified` because the microVM path was never bootable on this host.
