@@ -65,6 +65,12 @@ cat > "$mnt/sbin/fc-init" <<EOF
 mount -t proc     proc /proc     2>/dev/null || true
 mount -t sysfs    sys  /sys      2>/dev/null || true
 mount -t devtmpfs dev  /dev      2>/dev/null || true
+# Kernel starts init with no PATH, and /bin/sh's internal default is not
+# exported to child processes — so a Python app's shutil.which() would find
+# nothing (e.g. yt-dlp in /usr/local/bin). Set an explicit PATH so tools are
+# discoverable. PYTHONUNBUFFERED keeps startup logs visible on the console.
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PYTHONUNBUFFERED=1
 echo "fc-init: starting workload"
 $START_CMD
 # If the workload exits, halt cleanly instead of panicking.
