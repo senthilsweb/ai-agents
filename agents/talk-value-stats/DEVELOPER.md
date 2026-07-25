@@ -159,8 +159,8 @@ CI does the deploy — you don't build in the cloud by hand:
    (HTML + `stats.parquet`), and publishes it. It needs **no secret** and never
    sees a transcript — it only renders the committed `db.json`.
 
-The site is then live at `https://senthilsweb.github.io/ai-agents/`, and the
-parquet at `https://senthilsweb.github.io/ai-agents/stats.parquet`.
+The site is then live at `https://senthilsweb.github.io/ai-agents/ai-native-numbers/`, and the
+parquet at `https://senthilsweb.github.io/ai-agents/ai-native-numbers/stats.parquet`.
 
 ---
 

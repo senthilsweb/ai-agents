@@ -1,9 +1,16 @@
 name: talk-value-stats
 
-# Test, build the static "AI value stats" site + stats.parquet from the
-# committed JSON DB, and publish to GitHub Pages. No model call here — extraction
-# (extract.py) runs locally with an Anthropic key; CI only renders the committed
-# db.json. So no secret is needed and no transcript ever touches CI.
+# Test and build-check this agent only. It does NOT deploy.
+#
+# Publishing is owned by the single unified Pages workflow
+# (.github/workflows/job-scout-docs.yml), which assembles every app into one
+# `site/` and publishes it in one deploy — the stats app lives at
+# /ai-native-numbers/. A second workflow calling deploy-pages would silently
+# overwrite that whole site (the bug that used to put this app at the root).
+#
+# No model call here — extraction (extract.py) runs locally with an Anthropic
+# key; CI only renders the committed db.json. No secret, and no transcript
+# ever touches CI.
 
 on:
   push:
@@ -18,12 +25,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
 
 jobs:
   build:
@@ -40,20 +41,10 @@ jobs:
         run: pip install -e ".[dev]"
       - name: Test
         run: python -m pytest -q
-      - name: Build dist/ (HTML + stats.parquet)
-        run: python build.py
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: agents/talk-value-stats/dist
-
-  deploy:
-    # Only deploy from main; PRs run test+build but don't publish.
-    if: github.ref == 'refs/heads/main'
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-    steps:
-      - id: deploy
-        uses: actions/deploy-pages@v4
+      - name: Build-check dist/ (HTML + stats.parquet)
+        # Validates the committed db.json renders; the actual publish of these
+        # artifacts happens in the unified site workflow.
+        run: |
+          python build.py
+          test -f dist/index.html
+          test -f dist/stats.parquet

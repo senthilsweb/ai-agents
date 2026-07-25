@@ -1,12 +1,22 @@
-# Build the wiki (MkDocs Material) + the live pages (/console/, /trends/)
-# and deploy everything to GitHub Pages.
+# The SINGLE GitHub Pages deployer for this repo. GitHub Pages allows one
+# deployment per repo, and deploy-pages replaces the whole site — so every
+# app that wants to be on Pages must be assembled into `site/` here and
+# published in one deploy. Currently:
+#   /                    → MkDocs Material wiki
+#   /console/            → hosted DuckDB S3 console
+#   /trends/             → daily public trends dashboard
+#   /ai-native-numbers/  → talk-value-stats (AI-native productivity numbers)
+# Do NOT add a second workflow that calls deploy-pages — it silently
+# overwrites this one. That was exactly the bug that put talk-value-stats
+# at the site root and clobbered everything else.
+#
 # Specs: agents/job-scout/openspec/changes/job-scout-wiki/design.md (D5),
 #        agents/job-scout/openspec/changes/wiki-live-pages/design.md
 #
 # The 11:45 UTC cron refreshes /trends/ daily, 45 min after the trends
 # data workflow (11:00) commits the new parquet. A push-based chain is
 # impossible: GITHUB_TOKEN bot commits never trigger on:push workflows.
-name: job-scout docs
+name: site (unified pages deploy)
 
 on:
   push:
@@ -18,6 +28,7 @@ on:
       - "docs/**"
       - "agents/job-scout/templates/trends_dashboard.html.j2"
       - "agents/job-scout/tools/build_trends_report.py"
+      - "agents/talk-value-stats/**"
       - "utils/duckdb-s3-console.html"
       - "mkdocs.yml"
       - ".github/workflows/job-scout-docs.yml"
@@ -68,6 +79,20 @@ jobs:
             --jd none --no-targets
           grep -q 'let KEYWORDS = \[\];' site/trends/index.html
           ls -lh site/trends/ site/console/
+
+      - name: Build /ai-native-numbers/ (talk-value-stats)
+        # Renders the committed db.json to a static site + stats.parquet. No
+        # model call here (extraction runs locally with a key); CI only builds.
+        # Templates use relative links (./stats.parquet), so the app works at
+        # any depth — dropped straight into the subfolder.
+        run: |
+          pip install --quiet -e agents/talk-value-stats
+          python agents/talk-value-stats/build.py
+          mkdir -p site/ai-native-numbers
+          cp -r agents/talk-value-stats/dist/* site/ai-native-numbers/
+          test -f site/ai-native-numbers/index.html
+          test -f site/ai-native-numbers/stats.parquet
+          ls -lh site/ai-native-numbers/
 
       - uses: actions/upload-pages-artifact@v3
         with:

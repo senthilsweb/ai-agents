@@ -122,7 +122,7 @@ remotely without downloading it:
 ```sql
 INSTALL httpfs; LOAD httpfs;
 SELECT primaryCompany, display, watchUrl
-FROM 'https://senthilsweb.github.io/ai-agents/stats.parquet'
+FROM 'https://senthilsweb.github.io/ai-agents/ai-native-numbers/stats.parquet'
 WHERE category = 'cost_savings' AND confidence = 'stated'
 ORDER BY value DESC NULLS LAST;
 ```
