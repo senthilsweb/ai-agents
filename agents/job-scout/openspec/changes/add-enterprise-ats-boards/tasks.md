@@ -25,3 +25,9 @@
 - [x] 4.4 Verify: CLI full counts match board totals (HPE ~1073, AVEVA ~246, Cohesity ~209); legacy single-page path unchanged
 - [x] 4.5 One-time backfill: fetch_all over full Workday boards into the live job_tracker.duckdb
 - [x] 4.6 Deploy: push; dispatch job-scout-trends.yml manually so today's public parquet carries the full boards
+
+## Bolt 5 — Backfill marked analyzed (owner: "better mark it as analyzed", 2026-08-07)
+- [x] 5.1 match_sweep guards: collect_entries silently skips marker rows (report_json_path NULL); upsert_result ignores markers when deriving first_analyzed (NEW badge stays correct)
+- [x] 5.2 Insert `skipped_backfill` marker rows (jd_sha256 from the standard harvest path, scores/report NULL) for the backfill set only: 438 of 439 (1 unharvestable)
+- [x] 5.3 Scope check: 215 older unanalyzed postings found during marking were deliberately left UNMARKED (pre-existing backlog on other boards — OpenAI 42, Harvey 16, ... — not part of what the owner okayed skipping)
+- [x] 5.4 Verify: dry-run sweep selects 218 (backlog + 3 changed JDs), not ~656 — markers suppress exactly the backfill

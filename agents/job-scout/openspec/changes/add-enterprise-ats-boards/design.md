@@ -51,6 +51,21 @@ reproducible.
   delta will see a one-time flood of "new" rows, absorbed by its
   category/title/salary filters and `max_jobs_per_run` guard.
 
+- **D5 — Backfill pre-marked as analyzed via marker rows.** The 439
+  backfilled postings would all have hit the paid /analyze API on the
+  next sweep (match_sweep has no per-run cap). Owner chose to skip them:
+  each harvestable backfill posting gets an `api_match_result` row with
+  `match_status='skipped_backfill'`, the real harvested `jd_sha256`, and
+  NULL scores/`report_json_path`. Sweep selection is (no row) OR (sha
+  changed), so markers suppress the charge while a future JD edit still
+  triggers a real analysis, which overwrites the marker via the existing
+  INSERT OR REPLACE. Marker rows are excluded from the rendered report
+  and from the first-analyzed (NEW badge) derivation. Markers were
+  scoped to exactly the backfill set (4 Workday companies,
+  first_seen = 2026-08-07): 215 older unanalyzed postings discovered on
+  other boards during marking were left unmarked — that backlog predates
+  this change and the owner only approved skipping the backfill.
+
 ## Security baseline
 
 - No secrets involved; all three endpoints are public unauthenticated

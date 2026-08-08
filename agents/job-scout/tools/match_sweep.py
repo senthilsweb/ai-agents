@@ -293,7 +293,11 @@ def upsert_result(con, job_id: int, rep: dict, jd_sha256: str | None,
     stays available in the persisted JSON, never in these date columns."""
     sb = rep["score_breakdown"]
     analyzed = (analyzed_on or date.today()).isoformat()
-    prior = con.execute("SELECT first_analyzed FROM api_match_result WHERE job_id=?",
+    # Marker rows (report_json_path IS NULL — analysis deliberately skipped,
+    # e.g. a board backfill) don't count as a prior analysis: the first REAL
+    # analysis still gets the NEW badge.
+    prior = con.execute("SELECT first_analyzed FROM api_match_result "
+                        "WHERE job_id=? AND report_json_path IS NOT NULL",
                         [job_id]).fetchone()
     first = prior[0] if prior else analyzed
     con.execute("""INSERT OR REPLACE INTO api_match_result VALUES
@@ -315,8 +319,10 @@ def collect_entries(con) -> list[dict]:
         ORDER BY r.job_id""").fetchall()
     entries = []
     for job_id, company, title, location, apply_url, path, first in rows:
-        p = Path(path) if path else None
-        if not p or not p.is_file():
+        if path is None:      # marker row: analysis deliberately skipped, not lost
+            continue
+        p = Path(path)
+        if not p.is_file():
             log.warning("report JSON missing for job_id=%d (%s)", job_id, path)
             continue
         entries.append({"job_id": job_id, "company": company, "title": title,
