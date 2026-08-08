@@ -65,6 +65,12 @@ reproducible.
   first_seen = 2026-08-07): 215 older unanalyzed postings discovered on
   other boards during marking were left unmarked — that backlog predates
   this change and the owner only approved skipping the backfill.
+  **Amendment (same day):** owner then chose to zero the whole queue
+  ("mark all of them ... I don't want them to go thru LLM call") — the
+  215 backlog postings got the same marker rows, and the 3 changed-JD
+  postings had their stored jd_sha256 synced to the current harvest
+  (existing reports kept). Dry-run sweep selects 0; from here only
+  future postings or future JD edits incur paid analyses.
 
 ## Security baseline
 

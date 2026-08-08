@@ -31,3 +31,4 @@
 - [x] 5.2 Insert `skipped_backfill` marker rows (jd_sha256 from the standard harvest path, scores/report NULL) for the backfill set only: 438 of 439 (1 unharvestable)
 - [x] 5.3 Scope check: 215 older unanalyzed postings found during marking were deliberately left UNMARKED (pre-existing backlog on other boards — OpenAI 42, Harvey 16, ... — not part of what the owner okayed skipping)
 - [x] 5.4 Verify: dry-run sweep selects 218 (backlog + 3 changed JDs), not ~656 — markers suppress exactly the backfill
+- [x] 5.5 Owner follow-up ("mark all of them"): extend markers to the 215-posting pre-existing backlog + sync the 3 changed-JD hashes (reports kept) — dry-run sweep now selects 0
