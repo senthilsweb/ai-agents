@@ -10,7 +10,8 @@ Usage:
     python tools/ats_fetch.py greenhouse duckdb      # example: dbt Labs org slug
     python tools/ats_fetch.py ashby montecarlodata
     python tools/ats_fetch.py lever <org>
-    python tools/ats_fetch.py workday nvidia --site NVIDIAExternalCareerSite --host wd5
+    python tools/ats_fetch.py workday nvidia site=NVIDIAExternalCareerSite host=wd5
+    python tools/ats_fetch.py workday aveva site=AVEVA_careers host=wd3
 
 Wire-in: company.ats_org_slug drives fetch_all(con) to pull every company
 with pipeline_status in ('not_started','alert_target') and a known slug.
@@ -177,9 +178,11 @@ FETCHERS = {"greenhouse": fetch_greenhouse, "lever": fetch_lever,
 # can run from config alone (no manual company seeding). config.yaml stays
 # the single source of truth — nothing is hardcoded here.
 def _infer_platform(slug: str) -> str:
-    """Workday slugs are 'tenant/site' (contain '/'); single tokens default
-    to Ashby. Greenhouse/Lever slugs are also single tokens, so those MUST
-    use the explicit dict form {slug: <org>, platform: greenhouse|lever}."""
+    """Workday slugs are 'tenant/site' (contain '/'), or 'tenant/site/host'
+    for boards off the default wd5 host (e.g. 'aveva/AVEVA_careers/wd3');
+    single tokens default to Ashby. Greenhouse/Lever slugs are also single
+    tokens, so those MUST use the explicit dict form
+    {slug: <org>, platform: greenhouse|lever}."""
     return "workday" if "/" in slug else "ashby"
 
 

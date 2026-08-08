@@ -56,12 +56,17 @@ search:
     - "{company} careers {keyword} salary remote 2026"
     - "site:{ats_domain} {keyword}"
   ats_org_slugs_by_company:      # Tier 1 deterministic fetch targets
-    # Value forms: bare string = Ashby slug; "tenant/site" = Workday;
+    # Value forms: bare string = Ashby slug; "tenant/site" = Workday
+    # (default host wd5), "tenant/site/host" = Workday on another host;
     # dict {slug: ..., platform: greenhouse|lever} for those platforms.
     # Slugs are passed to the ATS API verbatim (case/spaces/dots matter).
     Snowflake: "snowflake"                          # Ashby board slug
     "Monte Carlo": "montecarlodata"                 # Ashby board slug
     NVIDIA: "nvidia/NVIDIAExternalCareerSite"       # Workday tenant/site (host wd5)
+    # ── enterprise Workday boards, verified 2026-08-07 (add-enterprise-ats-boards) ──
+    HPE: "hpe/Jobsathpe"                            # Phenom front-end, Workday underneath
+    AVEVA: "aveva/AVEVA_careers/wd3"                # non-default Workday host wd3
+    Cohesity: "cohesity/Cohesity_Careers"           # AEM page proxies this Workday board
     "Grow Therapy": "grow-therapy"                  # Ashby board slug
     # ── verified Ashby boards, added 2026-07-13 (see scratch map_verify) ──
     OpenAI: "openai"
@@ -159,6 +164,9 @@ search:
     # Not loadable (checked 2026-07-13): Shopify/Boomi (own ATS), Retool
     # (Greenhouse public board API disabled), Reddit/Mercury/Deel/
     # Convictional/"Luma AI" (dormant Ashby boards, zero postings).
+    # Not loadable (checked 2026-08-07): Quinnox — no ATS at all; jobs are
+    # server-rendered WordPress pages (keka/zohorecruit tenants dead).
+    # Tier-3 agentic fallback only (ADR 0001 rejects Tier-1 HTML scraping).
   ats_domains:
     workday: "myworkdayjobs.com"
     ashby: "jobs.ashbyhq.com"

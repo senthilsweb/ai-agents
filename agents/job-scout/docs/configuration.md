@@ -60,9 +60,18 @@ value's shape tells the fetcher which board system to call:
 search:
   ats_org_slugs_by_company:
     Acme: "acme"                                          # bare string = Ashby
-    BigCo: "bigco/BigCoExternalSite"                      # tenant/site = Workday
+    BigCo: "bigco/BigCoExternalSite"                      # tenant/site = Workday (host wd5)
+    OtherCo: "otherco/OtherCoCareers/wd3"                 # tenant/site/host = Workday, non-default host
     Startup: {slug: "startupinc", platform: "greenhouse"} # explicit (greenhouse or lever)
 ```
+
+For Workday, the tenant and host are the first two labels of the job
+board's hostname (`aveva.wd3.myworkdayjobs.com` → tenant `aveva`, host
+`wd3`) and the site is the path segment after it. When the host is the
+default `wd5` the third segment can be omitted. Some companies hide
+their Workday board behind a branded front-end (HPE behind Phenom,
+Cohesity behind an AEM proxy) — a posting's *apply* URL reveals the real
+`tenant.host.myworkdayjobs.com/site` to configure.
 
 Slugs are sent to the board exactly as written — case, spaces, and dots
 matter (`"Flock Safety"`, `"super.com"`, `"kraken.com"` are all real
