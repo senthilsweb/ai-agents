@@ -52,9 +52,15 @@ could be added to `search.ats_org_slugs_by_company`.
   Quinnox adopts an ATS. Yield would also be near zero: its ~30 openings
   are Calypso/SAP/.NET delivery roles that don't match the configured
   title keywords.
-- Workday pagination. `fetch_workday` still reads one page (limit 20,
+- ~~Workday pagination. `fetch_workday` still reads one page (limit 20,
   the CXS maximum) per run, the accepted NVIDIA-precedent behavior; the
-  daily delta run accumulates new reqs over time.
+  daily delta run accumulates new reqs over time.~~
+  **Amendment (2026-08-07, owner follow-up "can't we pull all the data
+  for the first time now?"):** moved into scope. CXS hard-caps every
+  response at 20 rows, so a full first-time pull *is* pagination —
+  implemented as `search.workday_max_postings` (0 = whole board, N =
+  cap, unset = first page) flowing through `fetch_all`, `raw_load`, and
+  `daily_match`. Applies to NVIDIA too. See design D4-r and tasks Bolt 4.
 
 ## Acceptance criteria
 

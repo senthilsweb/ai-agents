@@ -84,7 +84,7 @@ def _to_date(v) -> date | None:
         return None
 
 
-def _fetch_one(item):
+def _fetch_one(item, workday_max: int | None = None):
     """(name, (platform, slug)) -> (name, platform, jobs|None)."""
     name, (platform, slug) = item
     fetcher = FETCHERS.get(platform)
@@ -92,7 +92,8 @@ def _fetch_one(item):
         log.warning("no fetcher for ats=%s (%s)", platform, name)
         return name, platform, None
     try:
-        jobs = fetch_workday(*slug.split("/")) if platform == "workday" else fetcher(slug)
+        jobs = (fetch_workday(*slug.split("/"), max_postings=workday_max)
+                if platform == "workday" else fetcher(slug))
         return name, platform, jobs
     except Exception as e:
         log.error("fetch failed %s/%s: %s", name, platform, e)
@@ -123,9 +124,10 @@ def load(cfg: dict, con) -> dict:
     """Snapshot-load every configured board into ats_posting_raw."""
     _ensure_table(con)
     resolved = _resolve_slugs(cfg["search"].get("ats_org_slugs_by_company"))
+    wmax = cfg["search"].get("workday_max_postings")
     now = datetime.now()
     with ThreadPoolExecutor(max_workers=8) as ex:
-        results = list(ex.map(_fetch_one, resolved.items()))
+        results = list(ex.map(lambda it: _fetch_one(it, wmax), resolved.items()))
 
         loaded, failed, rows = 0, [], []
         for name, platform, jobs in results:

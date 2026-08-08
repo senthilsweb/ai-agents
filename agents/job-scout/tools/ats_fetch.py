@@ -141,28 +141,46 @@ def fetch_ashby(org: str) -> list[dict]:
 
 
 def fetch_workday(tenant: str, site: str, host: str = "wd5", limit: int = 20,
-                  search_text: str = "") -> list[dict]:
-    """Workday CXS JSON endpoint — returns friendly JR req IDs."""
+                  search_text: str = "", max_postings: int | None = None) -> list[dict]:
+    """Workday CXS JSON endpoint — returns friendly JR req IDs.
+
+    CXS hard-caps each page at 20 rows, so max_postings drives pagination:
+    None = first page only (legacy behavior), 0 = the whole board, N = stop
+    once N postings have been paged. Rows are deduped on externalPath
+    (boards can repeat rows across page boundaries)."""
     url = f"https://{tenant}.{host}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs"
-    d = _get(url, {"appliedFacets": {}, "limit": limit, "offset": 0,
-                   "searchText": search_text})
     base = f"https://{tenant}.{host}.myworkdayjobs.com/en-US/{site}"
-    jobs, skipped = [], 0
-    for j in d.get("jobPostings", []):
-        # One malformed posting must not sink the whole board (seen live:
-        # NVIDIA postings without a title, 2026-07-19) — skip and continue.
-        if not j.get("title") or not j.get("externalPath"):
-            skipped += 1
-            continue
-        jobs.append({
-            "title": j["title"],
-            "req_id": (j.get("bulletFields") or [None])[0],   # e.g. JR2017180
-            "req_id_type": "workday_r",
-            "location": j.get("locationsText"),
-            "apply_url": base + j["externalPath"],
-            "posted_date": None,
-            "posted_recency": j.get("postedOn"),
-        })
+    jobs, skipped, seen, offset, total = [], 0, set(), 0, None
+    while True:
+        d = _get(url, {"appliedFacets": {}, "limit": limit, "offset": offset,
+                       "searchText": search_text})
+        page = d.get("jobPostings", [])
+        if total is None:            # CXS quirk: total is only sent on page 1;
+            total = d.get("total") or 0   # later pages report total=0
+        for j in page:
+            # One malformed posting must not sink the whole board (seen live:
+            # NVIDIA postings without a title, 2026-07-19) — skip and continue.
+            if not j.get("title") or not j.get("externalPath"):
+                skipped += 1
+                continue
+            if j["externalPath"] in seen:
+                continue
+            seen.add(j["externalPath"])
+            jobs.append({
+                "title": j["title"],
+                "req_id": (j.get("bulletFields") or [None])[0],   # e.g. JR2017180
+                "req_id_type": "workday_r",
+                "location": j.get("locationsText"),
+                "apply_url": base + j["externalPath"],
+                "posted_date": None,
+                "posted_recency": j.get("postedOn"),
+            })
+        offset += limit
+        cap = total if max_postings == 0 else min(total, max_postings or limit)
+        if not page or offset >= cap:
+            break
+    if max_postings:                 # N-cap rounds up to a page boundary — trim
+        jobs = jobs[:max_postings]
     if skipped:
         log.warning("workday %s/%s: skipped %d posting(s) missing title/externalPath",
                     tenant, site, skipped)
@@ -318,7 +336,8 @@ def _too_old(posted: str | None, max_age_days: int | None) -> bool:
 
 def fetch_all(con, keywords: list[str] | None = None,
               slug_overrides: dict | None = None, verify: bool = False,
-              max_age_days: int | None = None, snapshot: bool = False) -> int:
+              max_age_days: int | None = None, snapshot: bool = False,
+              workday_max: int | None = None) -> int:
     """Seed companies from config, then pull postings for every company with a
     known ATS + org slug.
 
@@ -333,6 +352,8 @@ def fetch_all(con, keywords: list[str] | None = None,
     (undated feeds are kept). snapshot=True additionally marks previously
     open rows 'closed' when their req_id has left the company's live board —
     skipped for Workday (its feed is paginated, absence proves nothing).
+    workday_max is forwarded to fetch_workday as max_postings (config:
+    search.workday_max_postings; 0 = whole board, unset = first page).
     """
     resolved = _resolve_slugs(slug_overrides)
     seed_companies(con, resolved)
@@ -350,7 +371,8 @@ def fetch_all(con, keywords: list[str] | None = None,
             log.warning("no fetcher for ats=%s (%s)", ats, name)
             continue
         try:
-            jobs = fetch_workday(*slug.split("/")) if ats == "workday" else fetcher(slug)
+            jobs = (fetch_workday(*slug.split("/"), max_postings=workday_max)
+                    if ats == "workday" else fetcher(slug))
         except Exception as e:
             log.error("fetch failed %s/%s: %s", name, ats, e)
             continue
@@ -427,8 +449,11 @@ if __name__ == "__main__":
     ats, org = sys.argv[1], sys.argv[2]
     extra = dict(a.split("=") for a in sys.argv[3:] if "=" in a)
     if ats == "workday":
+        wmax = extra.get("--max", extra.get("max"))
         jobs = fetch_workday(org, extra.get("--site", extra.get("site", "External")),
-                             extra.get("--host", extra.get("host", "wd5")))
+                             extra.get("--host", extra.get("host", "wd5")),
+                             max_postings=int(wmax) if wmax is not None else None)
+        print(f"fetched {len(jobs)} postings", file=sys.stderr)
     else:
         jobs = FETCHERS[ats](org)
     print(json.dumps(jobs[:10], indent=2))

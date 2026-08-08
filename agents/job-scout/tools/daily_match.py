@@ -67,7 +67,8 @@ def main() -> int:
                                  cfg["search"].get("ats_org_slugs_by_company"),
                                  verify=cfg["search"].get("verify_before_insert", False),
                                  max_age_days=cfg["search"].get("max_posting_age_days"),
-                                 snapshot=cfg["search"].get("refresh_mode") == "snapshot")
+                                 snapshot=cfg["search"].get("refresh_mode") == "snapshot",
+                                 workday_max=cfg["search"].get("workday_max_postings"))
             log.info("fetch: %d new postings", inserted)
 
         # 2. sweep — only new/changed open postings reach the API

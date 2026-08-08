@@ -38,6 +38,18 @@ reproducible.
 - **D4 — No pagination change.** HPE's 1,073 postings vs the 20-per-page
   CXS cap mirrors NVIDIA (2,000). Delta mode accumulates new reqs daily;
   a pagination loop is future work if coverage proves insufficient.
+  **Correction (D4-r, 2026-08-07):** reversed same-day on owner
+  follow-up — first-page-only made the new boards mostly invisible
+  (HPE's first page is 20 of 1,073, sorted newest-first and dominated by
+  India postings). `fetch_workday` now takes `max_postings`
+  (None = first page, 0 = whole board, N = cap) driven by
+  `search.workday_max_postings` in config (set to 0). Pages are deduped
+  on `externalPath` because boards can repeat rows across page
+  boundaries. Cost accepted: a full daily raw load is ~180 extra listing
+  requests plus per-posting JD fetches for the four Workday boards
+  (~3.5k postings total, ThreadPool(8) in raw_load); job-pilot's next
+  delta will see a one-time flood of "new" rows, absorbed by its
+  category/title/salary filters and `max_jobs_per_run` guard.
 
 ## Security baseline
 

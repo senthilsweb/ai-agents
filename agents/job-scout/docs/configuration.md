@@ -94,10 +94,16 @@ search:
   max_posting_age_days: 30    # skip feed postings older than this
   refresh_mode: "delta"       # or "snapshot"
   verify_before_insert: false # optional live open/closed check
+  workday_max_postings: 0     # 0 = page through whole Workday boards
 ```
 
 - `max_posting_age_days` — postings older than this are skipped at
   fetch time. Boards that send no dates are always kept, never guessed.
+- `workday_max_postings` — Workday's API returns at most 20 rows per
+  request. `0` pages through the entire board (a 1,000-posting board is
+  ~50 requests), `N` stops after N postings, and leaving it unset reads
+  only the first page (the pre-2026-08-07 behavior). Other board systems
+  return everything in one response and ignore this setting.
 - `refresh_mode: delta` — every fetch only inserts postings that are
   new (rows dedup on company + req_id). `snapshot` additionally marks
   previously open rows `closed` when their id has disappeared from the

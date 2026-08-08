@@ -173,6 +173,9 @@ search:
     greenhouse: "boards.greenhouse.io"
     lever: "jobs.lever.co"
   max_results_per_company: 5
+  workday_max_postings: 0          # Workday boards page at 20 rows; 0 = fetch the
+                                   # whole board, N = stop after N, unset = first
+                                   # page only (pre-2026-08-07 behavior)
   verify_before_insert: true       # fetch posting to confirm open + extract req_id
   recrawl_ttl_days: 7              # skip queries crawled within this window (crawl_log)
   max_posting_age_days: 30         # skip feed postings older than this (undated feeds kept)
