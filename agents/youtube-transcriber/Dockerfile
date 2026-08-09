@@ -25,7 +25,11 @@ COPY pyproject.toml ./
 COPY pipeline ./pipeline
 COPY server ./server
 
-RUN pip install --no-cache-dir .
+# [objectstore]: boto3 for the optional S3/MinIO artifact mirror
+# (add-object-store-state) — env-gated at runtime, inert without OBJECT_STORE_*.
+# [telemetry]: OTel SDK + OTLP exporter so the deployed service can trace to
+# OpenObserve/Arize — env-gated the same way, inert without endpoints.
+RUN pip install --no-cache-dir ".[objectstore,telemetry]"
 
 # Bake the ASR weights into the image. faster-whisper caches to
 # ~/.cache/huggingface; this download becomes an image layer, so first boot

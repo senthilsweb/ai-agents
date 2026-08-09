@@ -176,6 +176,28 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="youtube-transcriber", version="0.1.0", lifespan=lifespan)
 
 
+@app.middleware("http")
+async def require_api_key(request, call_next):
+    """API-key gate for public exposure (deploy-stats-managed-agent).
+
+    Env-gated: no TRANSCRIBER_API_KEY set means an open service (the
+    loopback/local deployments). With a key set, every endpoint except
+    GET /healthz requires a matching X-API-Key header — an unauthenticated
+    public service is a CPU-DoS and transcript-exfiltration surface.
+    """
+    import os
+    import secrets as _secrets
+
+    from fastapi.responses import JSONResponse
+
+    expected = os.getenv("TRANSCRIBER_API_KEY", "").strip()
+    if expected and request.url.path != "/healthz":
+        supplied = request.headers.get("x-api-key", "")
+        if not _secrets.compare_digest(supplied, expected):
+            return JSONResponse({"detail": "invalid or missing API key"}, status_code=401)
+    return await call_next(request)
+
+
 @app.get("/healthz")
 def healthz() -> dict:
     return {
