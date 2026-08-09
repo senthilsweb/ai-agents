@@ -1,6 +1,6 @@
 schema: spec-driven
 name: add-cmg-local-deploy
-status: implemented
+status: verified
 approval:
   reviewed_by: senthilsweb
   reviewed_date: 2026-08-09

@@ -68,8 +68,9 @@ builds.
       `~/opt/cmg/youtube-transcriber/runs/<stamp>-Z47vatpsGPI/`, `db.json`
       upsert in the working tree, site in `~/opt/cmg/talk-value-stats/dist`,
       eyeballed on :8080.
-- [ ] Parameterization proof: a second, different video id runs through the
-      identical prompt shape (no duplicates in db.json; second page added).
+- [x] Parameterization proof: We7BZVKbCVw (87.8-min video, 19,260 words) ran
+      through the identical prompt shape 2026-08-09 — 15 examples/30 metrics
+      added, 6 unique pages in db.json, no duplicates. Cost $0.29.
 - [x] CI: both image workflows green on main (2026-08-09, first multi-arch
       run); GHCR manifest for youtube-transcriber confirmed [arm64, amd64].
       talk-value-stats package still PRIVATE — flip public in GitHub package
@@ -77,5 +78,6 @@ builds.
 - [x] Pages publish: owner-approved push 2026-08-09; unified deploy green;
       page live at /ai-agents/ai-native-numbers/fireside-chat-with-boris-
       cherny-head-of-claude-code.html (9 examples, 18 metrics).
-- [ ] Governance: `.openspec.yaml` → `implemented` after construction,
-      `verified` after the E2E + CI + Pages checks above.
+- [x] Governance: `.openspec.yaml` → `verified` 2026-08-09; every requirement
+      exercised live. The only open nicety is the optional one-time flip of
+      the talk-value-stats GHCR package to public.
