@@ -1,0 +1,33 @@
+schema: spec-driven
+name: add-object-store-state
+status: implemented
+builds_on: add-cmg-local-deploy
+approval:
+  reviewed_by: senthilsweb
+  reviewed_date: 2026-08-09
+  note: >
+    Raised and approved in-session 2026-08-09: the owner wants transcriber
+    results and talk-value-stats state stored in their MinIO (S3 API,
+    publicly reachable, bucket ai-agents) so the cmg containers exchange
+    state via the object store instead of bind mounts ("use the
+    variable/secrets in the .env so that we no need to mount the files"),
+    and directed construction to proceed immediately ("Make this change
+    first in automode"). Owner supplied the env contract (OBJECT_STORE_
+    BUCKET/REGION/ACCESS_KEY_ID/SECRET_ACCESS_KEY/ENDPOINT/FORCE_PATH_STYLE)
+    and live credentials for verification.
+
+    Design-time live finding: the S3 API answers at
+    https://minio-console.nathansweb.com (signed ListObjects verified);
+    the minio. hostname serves the web console — the names are swapped
+    relative to convention, documented so the env value isn't "corrected"
+    into breakage. The bucket already holds another project's prefixes;
+    this pipeline namespaces under youtube-transcriber/ and
+    talk-value-stats/.
+
+    Scope guardrails: filesystem mode stays the default when OBJECT_STORE_*
+    is absent (backwards compatible; laptop deployment unaffected until its
+    .envs opt in). Real credentials live only in installed chmod-600 .envs;
+    the repo carries placeholders. Security recommendation recorded: the
+    shared credentials are the MinIO root user on a public endpoint —
+    create a bucket-scoped user and rotate. Publish stays human: sync-db.sh
+    refreshes the repo db.json from the store; git push remains the gate.

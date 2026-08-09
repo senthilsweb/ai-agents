@@ -9,6 +9,7 @@ dependencies = [
     "jinja2>=3.1",      # build.py — static site
     "pyarrow>=16",      # export.py — stats.parquet
     "anthropic>=0.40",  # extract.py — the one GenAI call (structured outputs)
+    "boto3>=1.34",      # objstore.py — S3/MinIO state (add-object-store-state)
 ]
 
 [project.optional-dependencies]
@@ -23,7 +24,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 # Flat module set — no package; scripts import schema/extract/build/export directly.
-py-modules = ["schema", "extract", "build", "export"]
+py-modules = ["schema", "extract", "build", "export", "objstore"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

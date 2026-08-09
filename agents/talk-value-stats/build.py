@@ -28,6 +28,8 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from schema import StatsDB, thumbnail_url, ts_to_seconds, watch_url  # noqa: E402
 
+import objstore  # noqa: E402
+
 DEFAULT_DB = HERE / "db.json"
 DIST = HERE / "dist"
 TEMPLATES = HERE / "templates"
@@ -98,6 +100,10 @@ def moments(page) -> list[dict]:
 
 def main() -> None:
     db_path = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_DB
+    # Object-store mode: render from the store's authoritative db.json
+    # (add-object-store-state D3). Without the env this is a no-op.
+    if objstore.configured():
+        objstore.pull_db(db_path)
     pages = StatsDB.validate_python(json.loads(db_path.read_text()))
     pages.sort(key=lambda p: p.source.title.lower())
 

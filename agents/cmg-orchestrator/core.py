@@ -29,6 +29,11 @@ class Settings:
     cmg_root: Path
     repo: Path
     stats_image: str
+    # add-object-store-state D5: when the store is configured, state moves
+    # via S3/MinIO and the docker commands carry no state mounts. The stats
+    # container reads its own OBJECT_STORE_* from its --env-file; the
+    # orchestrator holds only this flag, never the credentials.
+    object_store: bool = False
 
     @classmethod
     def from_env(cls, env: dict[str, str] | None = None) -> "Settings":
@@ -55,6 +60,7 @@ class Settings:
             cmg_root=cmg_root,
             repo=Path(repo),
             stats_image=stats_image,
+            object_store=bool(env.get("OBJECT_STORE_BUCKET", "").strip()),
         )
 
     @property
@@ -83,8 +89,19 @@ def validate_video_id(video_id: str) -> str:
 
 def extract_cmd(s: Settings, video_id: str) -> list[str]:
     """docker argv for a one-shot extract.py run. The id is a single argv
-    token — validated first, never shell-interpolated."""
+    token — validated first, never shell-interpolated.
+
+    Object-store mode: no state mounts — the container pulls the transcript
+    and db.json from S3/MinIO and pushes db.json back (its OBJECT_STORE_*
+    comes from the --env-file)."""
     vid = validate_video_id(video_id)
+    if s.object_store:
+        return [
+            "docker", "run", "--rm",
+            "--env-file", str(s.stats_env_file),
+            s.stats_image,
+            "python", "extract.py", vid,
+        ]
     return [
         "docker", "run", "--rm",
         "--env-file", str(s.stats_env_file),
@@ -100,14 +117,20 @@ def extract_cmd(s: Settings, video_id: str) -> list[str]:
 
 def build_site_cmd(s: Settings) -> list[str]:
     """docker argv for a one-shot build.py run. build.py rmtree's /app/dist,
-    so the host dist/ is mounted at /out and the result is copied out."""
-    return [
-        "docker", "run", "--rm",
-        "-v", f"{s.db_json}:/app/db.json:ro",
+    so the host dist/ is mounted at /out and the result is copied out.
+    Object-store mode: db.json comes from the store (build.py pulls it);
+    the dist copy-out mount remains — it is a local output, not state."""
+    cmd = ["docker", "run", "--rm"]
+    if s.object_store:
+        cmd += ["--env-file", str(s.stats_env_file)]
+    else:
+        cmd += ["-v", f"{s.db_json}:/app/db.json:ro"]
+    cmd += [
         "-v", f"{s.dist_dir}:/out",
         s.stats_image,
         "sh", "-c", "python build.py && rm -rf /out/* && cp -r dist/. /out/",
     ]
+    return cmd
 
 
 def poll_job(

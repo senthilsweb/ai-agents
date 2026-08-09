@@ -33,6 +33,8 @@ from typing import Optional
 
 from dotenv import load_dotenv
 
+import objstore
+
 # schema.py sits next to this file.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from schema import (  # noqa: E402
@@ -73,15 +75,21 @@ def resolve_model() -> str:
 
 
 def find_transcript(arg: str) -> Path:
-    """Accept a transcript.md path, or an 11-char video id to look up in runs/."""
+    """Accept a transcript.md path, or an 11-char video id to look up —
+    in the object store when OBJECT_STORE_* is configured, else in runs/."""
     p = Path(arg)
     if p.is_file():
         return p
     if re.fullmatch(r"[A-Za-z0-9_-]{11}", arg):
+        if objstore.configured():
+            found = objstore.find_transcript_s3(arg)
+            if found:
+                return found
         matches = sorted(TRANSCRIBER_RUNS.glob(f"*-{arg}/transcript.md"))
         if matches:
             return matches[-1]  # latest by timestamped dir name
-        sys.exit(f"No transcript found for video id {arg} under {TRANSCRIBER_RUNS}")
+        where = "the object store or " if objstore.configured() else ""
+        sys.exit(f"No transcript found for video id {arg} in {where}{TRANSCRIBER_RUNS}")
     sys.exit(f"Not a transcript file or 11-char video id: {arg}")
 
 
@@ -187,9 +195,15 @@ def main() -> None:
         extractedAt=stamped,
     )
 
+    # Object-store mode: the store copy is authoritative — sync it down
+    # before the upsert and push the result back (add-object-store-state D3).
+    if objstore.configured():
+        objstore.pull_db(args.db)
     db = load_db(args.db)
     db = upsert(db, page)
     write_db(args.db, db)
+    if objstore.configured():
+        objstore.push_db(args.db)
 
     n_metrics = sum(len(e.metrics) for e in page.examples)
     print(

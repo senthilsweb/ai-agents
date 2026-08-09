@@ -64,6 +64,32 @@ class TestVideoIdValidation:
             validate_video_id(bad)
 
 
+class TestObjectStoreMode:
+    def s3_settings(self) -> Settings:
+        return Settings.from_env({**ENV, "OBJECT_STORE_BUCKET": "ai-agents"})
+
+    def test_flag_off_by_default(self):
+        assert settings().object_store is False
+        assert self.s3_settings().object_store is True
+
+    def test_extract_cmd_has_no_state_mounts(self):
+        cmd = extract_cmd(self.s3_settings(), "dQw4w9WgXcQ")
+        assert "-v" not in cmd
+        assert "TRANSCRIBER_RUNS=/data/runs" not in cmd
+        assert "--env-file" in cmd
+        assert cmd[-3:] == ["python", "extract.py", "dQw4w9WgXcQ"]
+
+    def test_build_cmd_keeps_only_dist_mount(self):
+        cmd = build_site_cmd(self.s3_settings())
+        mounts = [cmd[i + 1] for i, a in enumerate(cmd) if a == "-v"]
+        assert mounts == ["/cmg/talk-value-stats/dist:/out"]
+        assert "--env-file" in cmd
+
+    def test_s3_mode_still_validates_video_id(self):
+        with pytest.raises(ValueError):
+            extract_cmd(self.s3_settings(), "bad id")
+
+
 class TestCommands:
     def test_extract_cmd_shape(self):
         cmd = extract_cmd(settings(), "dQw4w9WgXcQ")

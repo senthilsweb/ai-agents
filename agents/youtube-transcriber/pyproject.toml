@@ -15,6 +15,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+objectstore = [
+    "boto3>=1.34",  # optional S3/MinIO mirror of run artifacts
+]
 telemetry = [
     "opentelemetry-sdk>=1.27",
     "opentelemetry-exporter-otlp-proto-http>=1.27",
