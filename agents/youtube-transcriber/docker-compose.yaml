@@ -1,17 +1,21 @@
 # Self-contained deployment: run from this directory on any Docker host.
 #
-#   cp .env.example .env   # fill in TRANSCRIBER_API_KEY + OBJECT_STORE_* etc.
 #   docker compose pull && docker compose up -d
 #   curl -s http://localhost:8001/healthz
 #
-# Env precedence: `environment:` below OVERRIDES what .env supplies, and
-# `${VAR:-default}` lets the shell override the inline value at `up` time,
-# e.g.  ASR_MODEL=small.en docker compose up -d
+# Every variable the service understands is INLINE below. Each resolves in
+# this order: shell environment → sibling .env file (compose interpolates it
+# automatically when present — optional, no env_file reference) → the inline
+# default. Empty string behaves as "unset" for every optional feature
+# (auth open, no object-store mirror, no tracing).
+#
+#   TRANSCRIBER_API_KEY=$(openssl rand -hex 24) docker compose up -d
+#   ASR_MODEL=small.en MAX_DURATION_MIN=60 docker compose up -d
 #
 # runs/ and .cache/ land in this directory (both gitignored). Public
-# exposure goes through a tunnel (see infra/cmg/README.md, "Public
-# transcriber") — set TRANSCRIBER_API_KEY in .env BEFORE creating any
-# public route; without it the service is open.
+# exposure goes through a tunnel (infra/cmg/README.md, "Public
+# transcriber") — set TRANSCRIBER_API_KEY BEFORE creating any public route;
+# without it the service is open.
 services:
   transcriber:
     image: ghcr.io/senthilsweb/youtube-transcriber:latest
@@ -21,11 +25,33 @@ services:
     volumes:
       - ./runs:/app/runs
       - ./.cache:/app/.cache
-    env_file:
-      - path: .env
-        required: false
     environment:
-      # Operational knobs, inline-overridable; secrets stay in .env only.
+      # --- ASR (local faster-whisper) ---------------------------------
       ASR_MODEL: ${ASR_MODEL:-distil-large-v3}
+      ASR_COMPUTE_TYPE: ${ASR_COMPUTE_TYPE:-int8}
+      ASR_LANGUAGE: ${ASR_LANGUAGE:-}
+      ASR_BEAM_SIZE: ${ASR_BEAM_SIZE:-5}
+      ASR_VAD: ${ASR_VAD:-1}
+      # --- Limits ------------------------------------------------------
       MAX_DURATION_MIN: ${MAX_DURATION_MIN:-180}
+      MAX_FILESIZE_MB: ${MAX_FILESIZE_MB:-200}
+      # --- Service auth: REQUIRED before any public route --------------
+      TRANSCRIBER_API_KEY: ${TRANSCRIBER_API_KEY:-}
+      # --- YouTube bot-block fallback (mount the file yourself) --------
+      YT_COOKIES_FILE: ${YT_COOKIES_FILE:-}
+      # --- Object-store mirror of run artifacts (add-object-store-state)
+      # Bucket/endpoint hardcoded to the owner's MinIO (S3 API answers on
+      # the minio-console. hostname — verified; the minio. vhost is the
+      # web console). Keys are secret: shell/.env only.
+      OBJECT_STORE_BUCKET: ${OBJECT_STORE_BUCKET:-ai-agents}
+      OBJECT_STORE_REGION: ${OBJECT_STORE_REGION:-us-east-1}
+      OBJECT_STORE_ACCESS_KEY_ID: ${OBJECT_STORE_ACCESS_KEY_ID:-}
+      OBJECT_STORE_SECRET_ACCESS_KEY: ${OBJECT_STORE_SECRET_ACCESS_KEY:-}
+      OBJECT_STORE_ENDPOINT: ${OBJECT_STORE_ENDPOINT:-https://minio-console.nathansweb.com}
+      OBJECT_STORE_FORCE_PATH_STYLE: ${OBJECT_STORE_FORCE_PATH_STYLE:-true}
+      # --- Tracing (dual export; blank = disabled, degrades to warning)
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
+      PHOENIX_COLLECTOR_ENDPOINT: ${PHOENIX_COLLECTOR_ENDPOINT:-}
+      PHOENIX_CLIENT_HEADERS: ${PHOENIX_CLIENT_HEADERS:-}
     restart: unless-stopped
