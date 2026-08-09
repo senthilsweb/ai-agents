@@ -1,0 +1,11 @@
+name: tvs-stats-env
+description: >-
+  Zero-trust sandbox for the talk-value-stats extractor agent. The agent
+  works entirely through its custom tools (executed host-side by the
+  session driver, which holds every credential — see
+  openspec/changes/deploy-stats-managed-agent design D2); the sandbox
+  itself needs no network, no packages, no secrets.
+config:
+  type: cloud
+  networking:
+    type: none

@@ -1,0 +1,31 @@
+schema: spec-driven
+name: deploy-stats-managed-agent
+status: implemented
+builds_on: add-object-store-state
+approval:
+  reviewed_by: senthilsweb
+  reviewed_date: 2026-08-09
+  note: >
+    Raised 2026-08-09 immediately after add-object-store-state: the state
+    move to MinIO was preparation for exactly this — running the
+    orchestration + stats half on Claude's serverless infra (Managed
+    Agents) while youtube-transcriber stays on owner hardware (settled:
+    no ffmpeg in the managed sandbox, datacenter-IP YouTube blocking,
+    CPU-bound ASR), exposed publicly through the owner's existing
+    *.nathansweb.com Cloudflare front. Owner chose service-level API-key
+    auth for the transcriber and directed spec+build in automode.
+
+    Design mirrors the owner's working agent-pii-discovery deployment
+    (ant CLI + YAML control plane + applied.json + host-side custom tools
+    as the credential boundary per its ADR 0003), with one significant
+    simplification: the managed agent performs extraction with its own
+    inference (no in-sandbox anthropic client), so no vault credential
+    and no sandbox networking are needed at all — the sandbox holds zero
+    secrets and the schema gate moves to the driver's persist_page
+    handler (pydantic validate, is_error retry loop).
+
+    Owner-side prerequisites recorded: one-time interactive `ant auth
+    login` (the CLI is installed but unauthenticated), and the Cloudflare
+    route for the transcriber. Both extraction paths coexist: the
+    container/CLI path from add-object-store-state stays canonical for
+    local runs; parity between the two is a verification item.

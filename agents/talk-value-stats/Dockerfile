@@ -16,7 +16,7 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY pyproject.toml schema.py extract.py build.py export.py ./
+COPY pyproject.toml schema.py extract.py build.py export.py objstore.py ./
 COPY prompts ./prompts
 COPY templates ./templates
 
