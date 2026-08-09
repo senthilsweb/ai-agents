@@ -1,0 +1,84 @@
+# Image publish for talk-value-stats — same shape as the other *-image.yml
+# workflows: tests on every push touching the agent; on main, build and push
+# ghcr.io/senthilsweb/talk-value-stats.
+#
+# Multi-arch (amd64 + arm64) in one buildx job: the image is tiny pure-Python
+# (no weights bake, unlike youtube-transcriber), so the arm64 half building
+# under QEMU emulation is cheap and doesn't warrant a native runner.
+#
+# The image is a ONE-SHOT wrapper around extract.py/build.py (no CMD, no
+# server) and bakes NO secrets — ANTHROPIC_API_KEY / MODEL_STATS_EXTRACTOR
+# arrive via --env-file on the deployment host at run time.
+#
+# NOTE: the package is PRIVATE on first push — flip
+# ghcr.io/senthilsweb/talk-value-stats to public once in GitHub package
+# settings if desired (a workflow cannot do it).
+#
+# Added by openspec change add-cmg-local-deploy (2026-08-09). Site publishing
+# is unrelated to this image and stays owned by job-scout-docs.yml.
+name: talk-value-stats image
+
+on:
+  push:
+    paths:
+      - "agents/talk-value-stats/**"
+      - ".github/workflows/talk-value-stats-image.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: talk-value-stats-image
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install and test
+        working-directory: agents/talk-value-stats
+        run: |
+          pip install -q -e ".[dev]"
+          pytest -q
+
+  image:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-qemu-action@v3
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/talk-value-stats
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=sha-
+            type=raw,value={{date 'YYYYMMDD'}}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: agents/talk-value-stats
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

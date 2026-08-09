@@ -1,0 +1,30 @@
+[project]
+name = "cmg-orchestrator"
+version = "0.1.0"
+description = "A2A orchestrator: one prompt drives youtube-transcriber -> talk-value-stats across the ~/opt/cmg local deployment"
+requires-python = ">=3.10"
+dependencies = [
+    "claude-agent-sdk>=0.1.0",
+    "httpx>=0.27",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[project.scripts]
+cmg-orchestrator = "orchestrator:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# Flat module set, same convention as talk-value-stats.
+py-modules = ["core", "orchestrator"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

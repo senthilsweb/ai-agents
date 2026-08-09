@@ -1,0 +1,32 @@
+schema: spec-driven
+name: add-cmg-local-deploy
+status: implemented
+approval:
+  reviewed_by: senthilsweb
+  reviewed_date: 2026-08-09
+  note: >
+    Raised 2026-08-09. Deploys youtube-transcriber and talk-value-stats as
+    locally "deployed" agents under ~/opt/cmg/<agent> (the owner's "claude
+    managed agents, local" convention — clarified during planning that
+    Anthropic's Managed Agents product is cloud-only with no local mode, and
+    that "A2A" as a protocol is Google's, not Anthropic's; the A2A layer here
+    is a Claude Agent SDK orchestrator with transcriber/stats subagents).
+
+    Three owner directions recorded at plan approval: (1) the pipeline is
+    PARAMETERIZED — it accepts any YouTube URL/id at invocation; the
+    https://youtu.be/Z47vatpsGPI link is only the first verification run,
+    nothing video-specific is hard-coded. (2) The plan lands as this openspec
+    change in the monorepo. (3) Deployment consumes GHCR-published CI images
+    (ghcr.io/senthilsweb/youtube-transcriber verified public but amd64-only;
+    the deploy host is an arm64 Mac, so CI grows a native-arm64 multi-arch
+    build via the ubuntu-24.04-arm runner, and talk-value-stats gets its
+    first image workflow) — local docker build is the dev fallback only.
+
+    Scope guardrails: both existing agents' code is untouched (the
+    transcriber image is reused as-is; the stats container wraps
+    extract.py/build.py unchanged). The orchestrator has a strict tool
+    allowlist (Task + four MCP tools, no Bash/Write/Edit/web) and cannot
+    commit or push — the Pages publish stays a human-run git command after
+    eyeballing the db.json diff. Transcripts never leave ~/opt/cmg and are
+    never committed; only db.json's extracted stats + grounded quotes are
+    published, as today.

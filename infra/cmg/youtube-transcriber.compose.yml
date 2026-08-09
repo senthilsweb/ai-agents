@@ -1,0 +1,18 @@
+# ~/opt/cmg/youtube-transcriber/docker-compose.yml (installed by install.sh).
+# Long-running transcription service; the GHCR image bakes the ASR weights so
+# startup warms the model with no download. Host port 8001 (container 8000).
+#
+# runs/ is the A2A data plane: talk-value-stats mounts the same host dir
+# read-only and reads transcripts from it. cache/ keeps the per-video opus
+# audio cache across restarts. Added by openspec change add-cmg-local-deploy.
+services:
+  transcriber:
+    image: ghcr.io/senthilsweb/youtube-transcriber:latest
+    container_name: cmg-youtube-transcriber
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./runs:/app/runs
+      - ./cache:/app/.cache
+    env_file: .env
+    restart: unless-stopped

@@ -311,6 +311,39 @@ All paths below are relative to `agents/talk-value-stats/`:
 Run (extract): `cd agents/talk-value-stats && MODEL_STATS_EXTRACTOR=claude-opus-4-8 python extract.py <transcript.md|video-id>`
 Run (build): `cd agents/talk-value-stats && python build.py && (cd dist && python3 -m http.server 8080)`
 
+### CMG Orchestrator (`agents/cmg-orchestrator/`)
+
+The A2A layer for the **"claude managed agents, local"** deployment
+(`~/opt/cmg/<agent>` — an owner-local convention; clarified during planning
+that Anthropic's Managed Agents product is cloud-only and "A2A" as a protocol
+is Google's). One natural-language prompt — *"transcribe \<any YouTube link\>
+and add it to talk-value-stats"* — drives transcription through the deployed
+youtube-transcriber REST service and stats extraction/site build through
+one-shot talk-value-stats containers. Born 2026-08-09. A small Python
+**Claude Agent SDK** app: a main agent delegating to `transcriber` and
+`stats` subagents (`AgentDefinition`), whose only capabilities are four
+in-process MCP tools; `Bash`/file-edit/web tools are disallowed, and
+**publishing is not a tool** — it prints the `git add db.json … push` for the
+human to run. Fully parameterized: nothing video-specific is hard-coded.
+
+All paths below are relative to `agents/cmg-orchestrator/`:
+
+- `core.py` — SDK-free core: env settings (`MODEL_CMG_ORCHESTRATOR → MODEL →
+  error`, `TRANSCRIBER_URL`, `CMG_ROOT`, `REPO`, `STATS_IMAGE`), 11-char id
+  validation, the exact `docker run` argv builders, and the in-tool job-poll
+  loop (10 s interval, 90 min cap). Unit-tested with no network/docker/key.
+- `orchestrator.py` — the SDK wiring (tools, subagents, allowlist) + CLI.
+- Deployment: `infra/cmg/install.sh` builds `~/opt/cmg/` (transcriber
+  compose on host port 8001, stats env + manual `run-extract.sh`/
+  `run-build.sh` wrappers, orchestrator venv + `run.sh`). Images come from
+  GHCR (`youtube-transcriber` is multi-arch — native arm64 CI runner;
+  `talk-value-stats` is a new one-shot image, no CMD, no secrets baked).
+- `openspec/changes/add-cmg-local-deploy/` (repo root) — the full design
+  spec, incl. the security baseline (transcripts never leave `~/opt/cmg`,
+  key via env-file only, orchestrator cannot commit).
+
+Run: `~/opt/cmg/orchestrator/run.sh "transcribe <youtube-url-or-id> and add it to talk-value-stats"`
+
 ---
 
 ## Monorepo Conventions
