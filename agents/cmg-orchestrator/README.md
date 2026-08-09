@@ -20,6 +20,73 @@ transcript itself never crosses the agent boundary — it flows through the
 shared `~/opt/cmg/youtube-transcriber/runs/` mount; agents exchange only ids
 and statuses.
 
+## Architecture
+
+```mermaid
+flowchart TB
+    subgraph host["Mac (~/opt/cmg — 'claude managed agents, local')"]
+        subgraph orch["orchestrator/  (Claude Agent SDK, venv)"]
+            MAIN["main agent<br/><i>sequences the pipeline</i>"]
+            TSUB["transcriber subagent"]
+            SSUB["stats subagent"]
+            MAIN -- "Task: transcribe &lt;url&gt;" --> TSUB
+            MAIN -- "Task: stats for &lt;video_id&gt;" --> SSUB
+        end
+        subgraph svc["youtube-transcriber/  (long-running container :8001)"]
+            API["FastAPI + resident<br/>distil-large-v3 (local ASR)"]
+        end
+        subgraph oneshot["talk-value-stats  (one-shot containers)"]
+            EX["extract.py<br/><i>the only GenAI call (Opus)</i>"]
+            BS["build.py → site"]
+        end
+        RUNS[("runs/&lt;stamp&gt;-&lt;id&gt;/<br/>transcript.md")]
+        DIST[("dist/ static site")]
+    end
+    DB[("repo db.json<br/><i>git working tree</i>")]
+    YT["YouTube"]
+    PAGES["GitHub Pages<br/>/ai-native-numbers/"]
+
+    TSUB -- "POST /transcribe<br/>GET /jobs/{id} (poll in-tool)" --> API
+    API -- "yt-dlp (allowlisted hosts)" --> YT
+    API -- writes --> RUNS
+    SSUB -- "docker run --rm" --> EX
+    SSUB -- "docker run --rm" --> BS
+    RUNS -- ":ro mount (TRANSCRIBER_RUNS)" --> EX
+    EX -- "upsert by videoId" --> DB
+    DB -- ":ro mount" --> BS
+    BS -- "copy-out to /out" --> DIST
+    DB -. "human-run git push<br/>(never a tool)" .-> PAGES
+```
+
+Only the 11-char `video_id` crosses the agent boundary — the transcript
+itself moves through the shared `runs/` mount (the filesystem is the A2A
+data plane; the orchestrator is the control plane).
+
+```mermaid
+sequenceDiagram
+    actor U as owner
+    participant M as main agent (Sonnet)
+    participant T as transcriber subagent
+    participant S as stats subagent
+    participant Y as transcriber service :8001
+    participant C as talk-value-stats container
+
+    U->>M: "transcribe <url> and add it to talk-value-stats"
+    M->>T: Task(transcribe <url>)
+    T->>Y: start_transcription(url)
+    Y-->>T: job_id (202)
+    T->>Y: wait_for_job(job_id) — polls 10s in-tool, 0 tokens while ASR runs
+    Y-->>T: done + video_id + word count
+    T-->>M: video_id, status
+    M->>S: Task(stats for video_id)
+    S->>C: extract_stats(video_id) — docker run, Opus extraction
+    C-->>S: upserted db.json (examples/metrics)
+    S->>C: build_site() — docker run, copy-out dist/
+    C-->>S: site rebuilt
+    S-->>M: summary
+    M-->>U: report + printed git publish command (human runs it)
+```
+
 ## Design (see `openspec/changes/add-cmg-local-deploy/`)
 
 - `core.py` — SDK-free: settings, 11-char id validation, the exact
