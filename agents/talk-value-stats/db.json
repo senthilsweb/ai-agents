@@ -586,6 +586,504 @@
   },
   {
     "schemaVersion": 2,
+    "slug": "head-of-claude-code-what-happens-after-coding-is-solved-bori",
+    "source": {
+      "videoId": "We7BZVKbCVw",
+      "title": "Head of Claude Code: What happens after coding is solved | Boris Cherny",
+      "channel": "Lenny's Podcast",
+      "url": "https://www.youtube.com/watch?v=We7BZVKbCVw",
+      "durationSeconds": 5265,
+      "publishedAt": null
+    },
+    "speakers": [
+      {
+        "name": "Boris Cherny",
+        "role": "Head of Claude Code",
+        "company": "Anthropic",
+        "headshotUrl": null,
+        "profileUrl": null
+      },
+      {
+        "name": "Lenny Rachitsky",
+        "role": "Host",
+        "company": "Lenny's Podcast",
+        "headshotUrl": null,
+        "profileUrl": null
+      }
+    ],
+    "headline": "Anthropic's Claude Code team reports 200% higher pull requests per engineer and 100% of Boris Cherny's code now written by AI since November.",
+    "examples": [
+      {
+        "useCase": "AI-authored code share on GitHub",
+        "org": "GitHub / Claude Code",
+        "speakerName": "Lenny Rachitsky",
+        "summary": "A semi-analysis report found Claude Code now authors 4% of all public GitHub commits, with a prediction of a fifth of all commits by end of year. Boris notes private repos are likely higher.",
+        "metrics": [
+          {
+            "category": "scale",
+            "label": "Share of GitHub commits",
+            "value": 4.0,
+            "unit": "%",
+            "display": "4%",
+            "direction": "up",
+            "confidence": "stated",
+            "quote": "There's this report that recently came out that I'm sure you saw by semi-analysis that showed that 4% of all GitHub commits are authored by Claude Code now.",
+            "timestamp": "00:05:27"
+          },
+          {
+            "category": "scale",
+            "label": "Predicted commit share by EOY",
+            "value": 20.0,
+            "unit": "%",
+            "display": "20% (a fifth)",
+            "direction": "up",
+            "confidence": "projected",
+            "quote": "And they predicted it'll be a fifth of all code commits on GitHub by the end of the year.",
+            "timestamp": "00:05:27"
+          }
+        ],
+        "timestampStart": "00:05:27"
+      },
+      {
+        "useCase": "Claude Code growth",
+        "org": "Anthropic",
+        "speakerName": "Lenny Rachitsky",
+        "summary": "Claude Code's growth is still accelerating — daily active users doubled in the past month — and Anthropic raised at a valuation over $350 billion.",
+        "metrics": [
+          {
+            "category": "scale",
+            "label": "DAU growth in a month",
+            "value": 2.0,
+            "unit": "x",
+            "display": "2x DAU in one month",
+            "direction": "up",
+            "confidence": "stated",
+            "quote": "Just in the past month, their daily active users has doubled.",
+            "timestamp": "00:01:08"
+          },
+          {
+            "category": "other",
+            "label": "Anthropic valuation",
+            "value": 350000000000.0,
+            "unit": "$",
+            "display": "$350B+",
+            "direction": "up",
+            "confidence": "stated",
+            "quote": "They just raised around it over $350 billion.",
+            "timestamp": "00:01:08"
+          }
+        ],
+        "timestampStart": "00:01:08"
+      },
+      {
+        "useCase": "Personal coding fully delegated to AI",
+        "org": "Anthropic",
+        "speakerName": "Boris Cherny",
+        "summary": "Boris says 100% of his code is written by Claude Code, he hasn't hand-edited a line since November, and he ships 10–30 pull requests a day. Claude also reviews 100% of pull requests at Anthropic.",
+        "metrics": [
+          {
+            "category": "productivity_gain",
+            "label": "Code written by AI",
+            "value": 100.0,
+            "unit": "%",
+            "display": "100%",
+            "direction": "up",
+            "confidence": "stated",
+            "quote": "So 100% of my code is written by cloud code.",
+            "timestamp": "00:16:12"
+          },
+          {
+            "category": "scale",
+            "label": "PRs shipped per day",
+            "value": 30.0,
+            "unit": "PRs/day",
+            "display": "10–30 PRs/day",
+            "direction": "up",
+            "confidence": "estimated",
+            "quote": "And so every, you know, every day I ship like 10, 20, 30, 30 requests, something like that.",
+            "timestamp": "00:16:12"
+          },
+          {
+            "category": "quality",
+            "label": "PRs reviewed by Claude",
+            "value": 100.0,
+            "unit": "%",
+            "display": "100% of PRs",
+            "direction": "up",
+            "confidence": "stated",
+            "quote": "So here at Anthropic Cloud reviews 100% of whole requests.",
+            "timestamp": "00:16:12"
+          },
+          {
+            "category": "productivity_gain",
+            "label": "Share of code AI-written in Feb",
+            "value": 20.0,
+            "unit": "%",
+            "display": "~20% (Feb)",
+            "direction": "up",
+            "confidence": "estimated",
+            "quote": "Because even in February when we released it, it was writing maybe, I don't know, like 20% of my code, not more.",
+            "timestamp": "00:15:04"
+          },
+          {
+            "category": "productivity_gain",
+            "label": "Share of code AI-written in May",
+            "value": 30.0,
+            "unit": "%",
+            "display": "~30% (May)",
+            "direction": "up",
+            "confidence": "estimated",
+            "quote": "And even in May, it was writing maybe 30%.",
+            "timestamp": "00:15:04"
+          }
+        ],
+        "timestampStart": "00:15:04"
+      },
+      {
+        "useCase": "Engineering productivity gains",
+        "org": "Anthropic",
+        "speakerName": "Boris Cherny",
+        "summary": "Since introducing Claude Code, Anthropic roughly 4x'd its engineering team while pull requests per engineer rose 200% — versus the few percentage points per year Boris saw with hundreds of engineers working on code quality at Meta.",
+        "metrics": [
+          {
+            "category": "productivity_gain",
+            "label": "PRs per engineer",
+            "value": 200.0,
+            "unit": "%",
+            "display": "+200%",
+            "direction": "up",
+            "confidence": "stated",
+            "quote": "But product. per engineer has increased 200% in terms of like full requests.",
+            "timestamp": "00:20:29"
+          },
+          {
+            "category": "scale",
+            "label": "Engineering team growth",
+            "value": 4.0,
+            "unit": "x",
+            "display": "~4x team",
+            "direction": "up",
+            "confidence": "estimated",
+            "quote": "We probably like 4x the engineering team or something like this.",
+            "timestamp": "00:20:29"
+          },
+          {
+            "category": "productivity_gain",
+            "label": "Prior-era annual gain (Meta)",
+            "value": null,
+            "unit": "%",
+            "display": "a few % per year",
+            "direction": "up",
+            "confidence": "estimated",
+            "quote": "With hundreds of engineers working on it, you would see a gain of like a few percentage points of productivity, something like this.",
+            "timestamp": "00:21:06"
+          }
+        ],
+        "timestampStart": "00:20:29"
+      },
+      {
+        "useCase": "Token spend per engineer",
+        "org": "Anthropic",
+        "speakerName": "Boris Cherny",
+        "summary": "Boris says some Anthropic engineers now spend hundreds of thousands of dollars a month on tokens, and advises companies to be generous with tokens before optimizing.",
+        "metrics": [
+          {
+            "category": "other",
+            "label": "Token spend per engineer",
+            "value": null,
+            "unit": "$/month",
+            "display": "hundreds of thousands $/mo",
+            "direction": "up",
+            "confidence": "estimated",
+            "quote": "You know, at Anthropic, we're starting to see some engineers that are spending, you know, like hundreds of thousands a month in tokens.",
+            "timestamp": "00:27:44"
+          }
+        ],
+        "timestampStart": "00:27:44"
+      },
+      {
+        "useCase": "Historical analog: the printing press",
+        "org": null,
+        "speakerName": "Boris Cherny",
+        "summary": "Boris uses the printing press as an analog: literacy under 1% in mid-1400s Europe, printing costs falling ~100x over 50 years, and literacy reaching ~70% globally over 200 years.",
+        "metrics": [
+          {
+            "category": "other",
+            "label": "Literacy in mid-1400s Europe",
+            "value": 1.0,
+            "unit": "%",
+            "display": "<1%",
+            "direction": "neutral",
+            "confidence": "stated",
+            "quote": "literacy was actually very low. There was sub 1% of the population.",
+            "timestamp": "00:32:59"
+          },
+          {
+            "category": "cost_savings",
+            "label": "Printing cost decline",
+            "value": 100.0,
+            "unit": "x",
+            "display": "100x cheaper",
+            "direction": "down",
+            "confidence": "estimated",
+            "quote": "It went down something like 100x over the next 50 years.",
+            "timestamp": "00:32:59"
+          },
+          {
+            "category": "other",
+            "label": "Literacy 200 years later",
+            "value": 70.0,
+            "unit": "%",
+            "display": "~70%",
+            "direction": "up",
+            "confidence": "estimated",
+            "quote": "But over the next 200 years, it went up to like 70% globally.",
+            "timestamp": "00:33:41"
+          }
+        ],
+        "timestampStart": "00:32:59"
+      },
+      {
+        "useCase": "Job satisfaction after adopting AI tools",
+        "org": null,
+        "speakerName": "Lenny Rachitsky",
+        "summary": "Lenny's informal Twitter polls found 70% of engineers and PMs enjoy their job more since adopting AI tools, versus 55% of designers, with 10% and 20% enjoying it less respectively.",
+        "metrics": [
+          {
+            "category": "quality",
+            "label": "Engineers/PMs enjoying job more",
+            "value": 70.0,
+            "unit": "%",
+            "display": "70%",
+            "direction": "up",
+            "confidence": "stated",
+            "quote": "And both engineers and PMs, 70% of people said they are enjoying their job more.",
+            "timestamp": "00:44:17"
+          },
+          {
+            "category": "quality",
+            "label": "Engineers/PMs enjoying job less",
+            "value": 10.0,
+            "unit": "%",
+            "display": "~10%",
+            "direction": "down",
+            "confidence": "estimated",
+            "quote": "And about 10% said they're enjoying their job less.",
+            "timestamp": "00:44:17"
+          },
+          {
+            "category": "quality",
+            "label": "Designers enjoying job more",
+            "value": 55.0,
+            "unit": "%",
+            "display": "55%",
+            "direction": "up",
+            "confidence": "stated",
+            "quote": "Designers, interestingly, only 55% said they're enjoying their job more and 20% said they're enjoying their job less.",
+            "timestamp": "00:45:01"
+          }
+        ],
+        "timestampStart": "00:44:17"
+      },
+      {
+        "useCase": "Latent demand product signals",
+        "org": "Facebook / Meta",
+        "speakerName": "Boris Cherny",
+        "summary": "Boris cites Facebook Marketplace and Dating as latent-demand examples: 40% of Facebook group posts were buying and selling, and 60% of profile views were between non-friends of the opposite gender.",
+        "metrics": [
+          {
+            "category": "other",
+            "label": "Group posts buying/selling",
+            "value": 40.0,
+            "unit": "%",
+            "display": "40%",
+            "direction": "neutral",
+            "confidence": "stated",
+            "quote": "that 40% of posts in Facebook groups are buying and selling stuff.",
+            "timestamp": "00:47:30"
+          },
+          {
+            "category": "other",
+            "label": "Cross-gender non-friend profile views",
+            "value": 60.0,
+            "unit": "%",
+            "display": "60%",
+            "direction": "neutral",
+            "confidence": "stated",
+            "quote": "60% of profile views are people that are not friends with each other that are opposite gender.",
+            "timestamp": "00:48:13"
+          }
+        ],
+        "timestampStart": "00:47:30"
+      },
+      {
+        "useCase": "Building Cowork with Claude Code",
+        "org": "Anthropic",
+        "speakerName": "Boris Cherny",
+        "summary": "Anthropic's team built the Cowork product — including a full virtual machine and security guardrails — entirely with Claude Code in about 10 days.",
+        "metrics": [
+          {
+            "category": "cycle_time",
+            "label": "Build time for Cowork",
+            "value": 10.0,
+            "unit": "days",
+            "display": "10 days",
+            "direction": "down",
+            "confidence": "stated",
+            "quote": "It was fully implemented with Quad Code. It took about 10 days.",
+            "timestamp": "00:53:06"
+          }
+        ],
+        "timestampStart": "00:51:54"
+      },
+      {
+        "useCase": "Autonomous agent run length",
+        "org": "Anthropic",
+        "speakerName": "Boris Cherny",
+        "summary": "Model autonomy has grown from 15–30 seconds of unattended running with Sonnet 3.5 a year ago to 10–30 minutes on average with Opus 4.6, and in some cases hours, days or weeks.",
+        "metrics": [
+          {
+            "category": "productivity_gain",
+            "label": "Unattended run time (a year ago)",
+            "value": 30.0,
+            "unit": "seconds",
+            "display": "15–30 seconds",
+            "direction": "neutral",
+            "confidence": "estimated",
+            "quote": "it could run for maybe 15 or 30 seconds before before it started going off the rails.",
+            "timestamp": "01:07:36"
+          },
+          {
+            "category": "productivity_gain",
+            "label": "Unattended run time (Opus 4.6)",
+            "value": 30.0,
+            "unit": "minutes",
+            "display": "10–30 minutes",
+            "direction": "up",
+            "confidence": "stated",
+            "quote": "But nowadays with Opus 4.6, you know, on average, it'll run maybe 10, 30, 20, 30 minutes unattended.",
+            "timestamp": "01:07:36"
+          }
+        ],
+        "timestampStart": "01:07:36"
+      },
+      {
+        "useCase": "Plan mode usage",
+        "org": "Anthropic",
+        "speakerName": "Boris Cherny",
+        "summary": "Boris starts about 80% of his Claude Code tasks in plan mode, which is implemented by injecting a single sentence into the model's prompt.",
+        "metrics": [
+          {
+            "category": "other",
+            "label": "Tasks started in plan mode",
+            "value": 80.0,
+            "unit": "%",
+            "display": "~80%",
+            "direction": "neutral",
+            "confidence": "estimated",
+            "quote": "I start almost all of my tasks in plan mode, maybe like 80%.",
+            "timestamp": "01:09:30"
+          }
+        ],
+        "timestampStart": "01:09:30"
+      },
+      {
+        "useCase": "Anthropic revenue scale",
+        "org": "Anthropic",
+        "speakerName": "Lenny Rachitsky",
+        "summary": "Lenny cites publicly stated figures of roughly $2B in revenue for Claude Code and $15B for Anthropic overall, while Boris notes most of the world still doesn't use AI.",
+        "metrics": [
+          {
+            "category": "additional_revenue",
+            "label": "Claude Code revenue",
+            "value": 2000000000.0,
+            "unit": "$",
+            "display": "$2B",
+            "direction": "up",
+            "confidence": "estimated",
+            "quote": "I think Claude alone is making $2 billion in revenue.",
+            "timestamp": "01:15:10"
+          },
+          {
+            "category": "additional_revenue",
+            "label": "Anthropic revenue",
+            "value": 15000000000.0,
+            "unit": "$",
+            "display": "$15B",
+            "direction": "up",
+            "confidence": "stated",
+            "quote": "You think Anthropic, I think the number you guys put out, you're making $15 billion in revenue.",
+            "timestamp": "01:15:10"
+          }
+        ],
+        "timestampStart": "01:15:10"
+      },
+      {
+        "useCase": "Evaluating Cowork against non-technical use cases",
+        "org": "Anthropic",
+        "speakerName": "Boris Cherny",
+        "summary": "Anthropic used Lenny's list of 50 non-technical Claude Code use cases as an eval; Cowork was released once it could handle 48 of the 50.",
+        "metrics": [
+          {
+            "category": "quality",
+            "label": "Eval pass rate",
+            "value": 96.0,
+            "unit": "%",
+            "display": "48 of 50",
+            "direction": "up",
+            "confidence": "stated",
+            "quote": "And I think at the point where we hit where coworker was able to do like 48 out of the 50. They were like, okay, it's pretty good.",
+            "timestamp": "01:23:20"
+          }
+        ],
+        "timestampStart": "01:23:20"
+      },
+      {
+        "useCase": "Role convergence across product teams",
+        "org": "Anthropic",
+        "speakerName": "Boris Cherny",
+        "summary": "Boris observes roughly 50% overlap between engineering, design and product management roles on the Claude Code team, where everyone codes.",
+        "metrics": [
+          {
+            "category": "other",
+            "label": "Role overlap",
+            "value": 50.0,
+            "unit": "%",
+            "display": "~50% overlap",
+            "direction": "neutral",
+            "confidence": "estimated",
+            "quote": "One thing that we're starting to see is there's maybe a 50% overlap in these roles where a lot of people are actually just doing the same thing.",
+            "timestamp": "00:42:17"
+          }
+        ],
+        "timestampStart": "00:42:17"
+      },
+      {
+        "useCase": "Scaffolding vs. general models",
+        "org": null,
+        "speakerName": "Boris Cherny",
+        "summary": "Boris says added scaffolding around a model typically improves performance only 10–20%, and those gains are usually wiped out by the next model release.",
+        "metrics": [
+          {
+            "category": "productivity_gain",
+            "label": "Gain from scaffolding",
+            "value": 20.0,
+            "unit": "%",
+            "display": "10–20%",
+            "direction": "up",
+            "confidence": "estimated",
+            "quote": "maybe scaffolding can improve performance, maybe 10, 20%, something like this. But often these gains just get wiped out with the next model.",
+            "timestamp": "01:05:02"
+          }
+        ],
+        "timestampStart": "01:05:02"
+      }
+    ],
+    "extractedBy": "claude-opus-5",
+    "extractedAt": "2026-08-09"
+  },
+  {
+    "schemaVersion": 2,
     "slug": "ascendion-ai-arbitrage",
     "source": {
       "videoId": "EQuCyrwyfXU",
