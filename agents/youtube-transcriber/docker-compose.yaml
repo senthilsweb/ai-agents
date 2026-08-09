@@ -1,0 +1,31 @@
+# Self-contained deployment: run from this directory on any Docker host.
+#
+#   cp .env.example .env   # fill in TRANSCRIBER_API_KEY + OBJECT_STORE_* etc.
+#   docker compose pull && docker compose up -d
+#   curl -s http://localhost:8001/healthz
+#
+# Env precedence: `environment:` below OVERRIDES what .env supplies, and
+# `${VAR:-default}` lets the shell override the inline value at `up` time,
+# e.g.  ASR_MODEL=small.en docker compose up -d
+#
+# runs/ and .cache/ land in this directory (both gitignored). Public
+# exposure goes through a tunnel (see infra/cmg/README.md, "Public
+# transcriber") — set TRANSCRIBER_API_KEY in .env BEFORE creating any
+# public route; without it the service is open.
+services:
+  transcriber:
+    image: ghcr.io/senthilsweb/youtube-transcriber:latest
+    container_name: youtube-transcriber
+    ports:
+      - "${TRANSCRIBER_PORT:-8001}:8000"
+    volumes:
+      - ./runs:/app/runs
+      - ./.cache:/app/.cache
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Operational knobs, inline-overridable; secrets stay in .env only.
+      ASR_MODEL: ${ASR_MODEL:-distil-large-v3}
+      MAX_DURATION_MIN: ${MAX_DURATION_MIN:-180}
+    restart: unless-stopped
