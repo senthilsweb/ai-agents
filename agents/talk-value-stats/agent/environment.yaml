@@ -7,5 +7,10 @@ description: >-
   itself needs no network, no packages, no secrets.
 config:
   type: cloud
+  # Effectively zero-network: the API has no `none` type (only
+  # limited|unrestricted — 400 verified 2026-08-09), so this is `limited`
+  # with no package managers and no allowed hosts.
   networking:
-    type: none
+    type: limited
+    allow_package_managers: false
+    allowed_hosts: []

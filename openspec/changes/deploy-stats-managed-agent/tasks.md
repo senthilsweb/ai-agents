@@ -54,24 +54,28 @@ API-key auth and the call topology (public transcriber via
 
 ## Deployment (owner actions marked ✋)
 
-- [ ] ✋ `ant auth login` (one-time; then `ant auth status` green).
-- [ ] Run `apply_stats_agent.sh`; `applied.json` committed.
+- [x] ✋ `ant auth login` done 2026-08-09 (default workspace).
+- [x] `apply_stats_agent.sh` run 2026-08-09 — env_01UVzu6u7j8W4xfqQFqbxme7 +
+      agent_011tiYLunn7WqXsCg2bL6iDm v1 (one API fix surfaced: networking
+      type `none` doesn't exist; zero-network = `limited` + no hosts).
 - [ ] ✋ Cloudflare route `transcriber.nathansweb.com` → the box running the
       transcriber (laptop now; static-IP server per
       `deploy-cmg-remote-server` later). Until it exists, the driver can
       point `TRANSCRIBER_URL` at `http://localhost:8001` for local E2E.
-- [ ] Driver `.env`: `TRANSCRIBER_URL`, `TRANSCRIBER_API_KEY`,
-      `OBJECT_STORE_*` (reuse installed values).
+- [x] Driver `.env` written (gitignored, chmod 600), localhost transcriber
+      for now.
 
 ## Verification
 
 - [x] Auth: 401 without key, 200 with, healthz open — live against the
       deployed container.
-- [ ] Serverless stats E2E (no transcriber needed): drive a session for a
-      video whose transcript already sits in MinIO (e.g. Z47vatpsGPI) —
-      agent fetches, extracts, persists; db.json in the store gains the
-      page; extraction counts within reason of the container path's
-      (parity check per design risk).
+- [x] Serverless stats E2E — VERIFIED 2026-08-09, session
+      sesn_01PDyQb7EVQHbRGm3kdJyUZ5: agent chose fetch_transcript-first
+      (no transcription job), schema-valid persist on the FIRST attempt,
+      store db.json updated (extractedBy: tvs-stats-extractor). Parity vs
+      container path: 8 examples/15 metrics/1 speaker vs 9/17/2 — slightly
+      conservative with defensible editorial calls (unnamed interviewer not
+      attributed; non-AI-outcome number excluded).
 - [ ] Full E2E once the public route exists: one session from a fresh
       YouTube URL through transcriber → store → extraction → persist.
 - [ ] `sync-db.sh` → diff → ✋ owner push → Pages green.
