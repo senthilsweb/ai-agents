@@ -58,10 +58,11 @@ API-key auth and the call topology (public transcriber via
 - [x] `apply_stats_agent.sh` run 2026-08-09 — env_01UVzu6u7j8W4xfqQFqbxme7 +
       agent_011tiYLunn7WqXsCg2bL6iDm v1 (one API fix surfaced: networking
       type `none` doesn't exist; zero-network = `limited` + no hosts).
-- [ ] ✋ Cloudflare route `transcriber.nathansweb.com` → the box running the
-      transcriber (laptop now; static-IP server per
-      `deploy-cmg-remote-server` later). Until it exists, the driver can
-      point `TRANSCRIBER_URL` at `http://localhost:8001` for local E2E.
+- [x] ✋ Cloudflare route `transcriber.nathansweb.com` live 2026-08-09 —
+      owner-deployed, NON-Docker (git checkout + venv uvicorn); server
+      mirrors artifacts to MinIO. NOTE: API key delivered to the owner but
+      not yet active on the server at E2E time (service still open) —
+      lockdown remains an owner action item.
 - [x] Driver `.env` written (gitignored, chmod 600), localhost transcriber
       for now.
 
@@ -76,8 +77,17 @@ API-key auth and the call topology (public transcriber via
       container path: 8 examples/15 metrics/1 speaker vs 9/17/2 — slightly
       conservative with defensible editorial calls (unnamed interviewer not
       attributed; non-AI-outcome number excluded).
-- [ ] Full E2E once the public route exists: one session from a fresh
-      YouTube URL through transcriber → store → extraction → persist.
+- [x] Full cloud E2E — VERIFIED 2026-08-09, session
+      sesn_015MU9d7WMogTpXAjtKKQrHb: fresh video qzeRWzKte3I (14 min) →
+      start_transcription via transcriber.nathansweb.com → server ASR →
+      MinIO mirror → fetch_transcript → agent extraction (3 examples /
+      6 metrics, sensible editorial: solo tutorial ⇒ org null, promises
+      marked projected) → persist_page → store db.json at 7 pages. A prior
+      session (sesn_018tuXKr…) also proved graceful degradation: 35
+      identical queued-polls behind a 46-min keynote job → agent stopped,
+      reported verbatim, refused to fabricate. Learnings for follow-up:
+      no job-cancel endpoint (killed sessions leave server jobs running);
+      server realtime factor ≈2x (consider a faster ASR model there).
 - [ ] `sync-db.sh` → diff → ✋ owner push → Pages green.
 - [ ] Governance: `.openspec.yaml` → `implemented` after construction,
       `verified` after the E2Es above.
