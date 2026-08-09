@@ -1,0 +1,31 @@
+schema: spec-driven
+name: deploy-cmg-remote-server
+status: proposed
+builds_on: add-cmg-local-deploy
+approval:
+  note: >
+    Raised 2026-08-09, same day add-cmg-local-deploy reached verified. The
+    owner wants the proven ~/opt/cmg A2A pipeline off the dev laptop and
+    onto their other Mac — a local server with a static IP — triggered over
+    SSH from any machine.
+
+    Architecture decision recorded at raise time: "all three on the other
+    Mac" was chosen over two split-cloud alternatives the owner floated and
+    we evaluated against docs: (a) talk-value-stats as Anthropic Managed
+    Agents — rejected because that sandbox has no ffmpeg / no way to add
+    system binaries and no subagent feature, and the git plumbing (token
+    secrets, clone/push scripting) is all manual; (b) stats + orchestration
+    in Claude Code cloud sessions calling an internet-exposed transcriber —
+    viable on paper (repo-native .claude/agents, setup scripts, GitHub
+    flow) but YouTube blocks datacenter egress IPs (proven live in this
+    repo's Firecracker bring-up) and exposing the unauthenticated
+    transcriber would first require an auth+TLS change. Single-host on the
+    server needs neither.
+
+    Scope: NO agent code changes. One compose-template hardening line
+    (loopback-only port bind — the static IP makes the current
+    all-interfaces bind an internet exposure of an unauthenticated
+    service), a remote-deployment runbook in infra/cmg/README.md, and the
+    deployment itself per tasks.md. Owner directed SPEC-ONLY authoring at
+    raise time: nothing executes — not even the compose edit — until this
+    change is approved.
