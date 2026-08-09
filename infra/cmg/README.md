@@ -48,6 +48,40 @@ git add agents/talk-value-stats/db.json && git commit -m "talk-value-stats: add 
 The push triggers the unified `job-scout-docs.yml` Pages deploy — the new
 page lands under `/ai-native-numbers/`. Transcripts never leave `~/opt/cmg`.
 
+## Public transcriber (`transcriber.nathansweb.com`)
+
+To expose the transcriber to the internet (the Managed-Agent driver and any
+remote caller), on the box that runs it:
+
+1. Deploy as below (`install.sh` → fill `.env` → `docker compose pull && up
+   -d`). The compose binds **127.0.0.1:8001** — the public path is a tunnel,
+   never a routable port.
+2. **Set `TRANSCRIBER_API_KEY`** in `youtube-transcriber/.env`
+   (`openssl rand -hex 24`) — with it set, every endpoint except
+   `GET /healthz` requires the `X-API-Key` header. Do not create the DNS
+   route before the key is set.
+3. Cloudflare tunnel (same pattern as the MinIO vhosts):
+   `cloudflared tunnel` ingress `transcriber.nathansweb.com` →
+   `http://localhost:8001`, then the DNS record for the tunnel.
+4. Verify from anywhere:
+   `curl https://transcriber.nathansweb.com/healthz` → 200;
+   `/jobs` without key → 401; with `X-API-Key` → 200.
+
+## Object-store mode (add-object-store-state)
+
+Set the `OBJECT_STORE_*` block in the transcriber and talk-value-stats
+`.env`s (and `OBJECT_STORE_BUCKET` in the orchestrator's, as the flag) and
+state stops flowing through mounts: the transcriber mirrors every run's
+artifacts to `s3://<bucket>/youtube-transcriber/runs/…`, and the stats
+container pulls transcripts and syncs `talk-value-stats/db.json` through
+the store — `docker run` with an env-file and nothing else. Publishing
+gains one step: `sync-db.sh` refreshes the repo's `db.json` from the store
+before the usual human `git diff`/commit/push.
+
+Endpoint gotcha (verified): the owner's MinIO serves its **S3 API on the
+`minio-console.` hostname** and the web console on `minio.` — the names are
+swapped; set `OBJECT_STORE_ENDPOINT` to the console-named host.
+
 ## Images
 
 - `ghcr.io/senthilsweb/youtube-transcriber` — multi-arch (amd64 + native

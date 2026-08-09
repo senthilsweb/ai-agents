@@ -10,12 +10,17 @@ command are deferred to Construction.
 
 ## Bolt 1 — repo edits (dev laptop, then push)
 
-- [ ] `infra/cmg/youtube-transcriber.compose.yml`: `ports: ["8001:8000"]` →
-      `["127.0.0.1:8001:8000"]` (design D1).
-- [ ] Apply the same bind to the laptop's installed
-      `~/opt/cmg/youtube-transcriber/docker-compose.yml` + `docker compose up -d`.
-- [ ] `infra/cmg/README.md`: add "Deploying to a remote Mac server" runbook
-      section (prereqs, install, SSH trigger, reboot persistence, GHCR note).
+- [x] `infra/cmg/youtube-transcriber.compose.yml`: `ports: ["8001:8000"]` →
+      `["127.0.0.1:8001:8000"]` (design D1). Done 2026-08-09, pulled forward
+      by deploy-stats-managed-agent's public-transcriber need.
+- [x] Laptop finding 2026-08-09: on colima a 127.0.0.1 container bind is
+      NOT forwarded to the host, and colima's SSH forwarder listens on all
+      host interfaces regardless — loopback-only hardening is unachievable
+      on colima; TRANSCRIBER_API_KEY (now enforced by the service) + host
+      firewall are the effective controls. Template documents both runtimes.
+- [x] `infra/cmg/README.md`: public-transcriber runbook section added
+      2026-08-09 (tunnel + API key + verification); the fuller remote-Mac
+      runbook remains for this change's execution.
 - [ ] Commit + push (docs/hardening; no image workflow triggers on these paths).
 
 ## Bolt 2 — one-time manual (owner)

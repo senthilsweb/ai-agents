@@ -10,6 +10,14 @@ services:
     image: ghcr.io/senthilsweb/youtube-transcriber:latest
     container_name: cmg-youtube-transcriber
     ports:
+      # Exposure control (deploy-cmg-remote-server D1, amended 2026-08-09):
+      # on Docker Desktop / Linux, prefer "127.0.0.1:8001:8000" so only the
+      # co-located orchestrator and the Cloudflare tunnel (which connects to
+      # localhost) can reach it. On COLIMA that bind breaks host forwarding
+      # and colima's SSH forwarder listens on ALL host interfaces either
+      # way (verified 2026-08-09) — so the real control is
+      # TRANSCRIBER_API_KEY in .env (REQUIRED before any public route) plus
+      # the host firewall.
       - "8001:8000"
     volumes:
       - ./runs:/app/runs

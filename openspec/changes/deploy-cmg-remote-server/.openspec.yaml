@@ -1,6 +1,6 @@
 schema: spec-driven
 name: deploy-cmg-remote-server
-status: proposed
+status: approved
 builds_on: add-cmg-local-deploy
 approval:
   note: >
