@@ -70,10 +70,12 @@ builds.
       eyeballed on :8080.
 - [ ] Parameterization proof: a second, different video id runs through the
       identical prompt shape (no duplicates in db.json; second page added).
-- [ ] CI: both image workflows green on main; multi-arch manifest confirmed
-      (`docker manifest inspect` shows amd64 + arm64); talk-value-stats
-      package flipped public (manual, one-time).
-- [ ] Pages publish: human-run `git add db.json` → push → `job-scout-docs.yml`
-      deploys; new page live under `/ai-native-numbers/`.
+- [x] CI: both image workflows green on main (2026-08-09, first multi-arch
+      run); GHCR manifest for youtube-transcriber confirmed [arm64, amd64].
+      talk-value-stats package still PRIVATE — flip public in GitHub package
+      settings if anonymous pulls are wanted (manual, one-time).
+- [x] Pages publish: owner-approved push 2026-08-09; unified deploy green;
+      page live at /ai-agents/ai-native-numbers/fireside-chat-with-boris-
+      cherny-head-of-claude-code.html (9 examples, 18 metrics).
 - [ ] Governance: `.openspec.yaml` → `implemented` after construction,
       `verified` after the E2E + CI + Pages checks above.
