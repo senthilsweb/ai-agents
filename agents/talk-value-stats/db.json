@@ -290,30 +290,23 @@
         "company": "Anthropic",
         "headshotUrl": null,
         "profileUrl": null
-      },
-      {
-        "name": "Interviewer (Director of Product, Dev Infra)",
-        "role": "Director of Product, Dev Infra / AI developer productivity",
-        "company": "Meta",
-        "headshotUrl": null,
-        "profileUrl": null
       }
     ],
-    "headline": "Anthropic's Claude Code head Boris Cherny reports an 8x increase in code per engineer this year, with 100% of his own code written by Claude since Opus 4.5.",
+    "headline": "Anthropic has seen an 8x increase in code shipped per engineer since the beginning of the year, with 80-90% of all Anthropic code now written by Claude Code.",
     "examples": [
       {
-        "useCase": "Personal engineering output with AI coding agents",
+        "useCase": "Personal engineering output with 100% AI-written code",
         "org": "Anthropic",
         "speakerName": "Boris Cherny",
-        "summary": "Boris pulled his own stats for the year: 1,700 PRs, 400,000 lines added and 250,000 deleted, and 8 billion tokens used since March. All of his code has been written by Claude Code since Opus 4.5 shipped, and most of his coding now happens on his phone.",
+        "summary": "Boris pulled his own stats for the year: ~1,700 PRs, 400,000 lines added and 250,000 deleted, and 8 billion tokens used since March. Since Opus 4.5 shipped in November, 100% of his code has been written by Claude Code.",
         "metrics": [
           {
             "category": "scale",
-            "label": "PRs this year",
+            "label": "Pull requests this year",
             "value": 1700.0,
             "unit": "PRs",
             "display": "1,700 PRs",
-            "direction": "neutral",
+            "direction": "up",
             "confidence": "stated",
             "quote": "So 1.7,000 PRs, added 400,000 wines, deleted 250,000 wines.",
             "timestamp": "00:01:29"
@@ -346,7 +339,7 @@
             "value": 8000000000.0,
             "unit": "tokens",
             "display": "8B tokens",
-            "direction": "neutral",
+            "direction": "up",
             "confidence": "stated",
             "quote": "But since March, I used eight billion tokens.",
             "timestamp": "00:01:29"
@@ -355,7 +348,7 @@
             "category": "productivity_gain",
             "label": "Code written by Claude Code",
             "value": 100.0,
-            "unit": "%",
+            "unit": "percent",
             "display": "100%",
             "direction": "up",
             "confidence": "stated",
@@ -366,22 +359,11 @@
         "timestampStart": "00:01:29"
       },
       {
-        "useCase": "Measuring ROI of AI coding at company scale",
+        "useCase": "Measuring ROI: productivity improvement per engineer",
         "org": "Anthropic",
         "speakerName": "Boris Cherny",
-        "summary": "Boris contrasts historical dev-infra productivity gains of 2-3% per year with today's gains in the hundreds of percent, citing an 8x increase in code per engineer at Anthropic since the start of the year.",
+        "summary": "Boris contrasts the old dev-infra bar of 2-3% annual productivity improvement with current gains of hundreds of percentage points, citing an 8x increase in code per engineer at Anthropic since the start of the year.",
         "metrics": [
-          {
-            "category": "productivity_gain",
-            "label": "Old annual productivity gain",
-            "value": 3.0,
-            "unit": "%",
-            "display": "2–3%/yr (old normal)",
-            "direction": "up",
-            "confidence": "stated",
-            "quote": "if you have, like, a percentage, like, 2, 3 percent productivity improvement for a year, that used to be, like, pretty good",
-            "timestamp": "00:05:33"
-          },
           {
             "category": "productivity_gain",
             "label": "Code per engineer",
@@ -391,54 +373,54 @@
             "direction": "up",
             "confidence": "stated",
             "quote": "And at Anthropic, you know, we've seen like an 8X increase in code per engineer since the beginning of this year.",
-            "timestamp": "00:05:33"
+            "timestamp": "00:06:12"
+          },
+          {
+            "category": "productivity_gain",
+            "label": "Old annual productivity bar",
+            "value": 3.0,
+            "unit": "percent",
+            "display": "2-3% (before)",
+            "direction": "up",
+            "confidence": "stated",
+            "quote": "if you have, like, a percentage, like, 2, 3 percent productivity improvement for a year, that used to be, like, pretty good, now the productivity improvements we're looking at are, you know, like, hundreds of percentage points.",
+            "timestamp": "00:06:12"
           }
         ],
-        "timestampStart": "00:05:33"
+        "timestampStart": "00:06:12"
       },
       {
-        "useCase": "Agent loops (agents prompting agents)",
+        "useCase": "Loops: agents prompting agents to write code",
         "org": "Anthropic",
         "speakerName": "Boris Cherny",
-        "summary": "Boris describes 'loops' — agents orchestrating agents — as the next abstraction step, and says roughly 30% of his own code is now written by loops on an average day.",
+        "summary": "Boris describes 'loops' as the next abstraction step above agents. On an average day roughly 30% of his code is written by loops, and on a good day he can push that to 100%.",
         "metrics": [
           {
             "category": "productivity_gain",
             "label": "Code written by loops",
             "value": 30.0,
-            "unit": "%",
+            "unit": "percent",
             "display": "~30% of code",
             "direction": "up",
-            "confidence": "estimated",
+            "confidence": "stated",
             "quote": "And so for me personally, maybe at this point, like 30% of my code is written by loops on an average day.",
-            "timestamp": "00:10:50"
-          },
-          {
-            "category": "productivity_gain",
-            "label": "Best-day loop share",
-            "value": 100.0,
-            "unit": "%",
-            "display": "up to 100% on some days",
-            "direction": "up",
-            "confidence": "estimated",
-            "quote": "If I try really hard, I can get to like 100% for some days, but it doesn't totally click yet.",
             "timestamp": "00:11:26"
           }
         ],
-        "timestampStart": "00:10:50"
+        "timestampStart": "00:11:26"
       },
       {
-        "useCase": "Company-wide AI-written code share",
+        "useCase": "Company-wide Claude Code adoption",
         "org": "Anthropic",
         "speakerName": "Boris Cherny",
-        "summary": "Across all of Anthropic, 80-90% of code is written by Claude Code on average, with an increasing number of teams at 100%.",
+        "summary": "Across all of Anthropic, 80 to 90% of code is written by Claude Code on average, and for a growing share of teams — including Claude Code and Co-work themselves — it is 100%.",
         "metrics": [
           {
             "category": "productivity_gain",
-            "label": "Code written by Claude Code (company-wide)",
+            "label": "Anthropic code written by Claude Code",
             "value": 90.0,
-            "unit": "%",
-            "display": "80–90%",
+            "unit": "percent",
+            "display": "80-90%",
             "direction": "up",
             "confidence": "stated",
             "quote": "I think across all of Anthropic, 80 to 90% of the code is written by quad code on average.",
@@ -448,140 +430,109 @@
         "timestampStart": "00:18:49"
       },
       {
-        "useCase": "Model-selection ROI framing",
+        "useCase": "Optimizing token spend vs. maximizing return",
         "org": "Anthropic",
         "speakerName": "Boris Cherny",
-        "summary": "Boris argues cost-optimization of model usage can cut investment by roughly 50%, but the upside on returns is orders of magnitude larger, so teams should focus on returns not cost cutting.",
+        "summary": "Boris argues that cost optimization (advisor models, cheaper defaults) can cut the investment roughly 50%, while the upside from increasing return is orders of magnitude larger — so teams should focus effort on returns, not cost cutting.",
         "metrics": [
           {
             "category": "cost_savings",
             "label": "Possible investment reduction",
             "value": 50.0,
-            "unit": "%",
-            "display": "~50%",
+            "unit": "percent",
+            "display": "~50% lower spend",
             "direction": "down",
             "confidence": "estimated",
-            "quote": "you can reduce the investment maybe like 50% or something if you use like, you know, Fable with an advisor model",
+            "quote": "So like when you think about kind of ROI for something like Fable, you can reduce the investment maybe like 50% or something if you use like, you know, Fable with an advisor model or, you know, use Opus by default and have a call out to Fable when it needs.",
             "timestamp": "00:19:38"
           },
           {
-            "category": "productivity_gain",
-            "label": "Upside on return",
+            "category": "other",
+            "label": "Opportunity to increase return",
             "value": 1000.0,
-            "unit": "%",
-            "display": "1,000%+ return opportunity",
+            "unit": "percent",
+            "display": "1,000%+ upside",
             "direction": "up",
             "confidence": "estimated",
-            "quote": "but probably like a thousand percent opportunity or even 100,000 or 10,000, whatever percent opportunity to increase the return",
+            "quote": "But I actually think that if you think about R-Y, there's probably like 50% chance to reduce the investment, but probably like a thousand percent opportunity or even 100,000 or 10,000, whatever percent opportunity to increase the return.",
             "timestamp": "00:20:13"
           }
         ],
         "timestampStart": "00:19:38"
       },
       {
-        "useCase": "Automated code review",
+        "useCase": "Automated code review with Claude Code Review",
         "org": "Anthropic",
         "speakerName": "Boris Cherny",
-        "summary": "Anthropic built Claude Code Review, used on every internal pull request; it catches an estimated 98-99% of bugs before a human sees the PR.",
+        "summary": "After coding stopped being the bottleneck, code review became the next one. Anthropic built Claude Code Review, used on every internal pull request; it catches and fixes an estimated 98-99% of bugs before a human sees the PR.",
         "metrics": [
           {
             "category": "quality",
             "label": "Bugs caught before human review",
             "value": 99.0,
-            "unit": "%",
-            "display": "98–99% of bugs",
+            "unit": "percent",
+            "display": "98-99% of bugs",
             "direction": "up",
             "confidence": "estimated",
-            "quote": "it's not a hundred percent we're still working on approving it but it's like you know like 98 99 percent of the bugs",
+            "quote": "there's essentially a guarantee that all the bugs have been caught and it's not you know it's not a hundred percent we're still working on approving it but it's like you know like 98 99 percent of the bugs",
             "timestamp": "00:26:04"
           }
         ],
         "timestampStart": "00:26:04"
       },
       {
-        "useCase": "Autonomous CI optimization with dynamic workflows",
+        "useCase": "CI speed-up via a dynamic workflow",
         "org": "Anthropic",
         "speakerName": "Boris Cherny",
-        "summary": "Boris gave Claude Code a one-line prompt to optimize CI; a dynamic workflow orchestrated many sub-agents, ran a few hours using a few million tokens, and produced four PRs that cut CI time by 50% — work that previously took days to months.",
+        "summary": "From a single prompt, Claude Code ran a dynamic workflow orchestrating many sub-agents for a few hours, using a few million tokens, and produced four pull requests that cut CI time in half — work Boris says would have taken days, weeks or months.",
         "metrics": [
           {
             "category": "cycle_time",
             "label": "CI time reduction",
             "value": 50.0,
-            "unit": "%",
-            "display": "CI time -50%",
+            "unit": "percent",
+            "display": "-50% CI time",
             "direction": "down",
             "confidence": "stated",
-            "quote": "it produced four pro requests that reduced the i time by 50 percent",
-            "timestamp": "00:28:46"
-          },
-          {
-            "category": "cycle_time",
-            "label": "Time to deliver the optimization",
-            "value": null,
-            "unit": "",
-            "display": "hours instead of days–months",
-            "direction": "down",
-            "confidence": "stated",
-            "quote": "this is work you know that would have taken days or you know weeks or months in the past to do all this kind of profiling",
-            "timestamp": "00:28:46"
+            "quote": "it used i think something like uh you know like like a few million tokens and it ran for like a a few hours and it produced four pro requests that reduced the i time by 50 percent",
+            "timestamp": "00:28:05"
           },
           {
             "category": "scale",
-            "label": "Tokens consumed by the run",
-            "value": null,
-            "unit": "tokens",
-            "display": "a few million tokens",
-            "direction": "neutral",
-            "confidence": "estimated",
-            "quote": "and uh it used i think something like uh you know like like a few million tokens and it ran for like a a few hours",
-            "timestamp": "00:28:46"
+            "label": "Pull requests produced",
+            "value": 4.0,
+            "unit": "PRs",
+            "display": "4 PRs from one prompt",
+            "direction": "up",
+            "confidence": "stated",
+            "quote": "it used i think something like uh you know like like a few million tokens and it ran for like a a few hours and it produced four pro requests that reduced the i time by 50 percent",
+            "timestamp": "00:28:05"
           }
         ],
         "timestampStart": "00:28:05"
       },
       {
-        "useCase": "Prompt injection resistance and auto mode",
+        "useCase": "Auto mode and prompt-injection resistance",
         "org": "Anthropic",
         "speakerName": "Boris Cherny",
-        "summary": "Boris cites Anthropic's system cards showing a prompt-injection success rate of around 1% at 100 attempts, which enabled shipping auto mode for long-running agents.",
+        "summary": "Permission-prompt fatigue was hurting security, so Anthropic shipped auto mode, where a model approves or declines each action. It relies on Claude's prompt-injection resistance: per the system cards, roughly a 1% success rate at 100 attempts.",
         "metrics": [
           {
             "category": "quality",
-            "label": "Prompt injection success rate (100 attempts)",
+            "label": "Prompt-injection success rate",
             "value": 1.0,
-            "unit": "%",
-            "display": "~1%",
+            "unit": "percent",
+            "display": "~1% at 100 attempts",
             "direction": "down",
             "confidence": "stated",
             "quote": "but if you look at our system cards the success rate at 100 attempts is like around 1%.",
-            "timestamp": "00:38:10"
+            "timestamp": "00:38:46"
           }
         ],
-        "timestampStart": "00:38:10"
-      },
-      {
-        "useCase": "Threads scale milestone",
-        "org": "Threads (Meta)",
-        "speakerName": "Interviewer (Director of Product, Dev Infra)",
-        "summary": "The interviewer notes Threads announced hitting 500 million monthly active users.",
-        "metrics": [
-          {
-            "category": "scale",
-            "label": "Monthly active users",
-            "value": 500000000.0,
-            "unit": "users",
-            "display": "500M MAU",
-            "direction": "up",
-            "confidence": "stated",
-            "quote": "and also threads just hit 500 million monthly active yesterday we announced",
-            "timestamp": "00:08:10"
-          }
-        ],
-        "timestampStart": "00:08:10"
+        "timestampStart": "00:38:46"
       }
     ],
-    "extractedBy": "claude-opus-5",
+    "extractedBy": "tvs-stats-extractor",
     "extractedAt": "2026-08-09"
   },
   {
@@ -1189,6 +1140,125 @@
     ],
     "extractedBy": "manual",
     "extractedAt": "2026-07-24"
+  },
+  {
+    "schemaVersion": 2,
+    "slug": "how-i-10x-my-productivity-with-one-claude-code-trick",
+    "source": {
+      "videoId": "qzeRWzKte3I",
+      "title": "How I 10X My Productivity with ONE Claude Code Trick",
+      "channel": "Mark Kashef",
+      "url": "https://www.youtube.com/watch?v=qzeRWzKte3I",
+      "durationSeconds": 849,
+      "publishedAt": null
+    },
+    "speakers": [
+      {
+        "name": "Mark Kashef",
+        "role": "Creator and host",
+        "company": null,
+        "headshotUrl": null,
+        "profileUrl": null
+      }
+    ],
+    "headline": "Mark Kashef claims a Claude Code \"assembly line\" of three natural-language sub-agents makes you up to 10x more productive, producing a 25-slide researched presentation in about 10 minutes.",
+    "examples": [
+      {
+        "useCase": "AI sub-agent assembly line for non-coding knowledge work",
+        "org": null,
+        "speakerName": "Mark Kashef",
+        "summary": "Instead of manually copy-pasting between chat sessions, Kashef sets up a chain of Claude Code sub-agents that research, draft and edit autonomously. He claims this makes a user up to ten times more productive, with no coding required.",
+        "metrics": [
+          {
+            "category": "productivity_gain",
+            "label": "Productivity",
+            "value": 10.0,
+            "unit": "x",
+            "display": "up to 10x more productive",
+            "direction": "up",
+            "confidence": "projected",
+            "quote": "So if you watch till the end, then you'll be able to create your own mini AI workforce that can execute tasks for you, and more importantly, make you up to 10 times more productive.",
+            "timestamp": "00:00:37"
+          }
+        ],
+        "timestampStart": "00:00:37"
+      },
+      {
+        "useCase": "\"State of AI Q4 2025\" slide deck built by a three-agent pipeline",
+        "org": null,
+        "speakerName": "Mark Kashef",
+        "summary": "A research analyst, creative copywriter and senior editor agent were chained in Claude Code to produce a 25-slide presentation for a non-technical business audience. The agents executed and baton-passed their subtasks in roughly ten minutes, delivering final slides plus all intermediate research and draft assets.",
+        "metrics": [
+          {
+            "category": "scale",
+            "label": "Agents in pipeline",
+            "value": 3.0,
+            "unit": "agents",
+            "display": "3 agents",
+            "direction": "neutral",
+            "confidence": "stated",
+            "quote": "So if we take a look right here, we have three agents.",
+            "timestamp": "00:01:12"
+          },
+          {
+            "category": "scale",
+            "label": "Slides produced",
+            "value": 25.0,
+            "unit": "slides",
+            "display": "25 slides",
+            "direction": "up",
+            "confidence": "stated",
+            "quote": "And you'll see the presentation basically says, create content for a 25 slide presentation titled the State of AI Quarter 4 2025 for a non-technical business audience.",
+            "timestamp": "00:01:51"
+          },
+          {
+            "category": "cycle_time",
+            "label": "Run time for full deck",
+            "value": 10.0,
+            "unit": "minutes",
+            "display": "~10 minutes",
+            "direction": "down",
+            "confidence": "stated",
+            "quote": "They're all invoked, and behind the scenes, they took around 10 minutes to go all execute their subtasks, then baton pass it to the next one.",
+            "timestamp": "00:03:12"
+          }
+        ],
+        "timestampStart": "00:01:12"
+      },
+      {
+        "useCase": "Content calendar agents for a real estate AI workshop",
+        "org": null,
+        "speakerName": "Mark Kashef",
+        "summary": "Using his \"assembly line\" mega-prompt in Gemini, Kashef generated two new sub-agents (a real estate AI strategist and an instructional designer) plus a starter prompt, then created them in Claude Code. He estimates a run of this kind takes five to twenty minutes depending on the task.",
+        "metrics": [
+          {
+            "category": "scale",
+            "label": "Agents generated",
+            "value": 2.0,
+            "unit": "agents",
+            "display": "2 new agents",
+            "direction": "neutral",
+            "confidence": "stated",
+            "quote": "So we'll take on copy and then you can see right here, agent changes. We now have two brand new agents.",
+            "timestamp": "00:12:02"
+          },
+          {
+            "category": "cycle_time",
+            "label": "Expected task run time",
+            "value": 20.0,
+            "unit": "minutes",
+            "display": "5–20 minutes",
+            "direction": "neutral",
+            "confidence": "estimated",
+            "quote": "This will probably take anywhere from five to 20 minutes, depending on the task, but the assets will look very similar to what you saw before.",
+            "timestamp": "00:12:48"
+          }
+        ],
+        "timestampStart": "00:09:06"
+      }
+    ],
+    "extractedBy": "tvs-stats-extractor",
+    "extractedAt": "2026-08-09"
   },
   {
     "schemaVersion": 2,
