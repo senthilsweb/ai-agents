@@ -43,7 +43,9 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 in CI, the tag of the last successful run.
 
 Cost note: a typical day has 3–10 new matching jobs; each costs one
-matcher API analysis. The run stops before any paid call if the delta
-looks wrong (more than `max_jobs_per_run` jobs).
+matcher API analysis. If the delta looks wrong (more than
+`max_jobs_per_run` jobs), matching is skipped for that run — zero paid
+calls, reported in the digest's Failures box — and the rest of the run
+(including the email) completes normally.
 
 Next: [Configuration](configuration.md)

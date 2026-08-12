@@ -13,16 +13,21 @@ to do when something fails.
 ## The one daily check
 
 **Did the email arrive?** A quiet day still sends a short "no new
-matching jobs" email. **No email means the pipeline is broken** — open
-the repo's Actions tab and look at the latest "job-pilot daily digest"
-run.
+matching jobs" email, and a `max_jobs_per_run` overflow still sends the
+digest too — with the overflow called out in the Failures box, matching
+skipped for that run only. **No email at all means the pipeline is
+broken** (e.g. `RUN_PAID_MATCH` off, or a run-level failure like the
+parquet or SMTP being unreachable) — open the repo's Actions tab and
+look at the latest "job-pilot daily digest" run.
 
 ## Procedures with cost
 
 - **Manual run**: Actions → "job-pilot daily digest" → Run workflow.
-  Optional input: a baseline tag like `trends/20260710` to widen the
-  window. Guard: the run aborts before any paid call above
-  `max_jobs_per_run` (25), so the worst-case bill is bounded.
+  Optional inputs: a baseline tag like `trends/20260710` to widen the
+  window, and `max_jobs_per_run` to raise the per-run cap for one
+  catch-up run (e.g. after several days skipped matching). Guard: never
+  a paid call above the cap in effect, so the worst-case bill is
+  bounded either way.
 - **Local paid run**: set `RUN_PAID_MATCH=1` in `.env`, then
   `python run.py --dry-run --baseline trends/YYYYMMDD`. Same guard.
 
@@ -31,9 +36,9 @@ run.
 | Symptom | Cause | Fix |
 |---|---|---|
 | Digest lists a job under "Failures" with "JD too short" | the job board serves a JavaScript shell; the ATS API had no text either | nothing to fix — the job is reported, not scored; apply manually if interesting |
-| Run aborts with "candidates exceed max_jobs_per_run" | wrong/old baseline made too many jobs look new | re-run with an explicit recent `--baseline`; the guard already prevented any cost |
+| Digest lists a `match_cap` Failure ("N candidates exceed max_jobs_per_run") | wrong/old baseline, or a genuine coverage-expansion burst, made too many jobs look new in one run; matching was skipped, cost was zero | nothing to fix by default — the baseline advances and normal-sized deltas resume tomorrow; dispatch manually with a raised `max_jobs_per_run` input first if you want that specific batch matched instead of skipped |
 | Arize spans silently missing; exporter logs "Internal Server Error" | Arize requires a `model_id` resource attribute on every span | already fixed in `pipeline/telemetry.py` (2026-07-15) — keep `model_id` if you touch tracing |
-| `RUN_PAID_MATCH != 1 — refusing paid /analyze calls` | the paid-call switch is off | set `RUN_PAID_MATCH=1` only when you intend to pay |
+| `RUN_PAID_MATCH != 1 — refusing paid /analyze calls` (no email, workflow red) | the paid-call switch is off | set `RUN_PAID_MATCH=1` only when you intend to pay |
 
 ## Telemetry
 

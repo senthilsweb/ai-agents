@@ -61,11 +61,22 @@ def test_paid_guard_blocks_before_any_call():
     assert c.harvest_calls == {} and c.upload_calls == 0 and c.analyze_calls == 0
 
 
-def test_cap_aborts_before_any_paid_call():
+def test_cap_exceeded_skips_match_but_does_not_raise():
     c = Counters()
-    with pytest.raises(GuardError, match="max_jobs_per_run"):
-        run([job(f"C{i}", req=f"R{i}") for i in range(26)], c)
-    assert c.harvest_calls == {} and c.analyze_calls == 0
+    matches, failures = run([job(f"C{i}", req=f"R{i}") for i in range(26)], c)
+    assert matches == []
+    assert c.harvest_calls == {} and c.upload_calls == 0 and c.analyze_calls == 0
+    assert len(failures) == 1 and failures[0].node == "match_cap"
+    assert "26 candidates exceed max_jobs_per_run=25" in failures[0].reason
+
+
+def test_cap_env_override_takes_precedence_over_config():
+    c = Counters()
+    jobs = [job(f"C{i}", req=f"R{i}") for i in range(26)]
+    # config cap is 25, but the env override raises it to 30 for this run
+    matches, failures = run(jobs, c, env={**ENV, "MAX_JOBS_PER_RUN": "30"})
+    assert failures == [] and len(matches) == 26
+    assert c.analyze_calls > 0
 
 
 def test_one_attempt_no_retry_and_siblings_continue():

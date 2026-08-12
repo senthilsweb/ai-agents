@@ -33,9 +33,10 @@ pipeline is broken, never that there was nothing.
 - **No LLM inside.** All model calls happen in the deployed job-matcher
   API. job-pilot itself is deterministic code, so its tests are plain
   pytest — 42 of them, no network, no secrets.
-- **Bounded cost.** Paid calls need `RUN_PAID_MATCH=1`, and a run stops
-  before the first paid call if the day's delta exceeds
-  `max_jobs_per_run` (25).
+- **Bounded cost.** Paid calls need `RUN_PAID_MATCH=1` (its absence
+  hard-aborts the run), and matching is skipped for the run — never
+  aborted — if the day's delta exceeds `max_jobs_per_run` (25); the
+  digest still sends and reports it.
 
 It is a LangGraph pipeline. The graph is not decoration: version 2 adds
 human-in-the-loop approval for outreach messages, which plugs into

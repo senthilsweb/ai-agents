@@ -23,7 +23,10 @@ filter:
 matcher:
   resume_path: "./inputs/resume.md"   # committed, PII-scrubbed (gate decision)
   pdf_band_threshold: "good_match"    # attach cover letters from this band up
-  max_jobs_per_run: 25                # abort before any paid call above this
+  max_jobs_per_run: 25                # above this, skip the paid match step
+                                       # this run only (not an abort — see
+                                       # graceful-match-cap); MAX_JOBS_PER_RUN
+                                       # env overrides this for one run
   batch_size: 5
 
 email:

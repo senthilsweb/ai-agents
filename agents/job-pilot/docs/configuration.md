@@ -17,7 +17,7 @@ public.
 | `filter.targets_config` | path to job-scout's `config.yaml` — the single source for title keywords and the salary floor | `../job-scout/config.yaml` |
 | `matcher.resume_path` | the resume the matcher scores | `./inputs/resume.md` |
 | `matcher.pdf_band_threshold` | attach cover letters from this match band up | `good_match` |
-| `matcher.max_jobs_per_run` | abort before any paid call above this | `25` |
+| `matcher.max_jobs_per_run` | above this, the run skips the paid match step (not aborts — see `MAX_JOBS_PER_RUN` below) and reports it in the digest | `25` |
 | `email.subject_template` | subject line with `{date}` `{new}` `{candidates}` `{matched}` `{strong}` `{pdfs}` placeholders; a typo renders empty, never blocks the send | counts-first template |
 
 Target roles and the salary floor are **not** duplicated here — edit
@@ -42,7 +42,8 @@ scrubbed: no phone number, no street address (the repo is public).
 | `JOBMATCH_API_BASE`, `JOBMATCH_AGENT_BASE` | deployed job-matcher endpoints |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | Gmail SMTP (app password) |
 | `DIGEST_TO`, `DIGEST_FROM` | email addresses; `DIGEST_TO` accepts a comma-separated list (`a@x.com, b@y.com`) |
-| `RUN_PAID_MATCH` | paid-call switch — `1` allows `/analyze` calls |
+| `RUN_PAID_MATCH` | paid-call switch — `1` allows `/analyze` calls; unset/not `1` hard-aborts the run |
+| `MAX_JOBS_PER_RUN` | optional, one-run override of `matcher.max_jobs_per_run` — e.g. a manual catch-up dispatch (`job-pilot.yml`'s `max_jobs_per_run` input) after a coverage-expansion burst day skipped matching |
 | `LETTERHEAD_PHONE` | phone for the PDF letterhead |
 | `LANGSMITH_TRACING`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` | LangSmith tracing (optional) |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS` | OpenObserve span export (optional) |

@@ -1,7 +1,10 @@
 """Match runner: harvest JD text live, upload it, call the deployed
 job-matcher API — exactly one attempt per job, no retry.
 
-Spec: openspec/changes/add-job-pilot/specs/match-runner/spec.md.
+Spec: openspec/changes/add-job-pilot/specs/match-runner/spec.md (repo
+root), modified by this agent's own
+openspec/changes/graceful-match-cap/specs/match-runner/spec.md (cap
+overflow skips the run's match step instead of aborting the run).
 Harvest logic ported from job-scout tools/match_sweep.py (Ashby GraphQL
 per job, Greenhouse board content=true, Workday cxs endpoint), with a
 host allowlist and size caps added per design.md §Security baseline.
@@ -35,7 +38,9 @@ RESP_MAX_BYTES = 20_000_000  # board JSON can be large; still bounded
 
 
 class GuardError(RuntimeError):
-    """Aborts the run before any paid call (cap or RUN_PAID_MATCH)."""
+    """Aborts the run before any paid call. Raised only when
+    RUN_PAID_MATCH != 1 (a deliberate operator switch) — exceeding
+    max_jobs_per_run is a graceful skip, not a raise; see run_match."""
 
 
 class HarvestError(RuntimeError):
@@ -211,17 +216,26 @@ def to_match(job: JobFact, rep: dict) -> MatchResult:
 def run_match(candidates: list[JobFact], resume_path: Path, cfg: dict,
               environ=None, harvest=harvest_jd, upload=upload_jd,
               analyze=analyze_batch) -> tuple[list[MatchResult], list[Failure]]:
-    """Guards first (abort BEFORE any paid call), then one attempt per job;
-    a job's failure never stops its siblings."""
+    """Guards first (RUN_PAID_MATCH aborts BEFORE any paid call), then one
+    attempt per job; a job's failure never stops its siblings.
+
+    Exceeding the cap is a graceful skip, not an abort (graceful-match-cap):
+    a run-level GuardError here would keep tomorrow's baseline pinned to
+    today (the CI workflow advances the baseline only on a successful run),
+    so a legitimate coverage-expansion burst would deadlock the pipeline
+    forever instead of catching up the next day. The cost bound is
+    unchanged — never a paid call above the cap."""
     environ = environ if environ is not None else os.environ
     m = cfg["matcher"]
     if not candidates:
         return [], []
-    if len(candidates) > m["max_jobs_per_run"]:
-        raise GuardError(
-            f"{len(candidates)} candidates exceed max_jobs_per_run="
-            f"{m['max_jobs_per_run']} — suspicious delta, aborting before "
-            "any paid call")
+    cap = int(environ.get("MAX_JOBS_PER_RUN") or m["max_jobs_per_run"])
+    if len(candidates) > cap:
+        reason = (f"{len(candidates)} candidates exceed max_jobs_per_run="
+                  f"{cap} — matching skipped this run, not retried "
+                  "(dispatch with a higher max_jobs_per_run to catch up)")
+        log.warning("match: %s", reason)
+        return [], [Failure(node="match_cap", job_ref="-", reason=reason)]
     if environ.get("RUN_PAID_MATCH") != "1":
         raise GuardError("RUN_PAID_MATCH != 1 — refusing paid /analyze calls")
     api_base = environ["JOBMATCH_API_BASE"].rstrip("/")

@@ -68,7 +68,9 @@ def build_graph(cfg: dict, deps: dict | None = None, tracer=None,
                     state["candidates"], ROOT / m["resume_path"], cfg,
                     environ=environ)
             except matcher.GuardError:
-                raise                     # guards must go red, never swallowed
+                raise   # RUN_PAID_MATCH off is an operator switch: go red,
+                        # never swallowed. Cap overflow no longer raises
+                        # this — see graceful-match-cap.
             except Exception as e:        # run-level match failure → digest
                 log.error("match node failed: %s", e)
                 matches, fails = [], [Failure(node="match", job_ref="-",

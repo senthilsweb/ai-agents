@@ -1,0 +1,14 @@
+schema: spec-driven
+name: graceful-match-cap
+status: approved
+approval:
+  reviewed_by: senthilsweb
+  reviewed_date: 2026-08-12
+  note: >
+    Owner-requested in-session 2026-08-12 after job-pilot's daily digest
+    was found failing 5 days straight (GuardError: candidates exceed
+    max_jobs_per_run, tripped by a legitimate job-scout coverage
+    expansion on 2026-08-08 that then deadlocked the baseline-advance
+    logic). Owner asked for the permanent/long-term fix given ATS
+    coverage keeps expanding, not a one-time threshold bump. Root-caused
+    and approved to proceed same session.

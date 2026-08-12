@@ -16,6 +16,9 @@ on:
       baseline:
         description: "trends/YYYYMMDD tag to diff against (default: last successful digest run)"
         required: false
+      max_jobs_per_run:
+        description: "override matcher.max_jobs_per_run for this run only (default: config.yaml's value, 25)"
+        required: false
 
 permissions:
   contents: read
@@ -66,6 +69,7 @@ jobs:
           docker run --rm \
             -e BASELINE_TAG="${{ steps.baseline.outputs.tag }}" \
             -e RUN_PAID_MATCH=1 \
+            -e MAX_JOBS_PER_RUN="${{ inputs.max_jobs_per_run }}" \
             -e JOBMATCH_API_BASE="${{ secrets.JOBMATCH_API_BASE }}" \
             -e JOBMATCH_AGENT_BASE="${{ secrets.JOBMATCH_AGENT_BASE }}" \
             -e SMTP_HOST="${{ secrets.SMTP_HOST }}" \

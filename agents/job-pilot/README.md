@@ -57,10 +57,11 @@ GHCR image `ghcr.io/senthilsweb/job-pilot` (built by
 `OTEL_EXPORTER_OTLP_HEADERS`.
 
 Two guards bound the LLM bill: `RUN_PAID_MATCH=1` must be set for any
-paid call, and a delta larger than `max_jobs_per_run` (25) aborts
-before the first call. The workflow never uploads artifacts — on a
-public repo they are world-readable, and match results belong only in
-your inbox.
+paid call, and a delta larger than `max_jobs_per_run` (25) skips the
+match step for that run (zero paid calls, reported in the digest) —
+`RUN_PAID_MATCH` off still hard-aborts the whole run. The workflow
+never uploads artifacts — on a public repo they are world-readable,
+and match results belong only in your inbox.
 
 ## Configuration
 
