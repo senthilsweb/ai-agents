@@ -16,6 +16,8 @@
       extraction, band filter and dedupe, sync scrub, public-repo phone guard
 - [x] Docs: configuration, FAQ, runbook, README, inputs/README, root AGENTS.md
 - [x] Full test suite green
-- [ ] Commit + push (rebuilds `ghcr.io/senthilsweb/job-pilot:latest`)
+- [x] Commit + push (rebuilds `ghcr.io/senthilsweb/job-pilot:latest`) — CI green, ed4c443
+- [x] Live run 2026-10-05 (dispatch vs `trends/20261001`): 13 analyzed, 0 failures,
+      10 letters + 3 resumes (eng-manager, genai-fde, master) in one email
 - [ ] Owner confirms: next digest with a `good_match`+ job carries the letter
       and the expected resume variant (Verification)
