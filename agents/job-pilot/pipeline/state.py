@@ -56,5 +56,7 @@ class PilotState(TypedDict, total=False):
     matches: list[MatchResult]
     failures: list[Failure]
     pdf_paths: list[str]
+    resume_paths: list[str]       # DOCX variants attached to the email
+    resume_variants: dict[str, str]  # job slug -> variant key, for the digest
     email_html: str
     send_result: str

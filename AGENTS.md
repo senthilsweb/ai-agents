@@ -143,7 +143,9 @@ in job-scout's public trends parquet (in-memory DuckDB anti-join over
 two HTTPS URLs — fully stateless, no database file), filters them by
 the owner's target roles, scores only those through the deployed
 job-matcher API, and emails one digest with cover-letter PDFs attached
-for `good_match`-and-up. **LangGraph** `StateGraph`, no LangChain
+for `good_match`-and-up, plus the resume variant the job title
+selects (master / genai-fde / data-genai-fde / eng-manager DOCX, phone
+injected from `LETTERHEAD_PHONE`). **LangGraph** `StateGraph`, no LangChain
 chains (ADR 0003 — the graph is reserved for v2 human-in-the-loop
 outreach approval). No LLM reasoning of its own, so evals are plain
 pytest.
@@ -155,11 +157,12 @@ All paths below are relative to `agents/job-pilot/`:
   read from job-scout's `config.yaml`), `matcher.py` (JD harvest with
   host allowlist, `/upload` + `/analyze` client, one-attempt-no-retry,
   `RUN_PAID_MATCH` + `max_jobs_per_run` guards), `letters.py` (fpdf2
-  PDFs), `digest.py` (Jinja2 autoescaped HTML + Gmail SMTP),
+  PDFs), `resumes.py` (variant choice, phone injection, DOCX text for
+  scoring; synced by `tools/sync_resumes.py`), `digest.py` (Jinja2 autoescaped HTML + Gmail SMTP),
   `telemetry.py` (LangSmith native + OTel dual export, degrades to a
   warning), `graph.py` (the StateGraph).
 - `run.py` — entrypoint; `--dry-run` writes the HTML instead of sending.
-- `tests/` — 34 code-level tests, no network, no secrets.
+- `tests/` — code-level tests, no network, no secrets.
 - CI: `.github/workflows/job-pilot.yml` (digest, after the daily trends
   publish; never uploads artifacts) + `job-pilot-image.yml` (tests on
   every push, GHCR image `ghcr.io/senthilsweb/job-pilot` on main).

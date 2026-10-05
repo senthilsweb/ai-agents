@@ -11,7 +11,8 @@ from pipeline.state import Failure, JobFact, MatchResult
 CFG = {
     "parquet": {"url_template": "https://x/{ref}/t.parquet"},
     "filter": {"categories": [], "title_keywords": [], "base_salary_min_usd": 0},
-    "matcher": {"resume_path": "./inputs/resume.md", "max_jobs_per_run": 25,
+    "resumes": {"dir": "./inputs/resumes", "fallback": "master", "rules": []},
+    "matcher": {"max_jobs_per_run": 25,
                 "batch_size": 5, "pdf_band_threshold": "good_match"},
     "email": {"subject_prefix": "[job-pilot]"},
     "slugs": {},
@@ -34,6 +35,9 @@ def deps_with(calls, *, new=(JOB,), cand="same", matches=(MATCH,), fails=()):
         "select_candidates": track("filter", cand_list),
         "run_match": track("match", (list(matches), list(fails))),
         "render_all": track("pdfs", [Path("/tmp/x.pdf")]),
+        "scoring_resume": track("scoring", Path("/tmp/scoring.md")),
+        "render_resumes": track("resumes", ([Path("/tmp/r.docx")],
+                                            {"harvey-fde": "genai-fde"}, [])),
         "compose": track("compose", "<html>ok</html>"),
         "build_message": track("build", object()),
         "send": track("send", "sent"),
@@ -49,10 +53,13 @@ def invoke(deps):
 def test_happy_path_order_and_state():
     calls = []
     final = invoke(deps_with(calls))
-    assert calls == ["fetch", "filter", "match", "pdfs", "compose", "build", "send"]
+    assert calls == ["fetch", "filter", "scoring", "match", "pdfs", "resumes",
+                     "compose", "build", "send"]
     assert final["send_result"] == "sent"
     assert final["email_html"] == "<html>ok</html>"
     assert final["pdf_paths"] == ["/tmp/x.pdf"]
+    assert final["resume_paths"] == ["/tmp/r.docx"]
+    assert final["resume_variants"] == {"harvey-fde": "genai-fde"}
 
 
 def test_quiet_day_skips_match_and_pdfs():
@@ -68,7 +75,7 @@ def test_match_failures_reach_compose():
     fail = Failure(node="match", job_ref="Harvey / FDE", reason="board down")
     deps = deps_with([], matches=(), fails=(fail,))
 
-    def compose(run_date, baseline, new, cand, matches, failures, threshold):
+    def compose(run_date, baseline, new, cand, matches, failures, threshold, **kw):
         seen["failures"] = failures
         return "<html></html>"
     deps["compose"] = compose
@@ -94,3 +101,30 @@ def test_fetch_failure_fails_the_run():
     deps["new_jobs"] = broken
     with pytest.raises(RuntimeError, match="parquet unreachable"):
         invoke(deps)
+
+
+def test_resume_failure_still_sends_the_email():
+    """A broken resume render is reported in the digest, never fatal."""
+    deps = deps_with([])
+
+    def broken(*a, **kw):
+        raise RuntimeError("resume file missing")
+    deps["render_resumes"] = broken
+    seen = {}
+    deps["compose"] = lambda *a, **kw: seen.update(failures=a[5]) or "<html/>"
+    final = invoke(deps)
+    assert final["send_result"] == "sent"
+    assert final["resume_paths"] == []
+    assert [f.node for f in seen["failures"]] == ["resumes"]
+
+
+def test_scoring_resume_failure_is_a_match_failure_not_a_crash():
+    deps = deps_with([])
+
+    def broken(*a, **kw):
+        raise RuntimeError("no master resume")
+    deps["scoring_resume"] = broken
+    final = invoke(deps)
+    assert final["send_result"] == "sent"
+    assert final["matches"] == []
+    assert final["failures"][0].node == "match"

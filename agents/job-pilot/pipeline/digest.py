@@ -12,6 +12,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from pipeline import resumes
 from pipeline.letters import band_at_least
 from pipeline.state import Failure, JobFact, MatchResult
 
@@ -32,14 +33,19 @@ def _salary(job: JobFact) -> str:
 
 def compose(run_date: str, baseline_tag: str, new_jobs: list[JobFact],
             candidates: list[JobFact], matches: list[MatchResult],
-            failures: list[Failure], threshold: str) -> str:
+            failures: list[Failure], threshold: str,
+            variants: dict[str, str] | None = None,
+            resume_count: int = 0) -> str:
     """Candidates only (digest-redesign spec): analyzed jobs as ranked
     cards, the rest of the delta appears solely in the counter line."""
     from datetime import date
 
     from pipeline.filters import location_bucket
+    from pipeline.letters import slugify
+    variants = variants or {}
     display_date = date.fromisoformat(run_date).strftime("%d-%b-%Y")
-    cards = [{"m": m, "salary": _salary(m.job)}
+    cards = [{"m": m, "salary": _salary(m.job),
+              "variant": variants.get(slugify(m.job.company_name, m.job.title))}
              for m in sorted(matches, key=lambda m: -m.total_score)]
     attached = [m for m in matches
                 if m.cover_letter and band_at_least(m.match_band, threshold)]
@@ -49,6 +55,7 @@ def compose(run_date: str, baseline_tag: str, new_jobs: list[JobFact],
         run_date=run_date, display_date=display_date,
         baseline_tag=baseline_tag, cards=cards,
         matches=matches, failures=failures, pdf_count=len(attached),
+        resume_count=resume_count,
         n_new=len(new_jobs), n_candidates=len(candidates),
         n_outside_us=n_outside_us)
 
@@ -80,8 +87,10 @@ def build_message(html: str, subject: str, pdf_paths: list[Path],
     msg.set_content("This digest is HTML — open in an HTML-capable client.")
     msg.add_alternative(html, subtype="html")
     for p in pdf_paths:
-        msg.add_attachment(p.read_bytes(), maintype="application",
-                           subtype="pdf", filename=p.name)
+        maintype, subtype = (resumes.DOCX_MIME if p.suffix.lower() == ".docx"
+                             else ("application", "pdf"))
+        msg.add_attachment(p.read_bytes(), maintype=maintype,
+                           subtype=subtype, filename=p.name)
     return msg
 
 

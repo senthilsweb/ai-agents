@@ -12,7 +12,8 @@
     {{ n_new }} new posting{{ 's' if n_new != 1 }} scanned since {{ baseline_tag }}
     {%- if n_outside_us %} · {{ n_outside_us }} outside US{% endif %}
     · <strong>{{ n_candidates }} matched your filter</strong>
-    · {{ matches|length }} analyzed · {{ pdf_count }} letter{{ 's' if pdf_count != 1 }} attached
+    · {{ matches|length }} analyzed · {{ pdf_count }} letter{{ 's' if pdf_count != 1 }}
+    · {{ resume_count }} resume{{ 's' if resume_count != 1 }} attached
   </p>
 
   {% if not cards %}
@@ -59,6 +60,12 @@
     <div style="color:#52514e; font-size:12.5px; margin-top:10px">
       <span style="color:#898781; text-transform:uppercase; font-size:10.5px; letter-spacing:.06em">Top gaps</span>
       — {{ m.missing_skills[:3]|join(' · ') }}
+    </div>
+    {% endif %}
+    {% if c.variant %}
+    <div style="color:#52514e; font-size:12.5px; margin-top:4px">
+      <span style="color:#898781; text-transform:uppercase; font-size:10.5px; letter-spacing:.06em">Resume</span>
+      — {{ c.variant }} variant
     </div>
     {% endif %}
     {% if m.recommendation %}

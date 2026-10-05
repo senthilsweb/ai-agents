@@ -38,6 +38,7 @@ look at the latest "job-pilot daily digest" run.
 | Digest lists a job under "Failures" with "JD too short" | the job board serves a JavaScript shell; the ATS API had no text either | nothing to fix — the job is reported, not scored; apply manually if interesting |
 | Digest lists a `match_cap` Failure ("N candidates exceed max_jobs_per_run") | wrong/old baseline, or a genuine coverage-expansion burst, made too many jobs look new in one run; matching was skipped, cost was zero | nothing to fix by default — the baseline advances and normal-sized deltas resume tomorrow; dispatch manually with a raised `max_jobs_per_run` input first if you want that specific batch matched instead of skipped |
 | Arize spans silently missing; exporter logs "Internal Server Error" | Arize requires a `model_id` resource attribute on every span | already fixed in `pipeline/telemetry.py` (2026-07-15) — keep `model_id` if you touch tracing |
+| Digest lists a `resumes` Failure ("expected exactly one sk-resume-…") | `inputs/resumes/` is missing a variant or holds two files for one | rerun `python tools/sync_resumes.py <dir>`; it leaves exactly one file per variant |
 | `RUN_PAID_MATCH != 1 — refusing paid /analyze calls` (no email, workflow red) | the paid-call switch is off | set `RUN_PAID_MATCH=1` only when you intend to pay |
 
 ## Telemetry

@@ -35,7 +35,9 @@ means breakage. (Spec: `specs/email-digest/spec.md`.)
 **Why is the resume committed to a public repository?**
 Owner decision at the Inception gate (2026-07-15): simpler CI, no fetch
 token, and what is committed is exactly what is scored. The committed
-copy is scrubbed — no phone, no street address.
+copies are scrubbed — the phone number is a `{{PHONE}}` placeholder and
+there is no street address; the real number is injected from the
+`LETTERHEAD_PHONE` secret when an attachment is rendered.
 
 **Why fpdf2 and not WeasyPrint or python-docx for the PDFs?**
 WeasyPrint needs system pango/gobject libraries; DOCX→PDF conversion

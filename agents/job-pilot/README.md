@@ -68,9 +68,11 @@ and match results belong only in your inbox.
 - `config.yaml` — parquet URL template, category filter, PDF band
   threshold, run caps. Your target roles and salary floor are read from
   `../job-scout/config.yaml` (single source of truth).
-- `inputs/resume.md` — the resume that gets scored. It is committed to
-  this public repo (owner's decision), so keep it PII-scrubbed: no
-  phone, no street address.
+- `inputs/resumes/` — the master resume (scored) and the three variants
+  (genai-fde, data-genai-fde, eng-manager) attached to the email by job
+  title. Synced from the owner's resume-variant folder with
+  `python tools/sync_resumes.py <dir>`; committed phone-scrubbed because
+  the repo is public (the number comes back from `LETTERHEAD_PHONE`).
 - `templates/letterhead.yaml` — the cover-letter letterhead (name,
   title line, contact, links, colors), mirroring the owner's personal
   letter format. Edit it and every PDF follows; the phone number comes
