@@ -1,6 +1,7 @@
 # Proposal: jev-rules-gate — Jev decides the fuzzy rules and hard constraints
 
-> Status: **PROPOSED** (2026-10-05) — proposal only, nothing implemented.
+> Status: **APPROVED** (2026-10-11) and **implemented in `off`/`shadow`/`enforce` modes**; default `off`.
+> Rollout: run `shadow` for 14 daily runs before enabling `enforce` (acceptance criterion 2).
 > Owner: @senthilsweb.
 > Builds on: `resume-variants` (implemented 2026-10-04), `us-location-filter`.
 > Related: `propose-governed-agent-architecture` in the agent-job-matcher repo
@@ -128,3 +129,20 @@ written). The API key lives only in the `TYPESAFE_API_KEY` GitHub secret.
    resume text.
 8. The key is read only from the environment and never logged or written to
    run output.
+
+## Implementation notes (2026-10-11)
+
+- API verified live: `POST https://api.typesafe.ai/v1/systemone`, `Authorization:
+  Bearer <key>`, object `state` accepted, `jev-latest` resolved to `jev-1.13.0`.
+  A `noul` answer has no `confidence` — the probability itself is used, and a
+  `noul` is "sure" when `max(p, 1-p)` meets the threshold.
+- First shadow run on the 2026-10-10 delta: 126 new, 83 asked after the
+  deterministic prefilter, 0 errors, ~19 s sequential, ~49k input tokens
+  (~$0.002 at the published $0.042/M). Rules and Jev agreed on all 4 candidates.
+  Jev leaned "target" (p 0.63–0.81) for three manager/director roles the title
+  rules drop — the first data point for the recall question.
+- Near-miss was recalibrated: Jev confidence clusters near 1.0, so "below
+  threshold + margin" flagged 66 of 79 rejects. It is now "rejected although
+  Jev gave >= `near_miss_floor` (0.30) probability of passing".
+- Added: a circuit breaker (`breaker_after`, 5 consecutive errors), per-run
+  usage logging, a Jev reachability probe in the health check.

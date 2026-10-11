@@ -35,7 +35,8 @@ def compose(run_date: str, baseline_tag: str, new_jobs: list[JobFact],
             candidates: list[JobFact], matches: list[MatchResult],
             failures: list[Failure], threshold: str,
             variants: dict[str, str] | None = None,
-            resume_count: int = 0) -> str:
+            resume_count: int = 0, gate: list | None = None,
+            gate_stats: dict | None = None) -> str:
     """Candidates only (digest-redesign spec): analyzed jobs as ranked
     cards, the rest of the delta appears solely in the counter line."""
     from datetime import date
@@ -51,13 +52,36 @@ def compose(run_date: str, baseline_tag: str, new_jobs: list[JobFact],
                 if m.cover_letter and band_at_least(m.match_band, threshold)]
     n_outside_us = sum(1 for j in new_jobs
                        if location_bucket(j.location) in ("non_us", "other"))
+    gate_view = _gate_view(gate or [], gate_stats or {})
     return _env.get_template("digest.html.j2").render(
+        gate=gate_view,
         run_date=run_date, display_date=display_date,
         baseline_tag=baseline_tag, cards=cards,
         matches=matches, failures=failures, pdf_count=len(attached),
         resume_count=resume_count,
         n_new=len(new_jobs), n_candidates=len(candidates),
         n_outside_us=n_outside_us)
+
+
+def _gate_view(gate: list, stats: dict) -> dict | None:
+    """Digest 'Gate' section data (jev-rules-gate). None when Jev is off
+    so the section does not appear and the digest is unchanged."""
+    mode = stats.get("mode", "off")
+    if mode == "off" or not stats:
+        return None
+    reasons: dict[str, int] = {}
+    for r in gate:
+        if r.reason:   # set only when Jev's answers reject the job
+            key = ("location " + r.reason.split(": ")[1].split(" ")[0]
+                   if r.reason.startswith("location") else "role fit")
+            reasons[key] = reasons.get(key, 0) + 1
+    return {
+        "mode": mode, "stats": stats, "reasons": sorted(reasons.items()),
+        "near_misses": [r for r in gate if r.near_miss][:10],
+        "disagreements": [r for r in gate if r.disagree][:15],
+        "n_disagree": sum(1 for r in gate if r.disagree),
+        "n_near": sum(1 for r in gate if r.near_miss),
+    }
 
 
 class _SafeCtx(dict):

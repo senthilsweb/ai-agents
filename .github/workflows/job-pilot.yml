@@ -19,6 +19,9 @@ on:
       max_jobs_per_run:
         description: "override matcher.max_jobs_per_run for this run only (default: config.yaml's value, 25)"
         required: false
+      jev_mode:
+        description: "Jev gate mode for this run: off | shadow | enforce (default: repo variable JEV_MODE, else off)"
+        required: false
 
 permissions:
   contents: read
@@ -70,6 +73,8 @@ jobs:
             -e BASELINE_TAG="${{ steps.baseline.outputs.tag }}" \
             -e RUN_PAID_MATCH=1 \
             -e MAX_JOBS_PER_RUN="${{ inputs.max_jobs_per_run }}" \
+            -e JEV_MODE="${{ inputs.jev_mode || vars.JEV_MODE || 'off' }}" \
+            -e TYPESAFE_API_KEY="${{ secrets.TYPESAFE_API_KEY }}" \
             -e JOBMATCH_API_BASE="${{ secrets.JOBMATCH_API_BASE }}" \
             -e JOBMATCH_AGENT_BASE="${{ secrets.JOBMATCH_AGENT_BASE }}" \
             -e SMTP_HOST="${{ secrets.SMTP_HOST }}" \

@@ -129,17 +129,22 @@ def scoring_resume(out_dir: Path, cfg: dict) -> Path:
 
 
 def render_attachments(matches: list[MatchResult], threshold: str, cfg: dict,
-                       out_dir: Path, environ=None
+                       out_dir: Path, environ=None,
+                       overrides: dict[str, str] | None = None
                        ) -> tuple[list[Path], dict[str, str], list[Failure]]:
     """For every match at or above `threshold` (the same cut as the
     cover letters) pick a variant by job title. Each distinct variant is
     attached once. Returns (paths, {job slug: variant}, failures); a
-    render problem becomes a Failure — it never stops the email."""
+    render problem becomes a Failure — it never stops the email.
+    `overrides` ({slug: variant}) carries Jev's confident choices; a
+    slug or an unknown key not in it falls back to the title rules."""
+    overrides = overrides or {}
     chosen: dict[str, str] = {}
     for m in matches:
         if m.cover_letter and band_at_least(m.match_band, threshold):
-            chosen[slugify(m.job.company_name, m.job.title)] = \
-                choose_variant(m.job.title, cfg)
+            slug = slugify(m.job.company_name, m.job.title)
+            v = overrides.get(slug)
+            chosen[slug] = v if v in KEYS else choose_variant(m.job.title, cfg)
     paths: list[Path] = []
     failures: list[Failure] = []
     for key in sorted(set(chosen.values())):

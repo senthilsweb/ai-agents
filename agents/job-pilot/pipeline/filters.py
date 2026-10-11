@@ -67,19 +67,30 @@ def location_bucket(location: str | None) -> str:
     return "other"
 
 
-def is_candidate(job: JobFact, flt: dict) -> bool:
+def passes_prefilter(job: JobFact, flt: dict) -> bool:
+    """The deterministic rules that stay code when Jev is on: category
+    set and salary floor (jev-rules-gate)."""
     if job.category and job.category not in flt["categories"]:
-        return False
-    if flt.get("us_only", True) and \
-            location_bucket(job.location) in ("non_us", "other"):
-        return False
-    title = job.title.lower()
-    if not any(kw.lower() in title for kw in flt["title_keywords"]):
         return False
     floor = flt["base_salary_min_usd"]
     if job.base_max_usd is not None and job.base_max_usd < floor:
         return False
     return True
+
+
+def title_matches(job: JobFact, flt: dict) -> bool:
+    title = job.title.lower()
+    return any(kw.lower() in title for kw in flt["title_keywords"])
+
+
+def location_ok(job: JobFact, flt: dict) -> bool:
+    return not (flt.get("us_only", True) and
+                location_bucket(job.location) in ("non_us", "other"))
+
+
+def is_candidate(job: JobFact, flt: dict) -> bool:
+    return (passes_prefilter(job, flt) and location_ok(job, flt)
+            and title_matches(job, flt))
 
 
 def select_candidates(new: list[JobFact], flt: dict) -> list[JobFact]:

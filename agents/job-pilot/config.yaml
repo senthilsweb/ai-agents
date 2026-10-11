@@ -48,6 +48,38 @@ resumes:
     - variant: "data-genai-fde"
       title_contains: ["data platform", "data architect", "data engineer"]
 
+jev:
+  # TypeSafe Jev decides the fuzzy rules (location, role fit, resume
+  # variant). JEV_MODE env: off (default) | shadow | enforce; no
+  # TYPESAFE_API_KEY means off. Spec: openspec/changes/jev-rules-gate/.
+  api_url: "https://api.typesafe.ai/v1/systemone"
+  model: "jev-latest"            # pin (e.g. jev-1.13.0) before enforce
+  timeout_s: 20
+  max_retries: 2                 # 429/529 only, exponential backoff
+  breaker_after: 5               # consecutive errors, then rules decide
+  near_miss_floor: 0.30          # digest lists rejections Jev still gave >= this chance to pass
+  thresholds:                    # confidence needed for Jev to decide
+    location: 0.85
+    target_role: 0.85
+    variant: 0.70
+  questions:                     # only job facts are ever sent with these
+    location:
+      instructions: "Where is this job located, for a candidate based in the United States?"
+      criteria:
+        us: "On-site or hybrid at a United States location"
+        remote_us: "Remote and open to candidates in the United States"
+        non_us: "Located outside the United States, or remote only for another country"
+        unclear: "The location is empty or too vague to tell"
+    target_role:
+      instructions: "The job title is one of these target role families: {targets}."
+    variant:
+      instructions: "Which resume variant fits this job best?"
+      criteria:
+        master: "General senior engineering, product or platform leadership role"
+        genai-fde: "Forward deployed, applied AI, AI engineer, solutions architect or AI transformation role"
+        data-genai-fde: "Data platform, data architecture or data engineering role"
+        eng-manager: "Engineering manager or people-leadership role"
+
 email:
   # Placeholders: {date} dd-mmm-yyyy, {new}, {candidates}, {matched},
   # {strong}, {pdfs}. Unknown placeholders render empty (never block

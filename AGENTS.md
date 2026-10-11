@@ -160,7 +160,10 @@ All paths below are relative to `agents/job-pilot/`:
   PDFs), `resumes.py` (variant choice, phone injection, DOCX text for
   scoring; synced by `tools/sync_resumes.py`), `digest.py` (Jinja2 autoescaped HTML + Gmail SMTP),
   `telemetry.py` (LangSmith native + OTel dual export, degrades to a
-  warning), `graph.py` (the StateGraph).
+  warning), `jev.py` (TypeSafe Jev gate: location / role fit / resume
+  variant; `JEV_MODE=off|shadow|enforce`, default off, falls back to the
+  string rules on error or low confidence, sends job facts only),
+  `graph.py` (the StateGraph).
 - `run.py` — entrypoint; `--dry-run` writes the HTML instead of sending.
 - `tests/` — code-level tests, no network, no secrets.
 - CI: `.github/workflows/job-pilot.yml` (digest, after the daily trends

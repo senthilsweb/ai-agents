@@ -48,6 +48,28 @@ class Failure(BaseModel):
     reason: str
 
 
+class GateRecord(BaseModel):
+    """One job's Jev gate decision (jev-rules-gate). Facts and verdicts
+    only — never job text. `rule_*` is what the string rules said,
+    `jev_*` what Jev said, `candidate`/`variant` what was used."""
+    job_ref: str                       # "company / title"
+    slug: str
+    rule_candidate: bool
+    rule_variant: str
+    jev_location: str | None = None
+    jev_location_conf: float | None = None
+    jev_role_p: float | None = None
+    jev_variant: str | None = None
+    jev_variant_conf: float | None = None
+    jev_candidate: bool | None = None  # what Jev's answers imply
+    candidate: bool = False            # what the run used
+    variant: str = ""
+    reason: str | None = None          # why rejected (enforce) / would be
+    near_miss: bool = False
+    disagree: bool = False
+    error: str | None = None
+
+
 class PilotState(TypedDict, total=False):
     run_date: str          # YYYY-MM-DD, injected by the entrypoint
     baseline_tag: str      # e.g. "trends/20260714", resolved by the CI wrapper
@@ -58,5 +80,8 @@ class PilotState(TypedDict, total=False):
     pdf_paths: list[str]
     resume_paths: list[str]       # DOCX variants attached to the email
     resume_variants: dict[str, str]  # job slug -> variant key, for the digest
+    gate: list[GateRecord]        # Jev gate records (empty when off)
+    gate_stats: dict              # mode, calls, errors, tokens, cost, model
+    jev_variants: dict[str, str]  # job slug -> variant chosen by Jev
     email_html: str
     send_result: str

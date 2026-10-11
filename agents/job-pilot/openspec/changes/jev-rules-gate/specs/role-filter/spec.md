@@ -37,8 +37,10 @@ text, or candidate identity.
 
 For each job the gate rejects, the run SHALL record the question, the answer
 and the confidence. The digest SHALL show rejection counts by reason and the
-near-misses (rejected with confidence below the threshold plus the configured
-margin).
+near-misses: rejected jobs to which Jev still gave at least
+`near_miss_floor` probability of passing (role: P(target); location:
+1 − confidence). Calibrated on the first real shadow run, where Jev answers
+cluster near 1.0 and "below threshold plus margin" flagged 66 of 79 rejects.
 
 ## MODIFIED Requirements
 

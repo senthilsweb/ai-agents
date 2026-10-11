@@ -74,6 +74,45 @@
   </div>
   {% endfor %}
 
+  {% if gate %}
+  <div style="background:#fcfcfb; border:1px solid #e1e0d9; border-radius:8px; padding:12px 16px; margin-top:14px">
+    <div style="color:#52514e; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px">
+      Gate &middot; Jev {{ gate.mode }}
+    </div>
+    <div style="font-size:12.5px; color:#52514e">
+      {{ gate.stats.asked }} jobs asked &middot; {{ gate.stats.calls }} calls
+      &middot; {{ gate.stats.errors }} error{{ 's' if gate.stats.errors != 1 }}
+      &middot; {{ gate.stats.rule_candidates }} by rules vs {{ gate.stats.jev_candidates }} by Jev
+      {% if gate.mode == 'shadow' %}&middot; <strong>shadow: nothing changed</strong>{% endif %}
+    </div>
+    {% if gate.reasons %}
+    <div style="font-size:12.5px; color:#52514e; margin-top:6px">
+      <span style="color:#898781; text-transform:uppercase; font-size:10.5px; letter-spacing:.06em">{{ 'Rejected' if gate.mode == 'enforce' else 'Would reject' }}</span>
+      &mdash; {% for k, n in gate.reasons %}{{ k }}: {{ n }}{{ ' &middot; '|safe if not loop.last }}{% endfor %}
+    </div>
+    {% endif %}
+    {% if gate.near_misses %}
+    <div style="font-size:12.5px; color:#52514e; margin-top:8px">
+      <span style="color:#898781; text-transform:uppercase; font-size:10.5px; letter-spacing:.06em">Near-misses ({{ gate.n_near }})</span>
+      {% for r in gate.near_misses %}
+      <div style="margin:2px 0">{{ r.job_ref }} &mdash; {{ r.reason }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if gate.disagreements %}
+    <div style="font-size:12.5px; color:#52514e; margin-top:8px">
+      <span style="color:#898781; text-transform:uppercase; font-size:10.5px; letter-spacing:.06em">Rules vs Jev ({{ gate.n_disagree }})</span>
+      {% for r in gate.disagreements %}
+      <div style="margin:2px 0">{{ r.job_ref }} &mdash;
+        rules: {{ 'keep' if r.rule_candidate else 'drop' }} / Jev: {{ 'keep' if r.jev_candidate else 'drop' }}
+        {% if r.rule_candidate and r.jev_variant and r.jev_variant != r.rule_variant %}&middot; variant {{ r.rule_variant }} &rarr; {{ r.jev_variant }}{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
   {% if failures %}
   <div style="background:#fcfcfb; border:1px solid #ec835a; border-radius:8px; padding:12px 16px; margin-top:14px">
     <div style="color:#d03b3b; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px">Failures</div>

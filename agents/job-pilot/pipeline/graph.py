@@ -20,7 +20,7 @@ from pathlib import Path
 
 from langgraph.graph import END, START, StateGraph
 
-from pipeline import digest, letters, matcher, resumes
+from pipeline import digest, jev, letters, matcher, resumes
 from pipeline.delta import new_jobs
 from pipeline.filters import select_candidates
 from pipeline.state import Failure, PilotState
@@ -35,6 +35,7 @@ def default_deps() -> dict:
     return {
         "new_jobs": new_jobs,
         "select_candidates": select_candidates,
+        "jev_gate": jev.gate,
         "run_match": matcher.run_match,
         "render_all": letters.render_all,
         "scoring_resume": resumes.scoring_resume,
@@ -59,9 +60,30 @@ def build_graph(cfg: dict, deps: dict | None = None, tracer=None,
         return {"new_jobs": jobs, "failures": state.get("failures", [])}
 
     def filter_roles(state: PilotState):
-        with span(tracer, "filter_roles", new=len(state["new_jobs"])):
-            cand = deps["select_candidates"](state["new_jobs"], cfg["filter"])
-        return {"candidates": cand}
+        mode = (jev.resolve_mode(environ)
+                if cfg.get("jev") and deps.get("jev_gate") else "off")
+        with span(tracer, "filter_roles", new=len(state["new_jobs"]),
+                  jev_mode=mode):
+            if mode == "off":
+                cand = deps["select_candidates"](state["new_jobs"],
+                                                 cfg["filter"])
+                return {"candidates": cand, "gate": [], "gate_stats": {},
+                        "jev_variants": {}}
+            try:
+                out = deps["jev_gate"](state["new_jobs"], cfg["filter"], cfg,
+                                       environ=environ, mode=mode)
+            except Exception as e:   # Jev must never block the digest
+                log.error("jev gate failed, using rules: %s", e)
+                cand = deps["select_candidates"](state["new_jobs"],
+                                                 cfg["filter"])
+                return {"candidates": cand, "gate": [],
+                        "gate_stats": {"mode": mode, "error": str(e)},
+                        "jev_variants": {},
+                        "failures": state.get("failures", []) +
+                        [Failure(node="jev", job_ref="-", reason=str(e))]}
+        return {"candidates": out.candidates, "gate": out.records,
+                "gate_stats": out.stats, "jev_variants": out.variants,
+                "failures": state.get("failures", []) + out.failures}
 
     def match(state: PilotState):
         with span(tracer, "match", candidates=len(state["candidates"])):
@@ -99,7 +121,8 @@ def build_graph(cfg: dict, deps: dict | None = None, tracer=None,
             try:
                 paths, variants, fails = deps["render_resumes"](
                     state["matches"], m["pdf_band_threshold"], cfg["resumes"],
-                    out_dir or ROOT / "runs", environ=environ)
+                    out_dir or ROOT / "runs", environ=environ,
+                    overrides=state.get("jev_variants"))
                 return {"resume_paths": [str(p) for p in paths],
                         "resume_variants": variants,
                         "failures": state.get("failures", []) + fails}
@@ -116,7 +139,9 @@ def build_graph(cfg: dict, deps: dict | None = None, tracer=None,
                 state.get("candidates", []), state.get("matches", []),
                 state.get("failures", []), m["pdf_band_threshold"],
                 variants=state.get("resume_variants", {}),
-                resume_count=len(state.get("resume_paths", [])))
+                resume_count=len(state.get("resume_paths", [])),
+                gate=state.get("gate", []),
+                gate_stats=state.get("gate_stats", {}))
         return {"email_html": html}
 
     def send_email(state: PilotState):
