@@ -16,6 +16,10 @@ on:
         description: "send the report email even if everything is up (to test SMTP/formatting)"
         type: boolean
         default: false
+      trace_probe:
+        description: "send one real span to the Phoenix/Arize collector and print its HTTP answer"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -48,3 +52,12 @@ jobs:
           DIGEST_FROM: ${{ secrets.DIGEST_FROM }}
           FORCE_EMAIL: ${{ inputs.force_email && '1' || '0' }}
         run: python3 .github/scripts/health_check.py
+      - name: Trace probe (dispatch only) — one real span to Phoenix
+        if: ${{ inputs.trace_probe }}
+        env:
+          PHOENIX_COLLECTOR_ENDPOINT: ${{ secrets.PHOENIX_COLLECTOR_ENDPOINT }}
+          PHOENIX_CLIENT_HEADERS: ${{ secrets.PHOENIX_CLIENT_HEADERS }}
+        run: |
+          docker run --rm -e PHOENIX_COLLECTOR_ENDPOINT -e PHOENIX_CLIENT_HEADERS \
+            -v "$PWD/.github/scripts/trace_probe.py:/p.py:ro" \
+            --entrypoint python ghcr.io/senthilsweb/job-pilot:latest /p.py
