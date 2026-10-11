@@ -53,7 +53,7 @@ jobs:
           FORCE_EMAIL: ${{ inputs.force_email && '1' || '0' }}
         run: python3 .github/scripts/health_check.py
       - name: Trace probe (dispatch only) — one real span to Phoenix
-        if: ${{ inputs.trace_probe }}
+        if: ${{ always() && inputs.trace_probe }}
         env:
           PHOENIX_COLLECTOR_ENDPOINT: ${{ secrets.PHOENIX_COLLECTOR_ENDPOINT }}
           PHOENIX_CLIENT_HEADERS: ${{ secrets.PHOENIX_CLIENT_HEADERS }}
