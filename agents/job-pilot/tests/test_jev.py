@@ -265,7 +265,7 @@ def test_real_config_builds_valid_questions():
 
 
 def test_graph_gate_error_falls_back_to_rules_and_flags_digest():
-    from tests.test_graph import CFG as GCFG, JOB, deps_with
+    from test_graph import CFG as GCFG, deps_with
     calls = []
     deps = deps_with(calls)
 
