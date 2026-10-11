@@ -53,19 +53,19 @@ def probe(c: Check) -> None:
     url = c.url.rstrip("/") + c.path
     for attempt in range(1, ATTEMPTS + 1):
         t0 = time.monotonic()
+        status = None
         try:
             req = urllib.request.Request(url, headers=UA, method=c.method)
             with urllib.request.urlopen(req, timeout=TIMEOUT,
                                         context=ssl.create_default_context()) as r:
                 status = r.status
-        except urllib.error.HTTPError as e:
+        except urllib.error.HTTPError as e:         # an answer, e.g. 405/401
             status = e.code
         except Exception as e:                       # DNS, refused, timeout, TLS
-            c.ms = int((time.monotonic() - t0) * 1000)
             c.detail = f"{type(e).__name__}: {getattr(e, 'reason', e)}"
             c.ok = False
-        else:
-            c.ms = int((time.monotonic() - t0) * 1000)
+        c.ms = int((time.monotonic() - t0) * 1000)
+        if status is not None:
             c.ok = status == 200 if c.mode == "ok200" else status < 500
             c.detail = f"HTTP {status}"
         if c.ok:
