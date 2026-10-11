@@ -28,18 +28,26 @@ print(f"header names sent: {sorted(hdrs) or 'none'}; "
       f"path ends with /v1/traces: {url.endswith('/v1/traces')}")
 
 
-class Probe(OTLPSpanExporter):
-    def _export(self, *a, **kw):
-        r = super()._export(*a, **kw)
-        print(f"phoenix export -> HTTP {r.status_code} {r.reason}; "
-              f"content-type={r.headers.get('content-type')}; "
-              f"body={r.text[:300]!r}")
-        return r
+import requests
+
+_send = requests.Session.send
+
+
+def _logged_send(self, req, **kw):      # version-independent HTTP hook
+    r = _send(self, req, **kw)
+    print(f"phoenix export -> HTTP {r.status_code} {r.reason}; "
+          f"bytes_sent={len(req.body or b'')}; "
+          f"content-type={r.headers.get('content-type')}; "
+          f"body={r.text[:300]!r}")
+    return r
+
+
+requests.Session.send = _logged_send
 
 
 provider = TracerProvider(resource=Resource.create(
     {"service.name": "job-pilot", "model_id": "job-pilot"}))
-provider.add_span_processor(SimpleSpanProcessor(Probe(endpoint=url, headers=hdrs)))
+provider.add_span_processor(SimpleSpanProcessor(OTLPSpanExporter(endpoint=url, headers=hdrs)))
 with provider.get_tracer("job-pilot").start_as_current_span("healthcheck.trace_probe"):
     pass
 provider.shutdown()
