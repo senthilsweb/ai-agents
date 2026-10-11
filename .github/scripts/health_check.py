@@ -41,6 +41,9 @@ class Check:
     # but that still proves the host is up).
     mode: str = "ok200"
     method: str = "GET"
+    # "otlp": POST an empty OTLP export with the same headers job-pilot
+    # sends, so a rejected credential (401/403) shows up as DOWN.
+    headers_env: str = ""
     ok: bool = False
     detail: str = ""
     ms: int = 0
@@ -51,11 +54,22 @@ def probe(c: Check) -> None:
         c.detail = "endpoint not configured (secret empty)"
         return
     url = c.url.rstrip("/") + c.path
+    data, headers = None, dict(UA)
+    if c.mode == "otlp":
+        if not url.endswith("/v1/traces"):
+            url += "/v1/traces"
+        # same header parsing as pipeline/telemetry.py
+        hdrs = dict(h.split("=", 1) for h in
+                    os.environ.get(c.headers_env, "").split(",") if "=" in h)
+        data, headers = b"", {**UA, "Content-Type": "application/x-protobuf",
+                              **hdrs}
     for attempt in range(1, ATTEMPTS + 1):
         t0 = time.monotonic()
         status = None
         try:
-            req = urllib.request.Request(url, headers=UA, method=c.method)
+            req = urllib.request.Request(
+                url, data=data, headers=headers,
+                method="POST" if data is not None else c.method)
             with urllib.request.urlopen(req, timeout=TIMEOUT,
                                         context=ssl.create_default_context()) as r:
                 status = r.status
@@ -66,8 +80,15 @@ def probe(c: Check) -> None:
             c.ok = False
         c.ms = int((time.monotonic() - t0) * 1000)
         if status is not None:
-            c.ok = status == 200 if c.mode == "ok200" else status < 500
+            if c.mode == "ok200":
+                c.ok = status == 200
+            elif c.mode == "otlp":
+                c.ok = status < 500 and status not in (401, 403)
+            else:
+                c.ok = status < 500
             c.detail = f"HTTP {status}"
+            if c.mode == "otlp" and status in (401, 403):
+                c.detail += " — credentials rejected on export"
         if c.ok:
             return
         if attempt < ATTEMPTS:
@@ -81,10 +102,12 @@ def build_checks(env=os.environ) -> list[Check]:
               "home lab", env.get("JOBMATCH_API_BASE"), "/health"),
         Check("job-matcher agent", "/upload of job descriptions — every match fails without it",
               "home lab", env.get("JOBMATCH_AGENT_BASE"), "/health"),
-        Check("Phoenix collector", "trace export (run still succeeds, traces lost)",
-              "home lab", env.get("PHOENIX_COLLECTOR_ENDPOINT"), mode="reachable"),
-        Check("OTLP endpoint", "trace export (run still succeeds, traces lost)",
-              "home lab", env.get("OTEL_EXPORTER_OTLP_ENDPOINT"), mode="reachable"),
+        Check("Phoenix traces", "no traces in Phoenix/Arize (run still succeeds)",
+              "home lab", env.get("PHOENIX_COLLECTOR_ENDPOINT"), mode="otlp",
+              headers_env="PHOENIX_CLIENT_HEADERS"),
+        Check("OTLP traces", "no traces in OpenObserve (run still succeeds)",
+              "home lab", env.get("OTEL_EXPORTER_OTLP_ENDPOINT"), mode="otlp",
+              headers_env="OTEL_EXPORTER_OTLP_HEADERS"),
         Check("TypeSafe Jev", "Jev gate falls back to the string rules (digest still sends)",
               "cloud", "https://api.typesafe.ai/v1/systemone", mode="reachable"),
         Check("job-scout trends data", "daily delta baseline — parquet fetch from GitHub",
