@@ -24,8 +24,13 @@ if not base:
 url = base if base.endswith("/v1/traces") else base + "/v1/traces"
 hdrs = dict(h.split("=", 1) for h in
             os.environ.get("PHOENIX_CLIENT_HEADERS", "").split(",") if "=" in h)
-print(f"header names sent: {sorted(hdrs) or 'none'}; "
-      f"path ends with /v1/traces: {url.endswith('/v1/traces')}")
+from urllib.parse import urlparse
+_u = urlparse(url)
+print(f"header names sent: {sorted(hdrs) or 'none'}")
+print(f"secret value path: {urlparse(base).path or '(none)'}; "
+      f"resolved path: {_u.path}; host is otlp.arize.com: "
+      f"{_u.hostname == 'otlp.arize.com'}")
+CANON = "https://otlp.arize.com/v1/traces"
 
 
 import requests
@@ -45,9 +50,18 @@ def _logged_send(self, req, **kw):      # version-independent HTTP hook
 requests.Session.send = _logged_send
 
 
-provider = TracerProvider(resource=Resource.create(
-    {"service.name": "job-pilot", "model_id": "job-pilot"}))
-provider.add_span_processor(SimpleSpanProcessor(OTLPSpanExporter(endpoint=url, headers=hdrs)))
-with provider.get_tracer("job-pilot").start_as_current_span("healthcheck.trace_probe"):
-    pass
-provider.shutdown()
+def send(target, label):
+    print(f"-- {label}")
+    prov = TracerProvider(resource=Resource.create(
+        {"service.name": "job-pilot", "model_id": "job-pilot"}))
+    prov.add_span_processor(SimpleSpanProcessor(
+        OTLPSpanExporter(endpoint=target, headers=hdrs)))
+    with prov.get_tracer("job-pilot").start_as_current_span(
+            "healthcheck.trace_probe." + label):
+        pass
+    prov.shutdown()
+
+
+send(url, "as_configured")
+if _u.hostname == "otlp.arize.com" and url != CANON:
+    send(CANON, "canonical_v1_traces")
