@@ -1,0 +1,48 @@
+# job-pilot health check — spec: openspec/changes/add-health-check/
+#
+# Every 4 hours: probe the hosted endpoints job-pilot depends on (home-lab
+# job-matcher API/agent, trace collectors, job-scout parquet on GitHub).
+# Free probes only — GET /health, never /analyze, /upload or any LLM call.
+# On any failure: a formatted alert email (same SMTP secrets as the digest)
+# and a red run. No artifacts, no hosts in logs (public repo).
+name: job-pilot health check
+
+on:
+  schedule:
+    - cron: "17 */4 * * *"     # off the :00 mark to dodge scheduler congestion
+  workflow_dispatch:
+    inputs:
+      force_email:
+        description: "send the report email even if everything is up (to test SMTP/formatting)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: job-pilot-health
+  cancel-in-progress: false
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+      - name: Probe endpoints, email on failure
+        env:
+          JOBMATCH_API_BASE: ${{ secrets.JOBMATCH_API_BASE }}
+          JOBMATCH_AGENT_BASE: ${{ secrets.JOBMATCH_AGENT_BASE }}
+          PHOENIX_COLLECTOR_ENDPOINT: ${{ secrets.PHOENIX_COLLECTOR_ENDPOINT }}
+          OTEL_EXPORTER_OTLP_ENDPOINT: ${{ secrets.OTEL_EXPORTER_OTLP_ENDPOINT }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          DIGEST_TO: ${{ secrets.DIGEST_TO }}
+          DIGEST_FROM: ${{ secrets.DIGEST_FROM }}
+          FORCE_EMAIL: ${{ inputs.force_email && '1' || '0' }}
+        run: python3 .github/scripts/health_check.py
