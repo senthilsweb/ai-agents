@@ -50,10 +50,10 @@ def _logged_send(self, req, **kw):      # version-independent HTTP hook
 requests.Session.send = _logged_send
 
 
-def send(target, label):
+def send(target, label, extra=None):
     print(f"-- {label}")
     prov = TracerProvider(resource=Resource.create(
-        {"service.name": "job-pilot", "model_id": "job-pilot"}))
+        {"service.name": "job-pilot", "model_id": "job-pilot", **(extra or {})}))
     prov.add_span_processor(SimpleSpanProcessor(
         OTLPSpanExporter(endpoint=target, headers=hdrs)))
     with prov.get_tracer("job-pilot").start_as_current_span(
@@ -63,5 +63,9 @@ def send(target, label):
 
 
 send(url, "as_configured")
+# Arize AX organises spans into projects by this resource attribute; without
+# it spans land in the default project. A distinct name makes them findable.
+send(url, "with_project_name",
+     {"openinference.project.name": "job-pilot-probe"})
 if _u.hostname == "otlp.arize.com" and url != CANON:
     send(CANON, "canonical_v1_traces")
